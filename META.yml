@@ -1,0 +1,18 @@
+# http://module-build.sourceforge.net/META-spec.html
+#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
+name:         Algorithm-QuineMcCluskey
+version:      0.01
+version_from: lib/Algorithm/QuineMcCluskey.pm
+installdirs:  site
+requires:
+    Alias:                         0
+    Carp:                          0
+    Data::Dumper:                  0
+    List::Compare::Functional:     0
+    List::MoreUtils:               0
+    List::Util:                    0
+    Test::More:                    0
+    Tie::Cycle:                    0
+
+distribution_type: module
+generated_by: ExtUtils::MakeMaker version 6.17
