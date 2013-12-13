@@ -13,7 +13,7 @@ use Algorithm::QuineMcCluskey::Util qw(
 	bin columns diffpos diffposes hdist maskmatch maskmatches remel stl tobit
 	uniqels
 );
-use Alias 'attr';
+use Moose;
 use Carp qw(carp croak);
 use Data::Dumper;
 use List::Compare::Functional qw(:main is_LequivalentR);
@@ -21,7 +21,35 @@ use List::MoreUtils qw(pairwise firstidx uniq);
 use List::Util qw(sum min);
 use Tie::Cycle;
 
-$Alias::AttrPrefix = 'main::';	# Compatibility with use strict 'vars'
+
+#
+# Moosey attributes.
+#
+# bits and imp only used in find_primes().
+# boolean only used in to_boolean().
+#
+has 'bits'	=> (isa => 'ArrayRef[Int]', is => 'rw', required => 0);
+has 'boolean'	=> (isa => 'ArrayRef[Str]', is => 'rw', required => 0);
+has 'covers'	=> (isa => 'ArrayRef[Int]', is => 'rw', required => 0);
+has 'dc'	=> (isa => 'Str', is => 'rw', default => '-');
+has 'minonly'	=> (isa => 'Bool', is => 'rw', default = 1);
+has 'dontcares'	=> (
+	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
+	predicate => 'has_dontcares'
+	);
+has 'minterms'	=> (
+	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
+	predicate => 'has_minterms'
+	);
+has 'maxterms'	=> (
+	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
+	predicate => 'has_maxterms'
+	);
+has 'vars'	=> (isa => 'ArrayRef[Str]', is => 'rw', default => ['A' .. 'Z']);
+has 'ess'	=> (isa => 'HashRef', is => 'rw', required => 0);
+has 'imp'	=> (isa => 'HashRef', is => 'rw', required => 0);
+has 'primes'	=> (isa => 'HashRef', is => 'rw', required => 0);
+has 'width'	=> (isa => 'Int', is => 'rw', required => 0);
 
 =head1 VERSION
 
@@ -67,9 +95,9 @@ the C<SYNOPSIS>).
 
 =cut
 
-################################################################################
-# Sub / method definitions
-################################################################################
+#
+# Sub and method definitions.
+#
 
 =head1 METHODS
 
@@ -83,9 +111,7 @@ Default constructor
 
 sub new {
 	my $type = shift;
-	my %def_prefs = (
-			minonly	=> 1
-	);
+
 	my $self = bless {
 		bits		=> [],
 		boolean		=> [],
@@ -95,33 +121,29 @@ sub new {
 		minterms	=> [],
 		maxterms	=> [],
 		vars		=> [ 'A'..'Z' ],
-		ess			=> {},
-		imp			=> {},
+		ess		=> {},
+		imp		=> {},
 		primes		=> {},
 		width		=> undef,
 		# Accept dash-prefixed or "normal" options
 		map { substr($_, /^-/) => {@_}->{$_} } keys %{{ @_ }}
 	}, $type;
 	
-	attr $self;
-	# Insert default preferences
-	defined $::prefs{$_} or $::prefs{$_} = $def_prefs{$_} for keys %def_prefs;
-	
-	if (defined %::minterms or defined %::maxterms) {
-		$self->prep_mopi;
-	}
-	attr $self;	# Rebuild new structure
+	#
 	# Catch errors
+	#
 	croak "Mixing minterms and maxterms not allowed"
-		if @::minterms * @::maxterms;
+		if @{$self->minterms} * @{$self->maxterms};
 	croak "Must supply either minterms or maxterms"
-		unless @::minterms + @::maxterms;
+		unless @{$self->minterms} + @{$self->maxterms};
 
+	#
 	# Convert terms to strings of bits if necessary
-	unless ((sum map { $::width == length } (@::minterms, @::maxterms))
-				== @::minterms + @::maxterms) {
+	#
+	unless ((sum map { $self->width == length } (@{$self->minterms}, @{$self->maxterms}))
+				== @{$self->minterms} + @{$self->maxterms}) {
 		no strict 'refs';
-		@{"::$_"} = map { tobit $_, $::width } @{"::$_"}
+		@{"self->$_"} = map { tobit $_, $self->width } @{"self->$_"}
 			for qw(minterms maxterms dontcares);
 	}
 
@@ -134,39 +156,57 @@ Finding prime essentials
 
 =cut
 
-sub find_primes {
-	my $self = attr shift;
+sub find_primes
+{
+	my $self = shift;
 
 	# Separate into bins based on number of 1's
-	push @{ $::bits[0][ sum stl $_ ] }, $_
-		for (@::minterms, @::maxterms, @::dontcares);
+	push @{ $self->bits[0][ sum stl $_ ] }, $_
+		for (@{$self->minterms}, @{$self->maxterms}, @{$self->dontcares});
 
-	for my $level (0 .. $::width) {
+	for my $level (0 .. $self->width)
+	{
+		#
 		# Skip if we haven't generated such data
-		last unless ref $::bits[$level];
+		#
+		last unless ref $self->bits[$level];
+
 		# Find pairs with Hamming distance of 1
-		for my $low (0 .. $#{ $::bits[$level] }) {
-			# These nested for-loops get all permutations of adjacent sets
-			for my $lv (@{ $::bits[$level][$low] }) {
-				$::imp{$lv} ||= 0;	# Initialize the implicant as unused
-				# Skip ahead if we don't have this data FIXME: explain
-				next unless ref $::bits[$level][$low + 1];
-				for my $hv (@{ $::bits[$level][$low + 1] }) {
-					$::imp{$hv} ||= 0;	# Initialize the implicant
-					if (hdist($lv, $hv) == 1) {
+		for my $low (0 .. $#{ $self->bits[$level] })
+		{
+			#
+			# These nested for-loops get all permutations
+			# of adjacent sets
+			#
+			for my $lv (@{ $self->bits[$level][$low] })
+			{
+				#
+				# Initialize the implicant as unused; Skip
+				# ahead if we don't have this data.
+				# FIXME: explain
+				#
+				$self->imp{$lv} ||= 0;
+				next unless ref $self->bits[$level][$low + 1];
+
+				for my $hv (@{ $self->bits[$level][$low + 1] })
+				{
+					$self->imp{$hv} ||= 0;	# Initialize the implicant
+					if (hdist($lv, $hv) == 1)
+					{
 						my $new = $lv;	# or $hv
-						substr($new, diffpos($lv, $hv), 1) = $::dc;
+						substr($new, diffpos($lv, $hv), 1) = $self->dc;
 						# Save new implicant to next level
-						push @{ $::bits[$level + 1][$low + 1] }, $new;
+						push @{ $self->bits[$level + 1][$low + 1] }, $new;
 						# Mark two used values as used
-						@::imp{$lv,$hv} = (1, 1);
+						@{$self->imp{$lv,$hv}} = (1, 1);
 					}
 				}
 			}
 		}
 	}
-	%::primes = map { $_ => [ maskmatches($_, @::minterms, @::maxterms) ] }
-		grep { !$::imp{$_} } keys %::imp;
+
+	%{$self->primes} = map { $_ => [ maskmatches($_, @{$self->minterms}, @{$self->maxterms}) ] }
+		grep { !$self->imp{$_} } keys %{$self->imp};
 }
 
 
@@ -177,8 +217,8 @@ Row-dominance
 =cut
 
 sub row_dom {
-	my $self = attr shift;
-	my $primes = shift || \%::primes;
+	my $self = shift;
+	my $primes = shift || \%{$self->primes};
 
 	$primes = { map {
 		my $o = $_;
@@ -198,15 +238,16 @@ Column-dominance
 =cut
 
 sub col_dom {
-	my $self = attr shift;
-	my $primes = shift || \%::primes;
+	my $self = shift;
+	my $primes = shift || \%{$self->primes};
 
 	my %cols = columns $primes, @::minterms, @::maxterms;
 	for my $col1 (keys %cols) {
 		for my $col2 (keys %cols) {
 			next if $col1 eq $col2;
 			
-			# If col1 is a non-empty proper subset of col2, remove col2
+			# If col1 is a non-empty proper subset of col2,
+			# remove col2
 			if (@{ $cols{$col1} }
 					and is_LsubsetR			([ $cols{$col1} => $cols{$col2} ])
 					and !is_LequivalentR	([ $cols{$col1} => $cols{$col2} ]))
@@ -225,19 +266,19 @@ Finding essential prime implicants
 =cut
 
 sub find_essentials {
-	my $self = attr shift;
-	%::ess = ();
-	my $primes = @_ ? shift : \%::primes;
-	my @terms = @_ ? @{ shift() } : (@::minterms, @::maxterms);
+	my $self = shift;
+	%{$self->ess} = ();
+	my $primes = @_ ? shift : \%{$self->primes};
+	my @terms = @_ ? @{ shift() } : (@{$self->minterms}, @{$self->maxterms});
 
 	for my $term (@terms) {
 		my $ess = ( map { @$_ == 1 ? @$_ : undef } [ grep {
 			grep { $_ eq $term } @{ $primes->{$_} }
 		} keys %$primes ] )[0];
 		# TODO: It would be nice to track the terms that make this essential
-		$::ess{$ess}++ if $ess;
+		${$self->ess}{$ess}++ if $ess;
 	}
-	%::ess;
+	%{$self->ess};
 }
 
 =item purge_essentials
@@ -247,9 +288,10 @@ Delete essential primes from table
 =cut
 
 sub purge_essentials {
-	my $self = attr shift;
-	my %ess = @_ ? %{ shift() } : %::ess;
-	my $primes = shift || \%::primes;
+	my $self = shift;
+	my %ess = @_ ? %{ shift() } : %{$self->ess};
+	my $primes = shift || \%{$self->primes};
+
 	# Delete columns associated with this term
 	for my $col (keys %$primes) {
 		remel $_, $primes->{$col} for keys %ess;
@@ -265,24 +307,24 @@ Generating Boolean expressions
 =cut
 
 sub to_boolean {
-	my $self = attr shift;
+	my $self = shift;
 
 	# Group separators (grouping character pairs)
 	my @gs = ('(', ')');
 	# Group joiner, element joiner, match condition
-	my ($gj, $ej, $cond) = @::minterms ? (' + ', '', 1) : ('', ' + ', 0);
-	tie my $var, 'Tie::Cycle', [ @::vars[0 .. $::width - 1] ];
+	my ($gj, $ej, $cond) = @{$self->minterms} ? (' + ', '', 1) : ('', ' + ', 0);
+	tie my $var, 'Tie::Cycle', [ @{$self->vars}[0 .. $self->width - 1] ];
 
-	push @::boolean,
+	push @{$self->boolean},
 		join $gj, map { $gs[0] . (
 			join $ej, map {
 				my $var = $var;	# Activate cycle even if not used
-				$_ eq $::dc ? () : $var . ($_ == $cond ? '' : "'")
+				$_ eq $self->dc ? () : $var . ($_ == $cond ? '' : "'")
 			} stl $_) . $gs[1]
 		} @$_
-		for @::covers;
+		for @{$self->covers};
 
-	@::boolean;
+	@{$self->boolean};
 }
 
 =item solve
@@ -292,9 +334,9 @@ Main solution sub (wraps recurse_solve())
 =cut
 
 sub solve {
-	my $self = attr shift;
-	%::primes or $self->find_primes;
-	@::covers = $self->recurse_solve($self->{primes});
+	my $self = shift;
+	%{$self->primes} or $self->find_primes;
+	@{$self->covers} = $self->recurse_solve($self->{primes});
 	$self->to_boolean;
 }
 
@@ -305,7 +347,7 @@ Recursive divide-and-conquer solver
 =cut
 
 sub recurse_solve {
-	my $self = attr shift;
+	my $self = shift;
 	my %primes = %{ $_[0] };
 	my @prefix;
 	my @covers;
@@ -333,7 +375,8 @@ sub recurse_solve {
 	my @t = grep {
 		my $o = $_;
 		sum map { sum map { $_ eq $o } @$_ } values %primes
-	} (@::minterms, @::maxterms);
+	} (@{$self->minterms}, @{$self->maxterms});
+
 	# Flip table so terms are keys
 	my %ic = columns \%primes, @t;
 	my $term = (sort { @{ $ic{$a} } <=> @{ $ic{$b} } } keys %ic)[0];
@@ -354,7 +397,7 @@ sub recurse_solve {
 		%reduced = map { $_ => $reduced{$_} } grep { @{ $reduced{$_} } } keys %reduced;
 		
 		my @c = $self->recurse_solve(\%reduced);
-		my @results = $::prefs{sortterms}
+		my @results = ${$self->prefs}{sortterms}
 			? @c
 				? map { [ reverse sort (@prefix, $ta, @$_) ] } @c
 				: [ reverse sort (@prefix, $ta) ]
@@ -365,9 +408,9 @@ sub recurse_solve {
 	}
 
 	# Weed out expensive solutions
-	sub cost { sum map { /$::dc/ ? 0 : 1 } stl join '', @{ shift() } }
+	sub cost { sum map { /$self->dc/ ? 0 : 1 } stl join '', @{ shift() } }
 	my $mincost = min map { cost $_ } @covers;
-	@covers = grep { cost($_) == $mincost } @covers if $::prefs{minonly};
+	@covers = grep { cost($_) == $mincost } @covers if ${$self->prefs}{minonly};
 	# Return our covers table to be treated similarly one level up
 	# FIXME: How to best ensure non-duplicated answers?
 	return uniqels @covers;

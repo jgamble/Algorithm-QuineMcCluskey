@@ -1,5 +1,13 @@
 Revision history for Algorithm-QuineMcCluskey
 
+"deAlias"
+	2013-10-25
+	- Moosify ("has" declarations) the attributes. This is part
+	  of the process to eliminate using Alias.pm.
+	- Removed default check in new(), which Moose has.
+	- Removed prep_mopi call, which doesn't seem to exist anywhere.
+	- De-attr'd the attributes in find_perms.
+
 0.01	2006-06-24T21:32-0500
 		First version, released on an unsuspecting world. Supports
 		single-output problems only.
