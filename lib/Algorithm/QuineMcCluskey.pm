@@ -32,7 +32,7 @@ has 'bits'	=> (isa => 'ArrayRef[Int]', is => 'rw', required => 0);
 has 'boolean'	=> (isa => 'ArrayRef[Str]', is => 'rw', required => 0);
 has 'covers'	=> (isa => 'ArrayRef[Int]', is => 'rw', required => 0);
 has 'dc'	=> (isa => 'Str', is => 'rw', default => '-');
-has 'minonly'	=> (isa => 'Bool', is => 'rw', default = 1);
+has 'minonly'	=> (isa => 'Bool', is => 'rw', default => 1);
 has 'dontcares'	=> (
 	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
 	predicate => 'has_dontcares'
