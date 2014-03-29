@@ -28,7 +28,7 @@ use Tie::Cycle;
 # bits and imp only used in find_primes().
 # boolean only used in to_boolean().
 #
-has 'bits'	=> (isa => 'ArrayRef[Int]', is => 'rw', required => 0);
+#has 'bits'	=> (isa => 'ArrayRef[ArrayRef[Int]]', is => 'rw', required => 0);
 has 'boolean'	=> (isa => 'ArrayRef[Str]', is => 'rw', required => 0);
 has 'covers'	=> (isa => 'ArrayRef[Int]', is => 'rw', required => 0);
 has 'dc'	=> (isa => 'Str', is => 'rw', default => '-');
@@ -109,26 +109,10 @@ Default constructor
 
 =cut
 
-sub new {
-	my $type = shift;
+sub BUILD
+{
+	my $self = shift;
 
-	my $self = bless {
-		bits		=> [],
-		boolean		=> [],
-		covers		=> [],
-		dc			=> '-',
-		dontcares	=> [],
-		minterms	=> [],
-		maxterms	=> [],
-		vars		=> [ 'A'..'Z' ],
-		ess		=> {},
-		imp		=> {},
-		primes		=> {},
-		width		=> undef,
-		# Accept dash-prefixed or "normal" options
-		map { substr($_, /^-/) => {@_}->{$_} } keys %{{ @_ }}
-	}, $type;
-	
 	#
 	# Catch errors
 	#
@@ -159,10 +143,15 @@ Finding prime essentials
 sub find_primes
 {
 	my $self = shift;
+	my @bits;
 
 	# Separate into bins based on number of 1's
-	push @{ $self->bits[0][ sum stl $_ ] }, $_
-		for (@{$self->minterms}, @{$self->maxterms}, @{$self->dontcares});
+	for (@{$self->minterms}, @{$self->maxterms}, @{$self->dontcares})
+	{
+		my $l = sum stl $_;
+		carp "$_ converted to $l";
+		push  @bits[ $l ], [$_];
+	}
 
 	for my $level (0 .. $self->width)
 	{
@@ -172,7 +161,7 @@ sub find_primes
 		last unless ref $self->bits[$level];
 
 		# Find pairs with Hamming distance of 1
-		for my $low (0 .. $#{ $self->bits[$level] })
+		for my $low (0 .. $#{ $bits[$level] })
 		{
 			#
 			# These nested for-loops get all permutations
