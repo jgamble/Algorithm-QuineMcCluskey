@@ -45,9 +45,9 @@ has 'maxterms'	=> (
 	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
 	predicate => 'has_maxterms'
 	);
-has 'vars'	=> (isa => 'ArrayRef[Str]', is => 'rw', default => ['A' .. 'Z']);
+has 'vars'	=> (isa => 'ArrayRef[Str]', is => 'rw', default => sub{['A' .. 'Z']});
 has 'ess'	=> (isa => 'HashRef', is => 'rw', required => 0);
-has 'imp'	=> (isa => 'HashRef', is => 'rw', required => 0);
+#has 'imp'	=> (isa => 'HashRef', is => 'rw', required => 0);
 has 'primes'	=> (isa => 'HashRef', is => 'rw', required => 0);
 has 'width'	=> (isa => 'Int', is => 'rw', required => 0);
 
@@ -144,21 +144,27 @@ sub find_primes
 {
 	my $self = shift;
 	my @bits;
+	my %imp;
 
 	# Separate into bins based on number of 1's
 	for (@{$self->minterms}, @{$self->maxterms}, @{$self->dontcares})
 	{
 		my $l = sum stl $_;
 		carp "$_ converted to $l";
-		push  @bits[ $l ], [$_];
+		push  @{$bits[0][ $l ]}, $_;
 	}
+
+	#
+	# Dump here.
+	#
+
 
 	for my $level (0 .. $self->width)
 	{
 		#
 		# Skip if we haven't generated such data
 		#
-		last unless ref $self->bits[$level];
+		last unless ref $bits[$level];
 
 		# Find pairs with Hamming distance of 1
 		for my $low (0 .. $#{ $bits[$level] })
@@ -167,27 +173,34 @@ sub find_primes
 			# These nested for-loops get all permutations
 			# of adjacent sets
 			#
-			for my $lv (@{ $self->bits[$level][$low] })
+			for my $lv (@{ $bits[$level][$low] })
 			{
 				#
 				# Initialize the implicant as unused; Skip
 				# ahead if we don't have this data.
 				# FIXME: explain
 				#
-				$self->imp{$lv} ||= 0;
-				next unless ref $self->bits[$level][$low + 1];
+				$imp{$lv} //= 0;
+				next unless ref $bits[$level][$low + 1];
 
-				for my $hv (@{ $self->bits[$level][$low + 1] })
+				for my $hv (@{ $bits[$level][$low + 1] })
 				{
-					$self->imp{$hv} ||= 0;	# Initialize the implicant
+					#
+					# Initialize the implicant.
+					#
+					$imp{$hv} //= 0;
+
 					if (hdist($lv, $hv) == 1)
 					{
 						my $new = $lv;	# or $hv
 						substr($new, diffpos($lv, $hv), 1) = $self->dc;
-						# Save new implicant to next level
-						push @{ $self->bits[$level + 1][$low + 1] }, $new;
-						# Mark two used values as used
-						@{$self->imp{$lv,$hv}} = (1, 1);
+						#
+						# Save new implicant to next
+						# level, then mark the two
+						# values as used.
+						#
+						push @{ $bits[$level + 1][$low + 1] }, $new;
+						@{$imp{$lv,$hv}} = (1, 1);
 					}
 				}
 			}
@@ -195,7 +208,7 @@ sub find_primes
 	}
 
 	%{$self->primes} = map { $_ => [ maskmatches($_, @{$self->minterms}, @{$self->maxterms}) ] }
-		grep { !$self->imp{$_} } keys %{$self->imp};
+		grep { !$imp{$_} } keys %imp;
 }
 
 
@@ -335,7 +348,10 @@ Recursive divide-and-conquer solver
 
 =cut
 
-sub recurse_solve {
+sub recurse_solve
+{
+	no warnings 'closure';
+
 	my $self = shift;
 	my %primes = %{ $_[0] };
 	my @prefix;
