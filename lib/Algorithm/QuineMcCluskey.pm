@@ -125,13 +125,14 @@ sub BUILD
 	# Convert terms to strings of bits if necessary
 	#
 	unless ((sum map { $self->width == length } (@{$self->minterms}, @{$self->maxterms}))
-				== @{$self->minterms} + @{$self->maxterms}) {
-		no strict 'refs';
-		@{"self->$_"} = map { tobit $_, $self->width } @{"self->$_"}
-			for qw(minterms maxterms dontcares);
+				== @{$self->minterms} + @{$self->maxterms})
+	{
+		@{$self->minterms} = map {tobit $_, $self->width } @{self->minterms};
+		@{$self->maxterms} = map {tobit $_, $self->width } @{self->maxterms};
+		@{$self->dontcares} = map {tobit $_, $self->width } @{self->dontcares};
 	}
 
-	$self;
+	return $self;
 }
 
 =item find_primes
@@ -147,7 +148,7 @@ sub find_primes
 	my %imp;
 
 	# Separate into bins based on number of 1's
-	for (@{$self->minterms}, @{$self->maxterms}, @{$self->dontcares})
+	for (@{$self->{minterms}}, @{$self->{maxterms}}, @{$self->{dontcares}})
 	{
 		my $l = sum stl $_;
 		carp "$_ converted to $l";
@@ -207,7 +208,7 @@ sub find_primes
 		}
 	}
 
-	%{$self->primes} = map { $_ => [ maskmatches($_, @{$self->minterms}, @{$self->maxterms}) ] }
+	%{$self->primes} = map { $_ => [ maskmatches($_, @{$self->{minterms}}, @{$self->maxterms}) ] }
 		grep { !$imp{$_} } keys %imp;
 }
 
@@ -218,7 +219,8 @@ Row-dominance
 
 =cut
 
-sub row_dom {
+sub row_dom
+{
 	my $self = shift;
 	my $primes = shift || \%{$self->primes};
 
@@ -243,7 +245,7 @@ sub col_dom {
 	my $self = shift;
 	my $primes = shift || \%{$self->primes};
 
-	my %cols = columns $primes, @::minterms, @::maxterms;
+	my %cols = columns $primes, @{$self->{minterms}}, @{$self->{maxterms}};
 	for my $col1 (keys %cols) {
 		for my $col2 (keys %cols) {
 			next if $col1 eq $col2;
@@ -271,7 +273,7 @@ sub find_essentials {
 	my $self = shift;
 	%{$self->ess} = ();
 	my $primes = @_ ? shift : \%{$self->primes};
-	my @terms = @_ ? @{ shift() } : (@{$self->minterms}, @{$self->maxterms});
+	my @terms = @_ ? @{ shift() } : (@{$self->{minterms}}, @{$self->maxterms});
 
 	for my $term (@terms) {
 		my $ess = ( map { @$_ == 1 ? @$_ : undef } [ grep {
@@ -314,7 +316,7 @@ sub to_boolean {
 	# Group separators (grouping character pairs)
 	my @gs = ('(', ')');
 	# Group joiner, element joiner, match condition
-	my ($gj, $ej, $cond) = @{$self->minterms} ? (' + ', '', 1) : ('', ' + ', 0);
+	my ($gj, $ej, $cond) = @{$self->{minterms}} ? (' + ', '', 1) : ('', ' + ', 0);
 	tie my $var, 'Tie::Cycle', [ @{$self->vars}[0 .. $self->width - 1] ];
 
 	push @{$self->boolean},
@@ -380,7 +382,7 @@ sub recurse_solve
 	my @t = grep {
 		my $o = $_;
 		sum map { sum map { $_ eq $o } @$_ } values %primes
-	} (@{$self->minterms}, @{$self->maxterms});
+	} (@{$self->{minterms}}, @{$self->maxterms});
 
 	# Flip table so terms are keys
 	my %ic = columns \%primes, @t;
