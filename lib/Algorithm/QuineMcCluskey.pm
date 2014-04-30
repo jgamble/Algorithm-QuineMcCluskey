@@ -17,7 +17,6 @@ use Moose;
 use Carp qw(carp croak);
 use Data::Dumper;
 use List::Compare::Functional qw(:main is_LequivalentR);
-use List::MoreUtils qw(pairwise firstidx uniq);
 use List::Util qw(sum min);
 use Tie::Cycle;
 
@@ -29,10 +28,11 @@ use Tie::Cycle;
 # boolean only used in to_boolean().
 #
 #has 'bits'	=> (isa => 'ArrayRef[ArrayRef[Int]]', is => 'rw', required => 0);
-has 'boolean'	=> (isa => 'ArrayRef[Str]', is => 'rw', required => 0);
+#has 'boolean'	=> (isa => 'ArrayRef[Str]', is => 'rw', required => 0);
 has 'covers'	=> (isa => 'ArrayRef[Int]', is => 'rw', required => 0);
 has 'dc'	=> (isa => 'Str', is => 'rw', default => '-');
 has 'minonly'	=> (isa => 'Bool', is => 'rw', default => 1);
+has 'sortterms'	=> (isa => 'Bool', is => 'rw', default => 1);
 has 'dontcares'	=> (
 	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
 	predicate => 'has_dontcares'
@@ -45,10 +45,16 @@ has 'maxterms'	=> (
 	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
 	predicate => 'has_maxterms'
 	);
-has 'vars'	=> (isa => 'ArrayRef[Str]', is => 'rw', default => sub{['A' .. 'Z']});
+has 'vars'	=> (
+	isa => 'ArrayRef[Str]', is => 'rw',
+	default => sub{['A' .. 'Z']}
+	);
 has 'ess'	=> (isa => 'HashRef', is => 'rw', required => 0);
 #has 'imp'	=> (isa => 'HashRef', is => 'rw', required => 0);
-has 'primes'	=> (isa => 'HashRef', is => 'rw', required => 0);
+has 'primes'	=> (
+	isa => 'HashRef', is => 'rw', required => 0,
+	predicate => 'has_primes'
+	);
 has 'width'	=> (isa => 'Int', is => 'rw', required => 0);
 
 =head1 VERSION
@@ -112,27 +118,55 @@ Default constructor
 sub BUILD
 {
 	my $self = shift;
+	my $w = $self->width;
 
 	#
 	# Catch errors
 	#
+	
 	croak "Mixing minterms and maxterms not allowed"
-		if @{$self->minterms} * @{$self->maxterms};
+		if ($self->has_minterms and $self->has_maxterms);
 	croak "Must supply either minterms or maxterms"
-		unless @{$self->minterms} + @{$self->maxterms};
+		unless ($self->has_minterms or $self->has_maxterms);
 
 	#
 	# Convert terms to strings of bits if necessary
 	#
-	unless ((sum map { $self->width == length } (@{$self->minterms}, @{$self->maxterms}))
-				== @{$self->minterms} + @{$self->maxterms})
+	if ($self->has_minterms)
 	{
-		@{$self->minterms} = map {tobit $_, $self->width } @{self->minterms};
-		@{$self->maxterms} = map {tobit $_, $self->width } @{self->maxterms};
-		@{$self->dontcares} = map {tobit $_, $self->width } @{self->dontcares};
+		$self->minterms(map {tobit $_, $w} $self->minterms);
+	}
+	if ($self->has_maxterms)
+	{
+		$self->maxterms(map {tobit $_, $w} $self->maxterms);
+	}
+	if ($self->has_dontcares)
+	{
+		$self->dontcares(map {tobit $_, $w} $self->dontcares);
 	}
 
 	return $self;
+}
+
+sub allterms
+{
+	my $self = shift;
+	my @terms;
+
+	push @terms, $self->minterms if ($self->has_minterms);
+	push @terms, $self->maxterms if ($self->has_maxterms);
+	push @terms, $self->dontcaresterms if ($self->has_dontcaresterms);
+	return @terms;
+}
+
+sub minmax_terms
+{
+	my $self = shift;
+	my @terms;
+
+	push @terms, $self->minterms if ($self->has_minterms);
+	push @terms, $self->maxterms if ($self->has_maxterms);
+	return @terms;
 }
 
 =item find_primes
@@ -148,7 +182,7 @@ sub find_primes
 	my %imp;
 
 	# Separate into bins based on number of 1's
-	for (@{$self->{minterms}}, @{$self->{maxterms}}, @{$self->{dontcares}})
+	for ($self->allterms())
 	{
 		my $l = sum stl $_;
 		carp "$_ converted to $l";
@@ -208,8 +242,10 @@ sub find_primes
 		}
 	}
 
-	%{$self->primes} = map { $_ => [ maskmatches($_, @{$self->{minterms}}, @{$self->maxterms}) ] }
-		grep { !$imp{$_} } keys %imp;
+	$self->primes(
+		map { $_ => [ maskmatches($_, $self->minmax_terms()) ] }
+		grep { !$imp{$_} } keys %imp
+	);
 }
 
 
@@ -245,7 +281,7 @@ sub col_dom {
 	my $self = shift;
 	my $primes = shift || \%{$self->primes};
 
-	my %cols = columns $primes, @{$self->{minterms}}, @{$self->{maxterms}};
+	my %cols = columns $primes, $self->minmax_terms();
 	for my $col1 (keys %cols) {
 		for my $col2 (keys %cols) {
 			next if $col1 eq $col2;
@@ -273,7 +309,7 @@ sub find_essentials {
 	my $self = shift;
 	%{$self->ess} = ();
 	my $primes = @_ ? shift : \%{$self->primes};
-	my @terms = @_ ? @{ shift() } : (@{$self->{minterms}}, @{$self->maxterms});
+	my @terms = @_ ? @{ shift() } : ($self->minmax_terms());
 
 	for my $term (@terms) {
 		my $ess = ( map { @$_ == 1 ? @$_ : undef } [ grep {
@@ -312,23 +348,24 @@ Generating Boolean expressions
 
 sub to_boolean {
 	my $self = shift;
+	my @boolean;
 
 	# Group separators (grouping character pairs)
 	my @gs = ('(', ')');
 	# Group joiner, element joiner, match condition
-	my ($gj, $ej, $cond) = @{$self->{minterms}} ? (' + ', '', 1) : ('', ' + ', 0);
+	my ($gj, $ej, $cond) = $self->has_minterms ? (' + ', '', 1) : ('', ' + ', 0);
 	tie my $var, 'Tie::Cycle', [ @{$self->vars}[0 .. $self->width - 1] ];
 
-	push @{$self->boolean},
+	push @boolean,
 		join $gj, map { $gs[0] . (
 			join $ej, map {
 				my $var = $var;	# Activate cycle even if not used
 				$_ eq $self->dc ? () : $var . ($_ == $cond ? '' : "'")
 			} stl $_) . $gs[1]
 		} @$_
-		for @{$self->covers};
+		for ($self->covers);
 
-	@{$self->boolean};
+	return @boolean;
 }
 
 =item solve
@@ -340,8 +377,8 @@ Main solution sub (wraps recurse_solve())
 sub solve {
 	my $self = shift;
 	%{$self->primes} or $self->find_primes;
-	@{$self->covers} = $self->recurse_solve($self->{primes});
-	$self->to_boolean;
+	$self->covers($self->recurse_solve($self->primes));
+	$self->to_boolean();
 }
 
 =item recurse_solve
@@ -382,7 +419,7 @@ sub recurse_solve
 	my @t = grep {
 		my $o = $_;
 		sum map { sum map { $_ eq $o } @$_ } values %primes
-	} (@{$self->{minterms}}, @{$self->maxterms});
+	} ($self->minmax_terms());
 
 	# Flip table so terms are keys
 	my %ic = columns \%primes, @t;
@@ -404,7 +441,7 @@ sub recurse_solve
 		%reduced = map { $_ => $reduced{$_} } grep { @{ $reduced{$_} } } keys %reduced;
 		
 		my @c = $self->recurse_solve(\%reduced);
-		my @results = ${$self->prefs}{sortterms}
+		my @results = $self->sortterms
 			? @c
 				? map { [ reverse sort (@prefix, $ta, @$_) ] } @c
 				: [ reverse sort (@prefix, $ta) ]
@@ -417,7 +454,7 @@ sub recurse_solve
 	# Weed out expensive solutions
 	sub cost { sum map { /$self->dc/ ? 0 : 1 } stl join '', @{ shift() } }
 	my $mincost = min map { cost $_ } @covers;
-	@covers = grep { cost($_) == $mincost } @covers if ${$self->prefs}{minonly};
+	@covers = grep { cost($_) == $mincost } @covers if $self->minonly;
 	# Return our covers table to be treated similarly one level up
 	# FIXME: How to best ensure non-duplicated answers?
 	return uniqels @covers;
