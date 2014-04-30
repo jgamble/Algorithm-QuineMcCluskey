@@ -2,11 +2,22 @@ Revision history for Algorithm-QuineMcCluskey
 
 "deAlias"
 	2014-04-30
-	- Achieved an compile-error-free version using Moose instead
+	- Achieved a compile-error-free version using Moose instead
 	  of Alias. Now to make it runtime-error-free.
 	- As part of the compilation process, moved from a Makefile.PL
 	  base (which was creating errors of its own) to Build.PL,
 	  which Just Works.
+	- Turned attribute boolean to a local variable (like I did
+	  also with attributes imp and bits) as it was only used in
+	  a single function.
+	- Defined and made use of predicate functions for attributes
+	  minterms, maxterms, and dontcares. Simplifies some sanity
+	  checks.
+	- Added methods allterms() and minmax_terms() to simplify
+	  coding.
+	- List::MoreUtils isn't actually being used in A::QMcC (it is
+	  used in A::QMcC::Util though).
+	- Continue correcting my use of Moose syntax.
 
 	2013-10-25
 	- Moosify ("has" declarations) the attributes. This is part
