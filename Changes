@@ -1,6 +1,13 @@
 Revision history for Algorithm-QuineMcCluskey
 
 "deAlias"
+	2014-04-30
+	- Achieved an compile-error-free version using Moose instead
+	  of Alias. Now to make it runtime-error-free.
+	- As part of the compilation process, moved from a Makefile.PL
+	  base (which was creating errors of its own) to Build.PL,
+	  which Just Works.
+
 	2013-10-25
 	- Moosify ("has" declarations) the attributes. This is part
 	  of the process to eliminate using Alias.pm.
