@@ -9,6 +9,16 @@ Revision history for Algorithm-QuineMcCluskey
 	  file was compact and in theory easy to add to, but I was
 	  having trouble figuring out what was causing my Moose
 	  errors. Plus, there were too many eval calls in the code.
+	- The code originally changed the minterms, maxterms, and
+	  dontcares fields from the passed-in decimal numbers into
+	  bitstrings, and saved them in the original fields.  We
+	  can't do that now, because Moose has set those fields to
+	  types of 'ArrarRef[Int]' (or at least I did, and I'm not
+	  inclined to back off on that yet).
+	  So, set up three new fields that represent the three fields
+	  in their bitstring form: min_bits, max_bits, and dc_bits.
+	  Also added the new subtypes ('Bitstring' and
+	  'ArrayRefOfBitstring') via Moose::Util::TypeConstraints.
 	2014-04-30
 	- Achieved a compile-error-free version using Moose instead
 	  of Alias. Now to make it runtime-error-free.
