@@ -29,6 +29,7 @@ use Tie::Cycle;
 #
 #has 'bits'	=> (isa => 'ArrayRef[ArrayRef[Int]]', is => 'rw', required => 0);
 #has 'boolean'	=> (isa => 'ArrayRef[Str]', is => 'rw', required => 0);
+has 'title'	=> (isa => 'Str', is => 'rw', default => "Quine-McCluskey Object");
 has 'covers'	=> (isa => 'ArrayRef[Int]', is => 'rw', required => 0);
 has 'dc'	=> (isa => 'Str', is => 'rw', default => '-');
 has 'minonly'	=> (isa => 'Bool', is => 'rw', default => 1);
