@@ -14,12 +14,39 @@ use Algorithm::QuineMcCluskey::Util qw(
 	uniqels
 );
 use Moose;
+use Moose::Util::TypeConstraints;
 use Carp qw(carp croak);
 use Data::Dumper;
 use List::Compare::Functional qw(:main is_LequivalentR);
 use List::Util qw(sum min);
 use Tie::Cycle;
 
+#
+# Moosey typing.
+#
+subtype 'Bitstring',
+	as 'Str',
+	where { /(?<=0b)?[01]+/ };
+coerce 'Int',
+	from 'Bitstring',
+	via { oct "0b$_" };
+coerce 'Bitstring',
+	from 'Int',
+	via { tobit $_ };
+
+subtype 'ArrayRefOfBitstrings',
+	as 'ArrayRef[Bitstring]';
+
+subtype 'ArrayRefOfInts',
+	as 'ArrayRef[Int]';
+
+coerce 'ArrayRefOfInts',
+	from 'ArrayRefOfBitstrings',
+	via { [map {oct "0b$_" } @{$_} ] };
+
+coerce 'ArrayRefOfBitstrings',
+	from 'ArrayRefOfInts',
+	via { [map {tobit } @{$_} ] };
 
 #
 # Moosey attributes.
@@ -45,6 +72,18 @@ has 'minterms'	=> (
 has 'maxterms'	=> (
 	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
 	predicate => 'has_maxterms'
+	);
+has 'dc_bits'	=> (
+	isa => 'Bitstring', is => 'rw', required => 0,
+	predicate => 'has_dc_bits'
+	);
+has 'min_bits'	=> (
+	isa => 'Bitstring', is => 'rw', required => 0,
+	predicate => 'has_min_bits'
+	);
+has 'max_bits'	=> (
+	isa => 'Bitstring', is => 'rw', required => 0,
+	predicate => 'has_max_bits'
 	);
 has 'vars'	=> (
 	isa => 'ArrayRef[Str]', is => 'rw',
@@ -135,15 +174,15 @@ sub BUILD
 	#
 	if ($self->has_minterms)
 	{
-		$self->minterms(map {tobit $_, $w} $self->minterms);
+		$self->min_bits(map {tobit $_, $w} $self->minterms);
 	}
 	if ($self->has_maxterms)
 	{
-		$self->maxterms(map {tobit $_, $w} $self->maxterms);
+		$self->max_bits(map {tobit $_, $w} $self->maxterms);
 	}
 	if ($self->has_dontcares)
 	{
-		$self->dontcares(map {tobit $_, $w} $self->dontcares);
+		$self->dc_bits(map {tobit $_, $w} $self->dontcares);
 	}
 
 	return $self;
@@ -154,9 +193,9 @@ sub allterms
 	my $self = shift;
 	my @terms;
 
-	push @terms, $self->minterms if ($self->has_minterms);
-	push @terms, $self->maxterms if ($self->has_maxterms);
-	push @terms, $self->dontcaresterms if ($self->has_dontcaresterms);
+	push @terms, $self->min_bits if ($self->has_min_bits);
+	push @terms, $self->max_bits if ($self->has_max_bits);
+	push @terms, $self->dc_bits if ($self->has_dc_bits);
 	return @terms;
 }
 
@@ -165,8 +204,8 @@ sub minmax_terms
 	my $self = shift;
 	my @terms;
 
-	push @terms, $self->minterms if ($self->has_minterms);
-	push @terms, $self->maxterms if ($self->has_maxterms);
+	push @terms, $self->min_bits if ($self->has_min_bits);
+	push @terms, $self->max_bits if ($self->has_max_bits);
 	return @terms;
 }
 
@@ -354,7 +393,7 @@ sub to_boolean {
 	# Group separators (grouping character pairs)
 	my @gs = ('(', ')');
 	# Group joiner, element joiner, match condition
-	my ($gj, $ej, $cond) = $self->has_minterms ? (' + ', '', 1) : ('', ' + ', 0);
+	my ($gj, $ej, $cond) = $self->has_min_bits ? (' + ', '', 1) : ('', ' + ', 0);
 	tie my $var, 'Tie::Cycle', [ @{$self->vars}[0 .. $self->width - 1] ];
 
 	push @boolean,
