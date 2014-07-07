@@ -1,15 +1,23 @@
 Revision history for Algorithm-QuineMcCluskey
 
 "deAlias"
+	2014-07-07
+	- After looking over the labeling in the run.t file, added
+	  a new attribute, "title". We can now say what the A::QMcC
+	  object actually represents.
+	- Broke up run.t into five separate test files. The original
+	  file was compact and in theory easy to add to, but I was
+	  having trouble figuring out what was causing my Moose
+	  errors. Plus, there were too many eval calls in the code.
 	2014-04-30
 	- Achieved a compile-error-free version using Moose instead
 	  of Alias. Now to make it runtime-error-free.
 	- As part of the compilation process, moved from a Makefile.PL
 	  base (which was creating errors of its own) to Build.PL,
 	  which Just Works.
-	- Turned attribute boolean to a local variable (like I did
-	  also with attributes imp and bits) as it was only used in
-	  a single function.
+	- Turned attribute boolean to a local variable (as I also did
+	  with attributes imp and bits) as it was only used in a
+	  single function.
 	- Defined and made use of predicate functions for attributes
 	  minterms, maxterms, and dontcares. Simplifies some sanity
 	  checks.
@@ -22,7 +30,7 @@ Revision history for Algorithm-QuineMcCluskey
 	2013-10-25
 	- Moosify ("has" declarations) the attributes. This is part
 	  of the process to eliminate using Alias.pm.
-	- Removed default check in new(), which Moose has.
+	- Removed default value check in new(), which Moose has.
 	- Removed prep_mopi call, which doesn't seem to exist anywhere.
 	- De-attr'd the attributes in find_perms.
 
