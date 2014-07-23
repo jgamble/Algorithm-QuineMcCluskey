@@ -32,7 +32,7 @@ coerce 'Int',
 	via { oct "0b$_" };
 coerce 'Bitstring',
 	from 'Int',
-	via { tobit $_ };
+	via { unpack("B32", pack("N", $_)) };
 
 subtype 'ArrayRefOfBitstrings',
 	as 'ArrayRef[Bitstring]';
@@ -46,7 +46,7 @@ coerce 'ArrayRefOfInts',
 
 coerce 'ArrayRefOfBitstrings',
 	from 'ArrayRefOfInts',
-	via { [map {tobit } @{$_} ] };
+	via { [map {upack("B32", pack("N", $_))} @{$_} ] };
 
 #
 # Moosey attributes.
@@ -103,7 +103,7 @@ This document describes version 0.01 released 24 June 2006.
 
 =cut
 
-our $VERSION = 0.01;
+our $VERSION = 0.02;
 
 =head1 SYNOPSIS
 
@@ -174,15 +174,15 @@ sub BUILD
 	#
 	if ($self->has_minterms)
 	{
-		$self->min_bits(map {tobit $_, $w} $self->minterms);
+		$self->min_bits($self->minterms);
 	}
 	if ($self->has_maxterms)
 	{
-		$self->max_bits(map {tobit $_, $w} $self->maxterms);
+		$self->max_bits($self->maxterms);
 	}
 	if ($self->has_dontcares)
 	{
-		$self->dc_bits(map {tobit $_, $w} $self->dontcares);
+		$self->dc_bits($self->dontcares);
 	}
 
 	return $self;

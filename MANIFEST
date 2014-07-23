@@ -6,6 +6,10 @@ README
 lib/Algorithm/QuineMcCluskey.pm
 lib/Algorithm/QuineMcCluskey/Util.pm
 t/00-load.t
+t/01run.t
+t/02run.t
+t/03run.t
+t/04run.t
+t/05run.t
 t/pod-coverage.t
 t/pod.t
-t/run.t

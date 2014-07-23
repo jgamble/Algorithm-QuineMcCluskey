@@ -7,7 +7,7 @@ my $build = Module::Build->new(
 
 	dist_abstract => '',
 	dist_author => 'Darren Kulp <darren@kulp.ch>',
-	dist_version => '0.01',
+	dist_version => '0.02',
 	dist_name => 'Algorithm-QuineMcCluskey',
 
 	requires => {
