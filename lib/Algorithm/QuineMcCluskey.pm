@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 use Algorithm::QuineMcCluskey::Util qw(
-	bin columns diffpos diffposes hdist maskmatch maskmatches remel stl tobit
+	bin columns diffpos hdist maskmatch maskmatches remel stl
 	uniqels
 );
 use Moose;
