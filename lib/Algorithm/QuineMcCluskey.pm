@@ -22,33 +22,6 @@ use List::Util qw(sum min);
 use Tie::Cycle;
 
 #
-# Moosey typing.
-#
-subtype 'Bitstring',
-	as 'Str',
-	where { /(?<=0b)?[01]+/ };
-coerce 'Int',
-	from 'Bitstring',
-	via { oct "0b$_" };
-coerce 'Bitstring',
-	from 'Int',
-	via { unpack("B32", pack("N", $_)) };
-
-subtype 'ArrayRefOfBitstrings',
-	as 'ArrayRef[Bitstring]';
-
-subtype 'ArrayRefOfInts',
-	as 'ArrayRef[Int]';
-
-coerce 'ArrayRefOfInts',
-	from 'ArrayRefOfBitstrings',
-	via { [map {oct "0b$_" } @{$_} ] };
-
-coerce 'ArrayRefOfBitstrings',
-	from 'ArrayRefOfInts',
-	via { [map {upack("B32", pack("N", $_))} @{$_} ] };
-
-#
 # Moosey attributes.
 #
 # bits and imp only used in find_primes().
@@ -56,11 +29,15 @@ coerce 'ArrayRefOfBitstrings',
 #
 #has 'bits'	=> (isa => 'ArrayRef[ArrayRef[Int]]', is => 'rw', required => 0);
 #has 'boolean'	=> (isa => 'ArrayRef[Str]', is => 'rw', required => 0);
-has 'title'	=> (isa => 'Str', is => 'rw', default => "Quine-McCluskey Object");
+has 'title'	=> (isa => 'Str', is => 'rw', required => 0, predicate => 'has_title');
 has 'covers'	=> (isa => 'ArrayRef[Int]', is => 'rw', required => 0);
 has 'dc'	=> (isa => 'Str', is => 'rw', default => '-');
 has 'minonly'	=> (isa => 'Bool', is => 'rw', default => 1);
 has 'sortterms'	=> (isa => 'Bool', is => 'rw', default => 1);
+
+#
+# The fields that hold the terms by their number.
+#
 has 'dontcares'	=> (
 	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
 	predicate => 'has_dontcares'
@@ -73,16 +50,20 @@ has 'maxterms'	=> (
 	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
 	predicate => 'has_maxterms'
 	);
+
+#
+# The terms' bitstring fields.
+#
 has 'dc_bits'	=> (
-	isa => 'Bitstring', is => 'rw', required => 0,
+	isa => 'ArrayRef[Str]', is => 'rw', required => 0,
 	predicate => 'has_dc_bits'
 	);
 has 'min_bits'	=> (
-	isa => 'Bitstring', is => 'rw', required => 0,
+	isa => 'ArrayRef[Str]', is => 'rw', required => 0,
 	predicate => 'has_min_bits'
 	);
 has 'max_bits'	=> (
-	isa => 'Bitstring', is => 'rw', required => 0,
+	isa => 'ArrayRef[Str]', is => 'rw', required => 0,
 	predicate => 'has_max_bits'
 	);
 has 'vars'	=> (
@@ -95,7 +76,7 @@ has 'primes'	=> (
 	isa => 'HashRef', is => 'rw', required => 0,
 	predicate => 'has_primes'
 	);
-has 'width'	=> (isa => 'Int', is => 'rw', required => 0);
+has 'width'	=> (isa => 'Int', is => 'rw', required => 1);
 
 =head1 VERSION
 
@@ -161,29 +142,42 @@ sub BUILD
 	my $w = $self->width;
 
 	#
-	# Catch errors
+	# Catch errors.
 	#
-	
 	croak "Mixing minterms and maxterms not allowed"
 		if ($self->has_minterms and $self->has_maxterms);
 	croak "Must supply either minterms or maxterms"
 		unless ($self->has_minterms or $self->has_maxterms);
 
 	#
-	# Convert terms to strings of bits if necessary
+	# Convert terms to strings of bits as needed.
 	#
 	if ($self->has_minterms)
 	{
-		$self->min_bits($self->minterms);
+		my @bitstrings = map {
+			substr(unpack("B32", pack("N", $_)), -$w)
+		} @{$self->minterms};
+
+		$self->min_bits(\@bitstrings);
 	}
 	if ($self->has_maxterms)
 	{
-		$self->max_bits($self->maxterms);
+		my @bitstrings = map {
+			substr(unpack("B32", pack("N", $_)), -$w)
+		} @{$self->minterms};
+
+		$self->max_bits(\@bitstrings);
 	}
 	if ($self->has_dontcares)
 	{
-		$self->dc_bits($self->dontcares);
+		my @bitstrings = map {
+			substr(unpack("B32", pack("N", $_)), -$w)
+		} @{$self->minterms};
+
+		$self->dc_bits(\@bitstrings);
 	}
+
+	$self->title("$w-variable truth table") unless ($self->has_title);
 
 	return $self;
 }
