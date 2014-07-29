@@ -1,6 +1,16 @@
 Revision history for Algorithm-QuineMcCluskey
 
 "deAlias"
+	2014-07-28
+	- Backing off on the Bitstring Moose type idea. I may
+	  revisit it, but right now it seems like too much for
+	  something that can be achieved in block of code in
+	  a BUILD method. Besides, it may make more sense to
+	  re-write the code using these attributes with Bit::Vector
+	  objects instead of strings.
+	- 'width' is now a required field, the Moosey typing section
+	  is deleted, and the BUILD method sets the bitstrings and
+	  the title if they aren't provided.
 	2014-07-07
 	- After looking over the labeling in the run.t file, added
 	  a new attribute, "title". We can now say what the A::QMcC
