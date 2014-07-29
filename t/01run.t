@@ -10,6 +10,7 @@ use Test::More tests => 1;
 
 my $q = Algorithm::QuineMcCluskey->new(
 	title => "Null Test",
+	width => 1,
 	minterms => [ 1 ]
 );
 
