@@ -187,9 +187,9 @@ sub allterms
 	my $self = shift;
 	my @terms;
 
-	push @terms, $self->min_bits if ($self->has_min_bits);
-	push @terms, $self->max_bits if ($self->has_max_bits);
-	push @terms, $self->dc_bits if ($self->has_dc_bits);
+	push @terms, @{ $self->min_bits } if ($self->has_min_bits);
+	push @terms, @{ $self->max_bits } if ($self->has_max_bits);
+	push @terms, @{ $self->dc_bits } if ($self->has_dc_bits);
 	return @terms;
 }
 
@@ -198,9 +198,40 @@ sub minmax_terms
 	my $self = shift;
 	my @terms;
 
-	push @terms, $self->min_bits if ($self->has_min_bits);
-	push @terms, $self->max_bits if ($self->has_max_bits);
+	push @terms, @{ $self->min_bits } if ($self->has_min_bits);
+	push @terms, @{ $self->max_bits } if ($self->has_max_bits);
 	return @terms;
+}
+
+=item maskmatch
+
+Returns true if a mask matches a minterm, false otherwise.
+
+=cut
+
+sub maskmatch
+{
+	my $self = shift;
+	my ($mask, $term) = @_;
+
+	(my $mask0 = $mask) =~ s/$self->dc/0/g;
+	(my $mask1 = $mask) =~ s/$self->dc/1/g;
+
+	((bin $mask0 & bin $term) == bin $mask0) &&
+		((bin $mask1 & bin $term) == bin $term)
+}
+
+=item maskmatches
+
+Returns the elements that match a mask, selected from an array
+
+=cut
+
+sub maskmatches
+{
+	my $self = shift;
+	my $m = shift;
+	grep { $self->maskmatch($m, $_) } @_;
 }
 
 =item find_primes
