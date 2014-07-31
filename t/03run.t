@@ -17,10 +17,10 @@ my $q = Algorithm::QuineMcCluskey->new(
 );
 
 
-my %val1 = {
+my %val1 = (
 	'111xx' => 1,
 	'xx1x1' => 2
-};
+);
 
 my %r01 = $q->find_primes;
 
