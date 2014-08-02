@@ -10,8 +10,7 @@ use strict;
 use warnings;
 
 use Algorithm::QuineMcCluskey::Util qw(
-	bin columns diffpos hdist maskmatch maskmatches remel stl
-	uniqels
+	bin columns diffpos hdist stl uniqels
 );
 use Moose;
 use Moose::Util::TypeConstraints;
@@ -232,6 +231,21 @@ sub maskmatches
 	my $self = shift;
 	my $m = shift;
 	grep { $self->maskmatch($m, $_) } @_;
+}
+
+=item remel
+
+Remove a value from an arrayref if it matches a mask
+
+=cut
+
+sub remel
+{
+	my $self = shift;
+	my ($el, $a) = @_;
+	my $pos = firstidx { $self->maskmatch($el, $_) } @$a;
+	splice(@$a, $pos, 1) if $pos >= 0;
+	$a;
 }
 
 =item find_primes
