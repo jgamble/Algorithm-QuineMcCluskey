@@ -1,6 +1,11 @@
 Revision history for Algorithm-QuineMcCluskey
 
 "deAlias"
+	2014-08-01
+	- Move maskmatch(), maskmatches(), and remel() from Util.pm
+	  to QuineMcCluskey.pm and made them object methods. Function
+	  maskmatch() uses what is now an attribute of the object,
+	  and maskmatches() and remel() are up the method calling chain.
 	2014-07-28
 	- Backing off on the Bitstring Moose type idea. I may
 	  revisit it, but right now it seems like too much for
