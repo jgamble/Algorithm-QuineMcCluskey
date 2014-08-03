@@ -212,9 +212,10 @@ sub maskmatch
 {
 	my $self = shift;
 	my ($mask, $term) = @_;
+	my $dc = $self->dc;
 
-	(my $mask0 = $mask) =~ s/$self->dc/0/g;
-	(my $mask1 = $mask) =~ s/$self->dc/1/g;
+	(my $mask0 = $mask) =~ s/$dc/0/g;
+	(my $mask1 = $mask) =~ s/$dc/1/g;
 
 	((bin $mask0 & bin $term) == bin $mask0) &&
 		((bin $mask1 & bin $term) == bin $term)
@@ -322,7 +323,7 @@ sub find_primes
 	}
 
 	$self->primes(
-		map { $_ => [ maskmatches($_, $self->minmax_terms()) ] }
+		map { $_ => [ $self->maskmatches($_, $self->minmax_terms()) ] }
 		grep { !$imp{$_} } keys %imp
 	);
 }
