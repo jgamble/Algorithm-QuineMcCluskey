@@ -1,6 +1,26 @@
 Revision history for Algorithm-QuineMcCluskey
 
 "deAlias"
+	2014-08-13
+	- Many changes to attributes -- altered the internal
+	  ones to have "init_arg=>undef" and read-only options,
+	  and added accessor methods.
+	- Moved the "keys %$primes" out of the loop in find_essentials().
+	  I think this was done to keep the local variable count to a
+	  minimum, but the downside is the repeated operation for each
+	  loop.
+	- In the same line, separated the map function from
+	  the map-grep-grep chain. Again, the reason seems to be
+	  to avoid storing a list in a variable, but the end result is
+	  a baroque technique involving dereferencing anonymous references,
+	  all to see if it's a one-element list or not.
+	- Also in find_essentials(), set the essentials attribute in
+	  one go with local hash set up in the loop, rather than setting
+	  each key individually per loop in the attribute.
+	- find_essentials() and purge_essentials no longer return
+	  the ->ess hash (the only thing using this feature was
+	  the test files). Use the accessor method get_essentials()
+	  if you really want to see the internals.
 	2014-08-01
 	- Move maskmatch(), maskmatches(), and remel() from Util.pm
 	  to QuineMcCluskey.pm and made them object methods. Function
