@@ -66,7 +66,6 @@ has 'vars'	=> (
 #
 # Internal attributes. No using them at object creation.
 #
-#CHANGES: add init_arg => undef, and change to ro and add reader/writer accessor methods
 
 #
 # The terms' bitstring fields.
@@ -462,28 +461,16 @@ foreach my $kp (@kp)
 	for my $term (@terms)
 	{
 carp "    For term '$term', ";
-		#my $ess = ( map { @$_ == 1 ? @$_ : undef } [ grep {
-		#	grep { $_ eq $term } @{ $primes->{$_} }
-		#} keys %$primes ] )[0];
-
-		#CHANGES: Move "keys %$primes" out of the loop - it's a constant list.
-
-		#my $ess = ( map { @$_ == 1 ? @$_ : undef } [
-		#	grep {
-		#	grep { $_ eq $term } @{ $primes->{$_} } } @kp ] )[0];
-
-		#CHANGES: Separate out the list from the double grep to see
-		#         what's going on internally.
 		my @tp = grep {
 			grep { $_ eq $term } @{ $primes->{$_} } } @kp;
 
-		my $ess = ( map { @$_ == 1 ? @$_ : undef }[@tp] )[0];
 carp "    term/prime list is (", join(", ", @tp), "), ";
 
 		# TODO: It would be nice to track the terms that make this essential
-		# CHANGES: set up essentials in local hash, to be set in the object at the end.
-carp "    'essential' found is ", (defined $ess)? $ess: "undef", "\n";
-		$essentials{$ess}++ if $ess;
+		if (scalar @tp == 1)
+		{
+			$essentials{$tp[0]}++;
+		}
 	}
 
 	$self->_set_essentials(\%essentials);
