@@ -9,16 +9,15 @@ use Algorithm::QuineMcCluskey;
 use Test::More tests => 1;
 
 my $q = Algorithm::QuineMcCluskey->new(
-	title	=> "Five-bit, 12-minterm Boolean expression test with don't-cares",
-	width => 5,
-	minterms => [ qw(0 5 7 8 10 11 15 17 18 23 26 27) ],
-	dontcares => [ qw(2 16 19 21 24 25) ]
-};
+	title	=> 'Four-bit, 8-minterm Boolean expression test',
+	width => 4,
+	minterms => [ qw(1 3 7 11 12 13 14 15) ]
+);
 
-my @val1 => [
-	q/(B'CE) + (C'E') + (AC') + (A'BDE)/
+my @val1	=> [
+	q/(AB) + (A'B'D) + (CD)/
 ];
 
-@r01 = $q->solve;
+my @r01 = $q->solve;
 is_deeply(\@r01, \@val1, "getting Boolean expression");
 

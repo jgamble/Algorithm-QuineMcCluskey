@@ -9,15 +9,23 @@ use Algorithm::QuineMcCluskey;
 use Test::More tests => 1;
 
 my $q = Algorithm::QuineMcCluskey->new(
-	title	=> 'Four-bit, 8-minterm Boolean expression test',
-	width => 4,
-	minterms => [ qw(1 3 7 11 12 13 14 15) ]
+	title => 'Five-bit, 19-minterm problem',
+	width => 5,
+	minterms => [ 0, 2, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 21, 23,
+			26, 28, 29, 30, 31 ],
+	dc => "x"
 );
 
-my @val1	=> [
-	q/(AB) + (A'B'D) + (CD)/
-];
 
-my @r01 = $q->solve;
-is_deeply(\@r01, \@val1, "getting Boolean expression");
+my %val1 = (
+	'111xx' => 1,
+	'xx1x1' => 2
+);
+
+my %r01 = $q->find_primes;
+
+my %r02 = $q->find_essentials;
+
+is_deeply(\%r02, \%val1, "finding essential prime implicants");
+
 
