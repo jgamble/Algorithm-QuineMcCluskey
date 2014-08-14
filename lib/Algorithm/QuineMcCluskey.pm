@@ -21,21 +21,7 @@ use List::Util qw(sum min);
 use Tie::Cycle;
 
 #
-# Moosey attributes.
-#
-# bits and imp only used in find_primes().
-# boolean only used in to_boolean().
-#
-#has 'bits'	=> (isa => 'ArrayRef[ArrayRef[Int]]', is => 'rw', required => 0);
-#has 'boolean'	=> (isa => 'ArrayRef[Str]', is => 'rw', required => 0);
-has 'title'	=> (isa => 'Str', is => 'rw', required => 0, predicate => 'has_title');
-has 'covers'	=> (isa => 'ArrayRef[Int]', is => 'rw', required => 0);
-has 'dc'	=> (isa => 'Str', is => 'rw', default => '-');
-has 'minonly'	=> (isa => 'Bool', is => 'rw', default => 1);
-has 'sortterms'	=> (isa => 'Bool', is => 'rw', default => 1);
-
-#
-# The fields that hold the terms by their number.
+# Required attributes to create the object.
 #
 has 'dontcares'	=> (
 	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
@@ -49,33 +35,81 @@ has 'maxterms'	=> (
 	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
 	predicate => 'has_maxterms'
 	);
+has 'width'	=> (
+	isa => 'Int', is => 'rw', required => 1
+);
+
+#
+# Optional attributes.
+#
+has 'title'	=> (
+	isa => 'Str', is => 'rw', required => 0,
+	predicate => 'has_title'
+);
+has 'dc'	=> (
+	isa => 'Str', is => 'rw',
+	default => '-'
+);
+has 'minonly'	=> (
+	isa => 'Bool', is => 'rw',
+	default => 1
+);
+has 'sortterms'	=> (
+	isa => 'Bool', is => 'rw',
+	default => 1
+);
+has 'vars'	=> (
+	isa => 'ArrayRef[Str]', is => 'rw', required => 0,
+	default => sub{['A' .. 'Z']}
+);
+
+#
+# Internal attributes. No using them at object creation.
+#
+#CHANGES: add init_arg => undef, and change to ro and add reader/writer accessor methods
 
 #
 # The terms' bitstring fields.
 #
 has 'dc_bits'	=> (
 	isa => 'ArrayRef[Str]', is => 'rw', required => 0,
+	init_arg => undef,
 	predicate => 'has_dc_bits'
 	);
 has 'min_bits'	=> (
 	isa => 'ArrayRef[Str]', is => 'rw', required => 0,
+	init_arg => undef,
 	predicate => 'has_min_bits'
 	);
 has 'max_bits'	=> (
 	isa => 'ArrayRef[Str]', is => 'rw', required => 0,
+	init_arg => undef,
 	predicate => 'has_max_bits'
 	);
-has 'vars'	=> (
-	isa => 'ArrayRef[Str]', is => 'rw',
-	default => sub{['A' .. 'Z']}
+has 'ess'	=> (
+	isa => 'HashRef', is => 'ro', required => 0,
+	init_arg => undef,
+	reader => 'get_essentials',
+	writer => '_set_essentials',
+	predicate => 'has_essentials',
+	clearer => 'clear_essentials'
 	);
-has 'ess'	=> (isa => 'HashRef', is => 'rw', required => 0);
-#has 'imp'	=> (isa => 'HashRef', is => 'rw', required => 0);
 has 'primes'	=> (
-	isa => 'HashRef', is => 'rw', required => 0,
-	predicate => 'has_primes'
+	isa => 'HashRef', is => 'ro', required => 0,
+	init_arg => undef,
+	reader => 'get_primes',
+	writer => '_set_primes',
+	predicate => 'has_primes',
+	clearer => 'clear_primes'
 	);
-has 'width'	=> (isa => 'Int', is => 'rw', required => 1);
+has 'covers'	=> (
+	isa => 'ArrayRef[Int]', is => 'ro', required => 0,
+	init_arg => undef,
+	reader => 'get_covers',
+	writer => '_set_covers',
+	predicate => 'has_covers',
+	clearer => 'clear_covers'
+);
 
 =head1 VERSION
 
@@ -259,20 +293,26 @@ sub find_primes
 {
 	my $self = shift;
 	my @bits;
-	my %imp;
+	my %implicant;
+
+	#
+	# Entering the sub message.
+	#
+	carp "find_primes:\n";
 
 	# Separate into bins based on number of 1's
 	for ($self->allterms())
 	{
 		my $l = sum stl $_;
-		carp "$_ converted to $l";
+		carp "    $_ converted to $l";
 		push  @{$bits[0][ $l ]}, $_;
 	}
 
 	#
 	# Dump here.
 	#
-
+	carp "    Dump of \@bits:\n";
+	carp Dumper(\@bits);
 
 	for my $level (0 .. $self->width)
 	{
@@ -295,7 +335,7 @@ sub find_primes
 				# ahead if we don't have this data.
 				# FIXME: explain
 				#
-				$imp{$lv} //= 0;
+				$implicant{$lv} //= 0;
 				next unless ref $bits[$level][$low + 1];
 
 				for my $hv (@{ $bits[$level][$low + 1] })
@@ -303,7 +343,7 @@ sub find_primes
 					#
 					# Initialize the implicant.
 					#
-					$imp{$hv} //= 0;
+					$implicant{$hv} //= 0;
 
 					if (hdist($lv, $hv) == 1)
 					{
@@ -315,17 +355,27 @@ sub find_primes
 						# values as used.
 						#
 						push @{ $bits[$level + 1][$low + 1] }, $new;
-						@{$imp{$lv,$hv}} = (1, 1);
+						@{$implicant{$lv,$hv}} = (1, 1);
 					}
 				}
 			}
 		}
 	}
 
-	$self->primes(
-		map { $_ => [ $self->maskmatches($_, $self->minmax_terms()) ] }
-		grep { !$imp{$_} } keys %imp
-	);
+	carp "    Dump after processing of \@bits:\n";
+	carp Dumper(\@bits);
+
+	my %p = map { $_ => [ $self->maskmatches($_, $self->minmax_terms()) ] }
+		grep { !$implicant{$_} } keys %implicant;
+
+	#
+	# Carp the primes.
+	#
+	carp "    Setting attribute primes with:\n";
+	carp Dumper(\%p);
+
+	$self->_set_primes( \%p );
+	return $self->get_primes;
 }
 
 
@@ -338,7 +388,7 @@ Row-dominance
 sub row_dom
 {
 	my $self = shift;
-	my $primes = shift || \%{$self->primes};
+	my $primes = shift || \%{$self->get_primes};
 
 	$primes = { map {
 		my $o = $_;
@@ -359,7 +409,7 @@ Column-dominance
 
 sub col_dom {
 	my $self = shift;
-	my $primes = shift || \%{$self->primes};
+	my $primes = shift || \%{$self->get_primes};
 
 	my %cols = columns $primes, $self->minmax_terms();
 	for my $col1 (keys %cols) {
@@ -369,7 +419,7 @@ sub col_dom {
 			# If col1 is a non-empty proper subset of col2,
 			# remove col2
 			if (@{ $cols{$col1} }
-					and is_LsubsetR			([ $cols{$col1} => $cols{$col2} ])
+					and is_LsubsetR		([ $cols{$col1} => $cols{$col2} ])
 					and !is_LequivalentR	([ $cols{$col1} => $cols{$col2} ]))
 			{
 				remel $col2, $primes->{$_} for keys %$primes;
@@ -385,20 +435,59 @@ Finding essential prime implicants
 
 =cut
 
-sub find_essentials {
+sub find_essentials
+{
 	my $self = shift;
-	%{$self->ess} = ();
-	my $primes = @_ ? shift : \%{$self->primes};
+
+	my $primes = @_ ? shift : \%{$self->get_primes};
 	my @terms = @_ ? @{ shift() } : ($self->minmax_terms());
 
-	for my $term (@terms) {
-		my $ess = ( map { @$_ == 1 ? @$_ : undef } [ grep {
-			grep { $_ eq $term } @{ $primes->{$_} }
-		} keys %$primes ] )[0];
+	my @kp = keys %$primes;
+	my %essentials;
+
+	$self->clear_essentials;
+
+carp "find_essentials:\n";
+carp "    Keys of \$primes are [", join(", ", @kp), "]\n    Dump:\n";
+
+#
+# Find out what each is holding.
+#
+foreach my $kp (@kp)
+{
+	my @pt = @{ $primes->{$kp}};
+	carp "    $kp => [", join(", ", @pt), "]\n";
+}
+
+	for my $term (@terms)
+	{
+carp "    For term '$term', ";
+		#my $ess = ( map { @$_ == 1 ? @$_ : undef } [ grep {
+		#	grep { $_ eq $term } @{ $primes->{$_} }
+		#} keys %$primes ] )[0];
+
+		#CHANGES: Move "keys %$primes" out of the loop - it's a constant list.
+
+		#my $ess = ( map { @$_ == 1 ? @$_ : undef } [
+		#	grep {
+		#	grep { $_ eq $term } @{ $primes->{$_} } } @kp ] )[0];
+
+		#CHANGES: Separate out the list from the double grep to see
+		#         what's going on internally.
+		my @tp = grep {
+			grep { $_ eq $term } @{ $primes->{$_} } } @kp;
+
+		my $ess = ( map { @$_ == 1 ? @$_ : undef }[@tp] )[0];
+carp "    term/prime list is (", join(", ", @tp), "), ";
+
 		# TODO: It would be nice to track the terms that make this essential
-		${$self->ess}{$ess}++ if $ess;
+		# CHANGES: set up essentials in local hash, to be set in the object at the end.
+carp "    'essential' found is ", (defined $ess)? $ess: "undef", "\n";
+		$essentials{$ess}++ if $ess;
 	}
-	%{$self->ess};
+
+	$self->_set_essentials(\%essentials);
+	return $self;
 }
 
 =item purge_essentials
@@ -407,17 +496,18 @@ Delete essential primes from table
 
 =cut
 
-sub purge_essentials {
+sub purge_essentials
+{
 	my $self = shift;
-	my %ess = @_ ? %{ shift() } : %{$self->ess};
-	my $primes = shift || \%{$self->primes};
+	my %ess = @_ ? %{ shift() } : %{$self->get_essentials};
+	my $primes = shift || \%{$self->get_primes};
 
 	# Delete columns associated with this term
 	for my $col (keys %$primes) {
 		remel $_, $primes->{$col} for keys %ess;
 	}
 	delete ${$primes}{$_} for keys %ess;
-	%ess;
+	return $self;
 }
 
 =item to_boolean
@@ -443,7 +533,7 @@ sub to_boolean {
 				$_ eq $self->dc ? () : $var . ($_ == $cond ? '' : "'")
 			} stl $_) . $gs[1]
 		} @$_
-		for ($self->covers);
+		for ($self->get_covers);
 
 	return @boolean;
 }
@@ -456,8 +546,8 @@ Main solution sub (wraps recurse_solve())
 
 sub solve {
 	my $self = shift;
-	%{$self->primes} or $self->find_primes;
-	$self->covers($self->recurse_solve($self->primes));
+	$self->find_primes unless ($self->has_primes);
+	$self->_set_covers($self->recurse_solve($self->get_primes));
 	$self->to_boolean();
 }
 
@@ -480,8 +570,10 @@ sub recurse_solve
 	my %ess = $self->find_essentials(\%primes);
 	$self->purge_essentials(\%ess, \%primes);
 	push @prefix, grep { $ess{$_} } keys %ess;
+
 	$self->row_dom(\%primes);
 	$self->col_dom(\%primes);
+
 	while (!is_LequivalentR([
 			[ keys %ess ] => [ %ess = $self->find_essentials(\%primes) ]
 			])) {
@@ -535,6 +627,7 @@ sub recurse_solve
 	sub cost { sum map { /$self->dc/ ? 0 : 1 } stl join '', @{ shift() } }
 	my $mincost = min map { cost $_ } @covers;
 	@covers = grep { cost($_) == $mincost } @covers if $self->minonly;
+
 	# Return our covers table to be treated similarly one level up
 	# FIXME: How to best ensure non-duplicated answers?
 	return uniqels @covers;
