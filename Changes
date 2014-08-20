@@ -1,6 +1,13 @@
 Revision history for Algorithm-QuineMcCluskey
 
 "deAlias"
+	2014-08-19
+	- More work in find_primes(). An array slice in a hash isn't
+	  working as originally coded (I seem to recall the rules
+	  changing some time ago). Changed it to two statements for
+	  now.
+	- Also comment changes in find_primes(), hopefully explaining
+	  the prime implicant search more completely, and maybe better.
 	2014-08-13
 	- Many changes to attributes -- altered the internal
 	  ones to have "init_arg=>undef" and read-only options,
