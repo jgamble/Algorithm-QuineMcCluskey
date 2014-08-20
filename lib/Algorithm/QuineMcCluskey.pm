@@ -299,11 +299,13 @@ sub find_primes
 	#
 	carp "find_primes:\n";
 
-	# Separate into bins based on number of 1's
+	#
+	# Separate into bins based on number of 1's (the weight).
+	#
 	for ($self->allterms())
 	{
 		my $l = sum stl $_;
-		carp "    $_ converted to $l";
+		carp "    $_ : $l bits set.";
 		push  @{$bits[0][ $l ]}, $_;
 	}
 
@@ -313,28 +315,43 @@ sub find_primes
 	carp "    Dump of \@bits:\n";
 	carp Dumper(\@bits);
 
+	#
+	# Now for each level, we look for terms that be absorbed into
+	# simpler product terms. Level 0 consists of the fundemental
+	# product terms; level 1 consists of pairs of fundemental terms
+	# that have a variable in common; level 2 consists of pairs of pairs
+	# that have a variable in common; and so on until we're out of
+	# levels (number of variables) or cannot find any more products
+	# with terms in common.
+	#
 	for my $level (0 .. $self->width)
 	{
 		#
-		# Skip if we haven't generated such data
+		# Skip if we haven't generated data for this level.
 		#
 		last unless ref $bits[$level];
 
-		# Find pairs with Hamming distance of 1
+		#
+		# Find pairs with Hamming distance of 1 (i.e., a weight
+		# difference of 1).
+		#
 		for my $low (0 .. $#{ $bits[$level] })
 		{
 			#
 			# These nested for-loops get all permutations
-			# of adjacent sets
+			# of adjacent sets.
 			#
 			for my $lv (@{ $bits[$level][$low] })
 			{
 				#
-				# Initialize the implicant as unused; Skip
-				# ahead if we don't have this data.
-				# FIXME: explain
+				# Initialize the implicant as unused.
 				#
 				$implicant{$lv} //= 0;
+
+				#
+				# Skip ahead if there are no terms at
+				# this level.
+				#
 				next unless ref $bits[$level][$low + 1];
 
 				for my $hv (@{ $bits[$level][$low + 1] })
@@ -344,25 +361,33 @@ sub find_primes
 					#
 					$implicant{$hv} //= 0;
 
+					#
+					# If there are matching terms, save
+					# the new implicant at the next 'level',
+					# creating it if it doesn't exist.
+					#
 					if (hdist($lv, $hv) == 1)
 					{
 						my $new = $lv;	# or $hv
 						substr($new, diffpos($lv, $hv), 1) = $self->dc;
+
 						#
 						# Save new implicant to next
 						# level, then mark the two
 						# values as used.
 						#
 						push @{ $bits[$level + 1][$low + 1] }, $new;
-						@{$implicant{$lv,$hv}} = (1, 1);
+						#@{$implicant{$lv,$hv}} = (1, 1);
+						$implicant{$lv} = 1;
+						$implicant{$hv} = 1;
 					}
 				}
 			}
 		}
 	}
 
-	carp "    Dump after processing of \@bits:\n";
-	carp Dumper(\@bits);
+	carp "    Dump of implicant table:\n";
+	carp Dumper(\%implicant);
 
 	my %p = map { $_ => [ $self->maskmatches($_, $self->minmax_terms()) ] }
 		grep { !$implicant{$_} } keys %implicant;
