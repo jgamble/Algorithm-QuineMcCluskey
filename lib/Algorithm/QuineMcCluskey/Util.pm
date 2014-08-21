@@ -16,10 +16,10 @@ use List::Util qw(sum min);
 
 use base qw(Exporter);
 our @EXPORT = qw(
-	bin columns diffpos diffposes hdist stl tobit uniqels
+	bin columns diffpos diffposes hdist stl uniqels
 );
 our @EXPORT_OK = qw(
-	bin columns diffpos diffposes hdist stl tobit uniqels
+	bin columns diffpos diffposes hdist stl uniqels
 );
 
 =head1 VERSION
@@ -43,7 +43,6 @@ Algorithm::QuineMcCluskey.
 sub uniqels (@);
 sub columns ($@);
 sub diffpos ($$);
-sub tobit ($$);
 sub bin ($);
 sub diffposes;
 sub stl ($);
@@ -88,14 +87,6 @@ Wrap oct() to provide easy conversion of a binary string to a number
 =cut
 
 sub bin ($) { oct "0b" . shift }
-
-=item tobit
-
-Convert a number to an n-wide string of bits representing it
-
-=cut
-
-sub tobit ($$) { substr(unpack("B32", pack("N", shift)), -shift) }
 
 =item diffpos
 

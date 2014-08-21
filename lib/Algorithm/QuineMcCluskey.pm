@@ -8,15 +8,16 @@ package Algorithm::QuineMcCluskey;
 
 use strict;
 use warnings;
+use 5.008003;
 
-use Algorithm::QuineMcCluskey::Util qw(
-	bin columns diffpos hdist stl uniqels
-);
 use Moose;
 use Moose::Util::TypeConstraints;
 use Carp qw(carp croak);
 use Data::Dumper;
+
+use Algorithm::QuineMcCluskey::Util qw(bin columns diffpos hdist stl uniqels);
 use List::Compare::Functional qw(:main is_LequivalentR);
+use List::MoreUtils qw(firstidx);
 use List::Util qw(sum min);
 use Tie::Cycle;
 
@@ -277,7 +278,7 @@ sub remel
 {
 	my $self = shift;
 	my ($el, $a) = @_;
-	my $pos = firstidx { $self->maskmatch($el, $_) } @$a;
+	my $pos = firstidx { $self->maskmatches($el, $_) } @$a;
 	splice(@$a, $pos, 1) if $pos >= 0;
 	$a;
 }
@@ -317,7 +318,10 @@ sub find_primes
 
 	#
 	# Now for each level, we look for terms that be absorbed into
-	# simpler product terms. Level 0 consists of the fundemental
+	# simpler product terms (for example, _ab_c + ab_c can be simplified
+	# to b_c).
+	#
+	# Level 0 consists of the fundemental
 	# product terms; level 1 consists of pairs of fundemental terms
 	# that have a variable in common; level 2 consists of pairs of pairs
 	# that have a variable in common; and so on until we're out of
@@ -372,12 +376,11 @@ sub find_primes
 						substr($new, diffpos($lv, $hv), 1) = $self->dc;
 
 						#
-						# Save new implicant to next
-						# level, then mark the two
+						# Save the new implicant to the
+						# next level, then mark the two
 						# values as used.
 						#
 						push @{ $bits[$level + 1][$low + 1] }, $new;
-						#@{$implicant{$lv,$hv}} = (1, 1);
 						$implicant{$lv} = 1;
 						$implicant{$hv} = 1;
 					}
@@ -389,6 +392,11 @@ sub find_primes
 	carp "    Dump of implicant table:\n";
 	carp Dumper(\%implicant);
 
+	#
+	# For each unmarked (value == 0) implicant, match it against the
+	# minterms (or maxterms). The resulting hash of arrays is our
+	# set of prime implicants.
+	#
 	my %p = map { $_ => [ $self->maskmatches($_, $self->minmax_terms()) ] }
 		grep { !$implicant{$_} } keys %implicant;
 
@@ -412,7 +420,7 @@ Row-dominance
 sub row_dom
 {
 	my $self = shift;
-	my $primes = shift || \%{$self->get_primes};
+	my $primes = shift;
 
 	$primes = { map {
 		my $o = $_;
@@ -422,7 +430,8 @@ sub row_dom
 			} grep { $_ ne $o } keys %$primes)
 		? () : ( $_ => $primes->{$_} )
 	} keys %$primes };
-	%$primes;
+
+	return $primes;
 }
 
 =item col_dom
@@ -431,9 +440,10 @@ Column-dominance
 
 =cut
 
-sub col_dom {
+sub col_dom
+{
 	my $self = shift;
-	my $primes = shift || \%{$self->get_primes};
+	my $primes = shift;
 
 	my %cols = columns $primes, $self->minmax_terms();
 	for my $col1 (keys %cols) {
@@ -443,19 +453,23 @@ sub col_dom {
 			# If col1 is a non-empty proper subset of col2,
 			# remove col2
 			if (@{ $cols{$col1} }
-					and is_LsubsetR		([ $cols{$col1} => $cols{$col2} ])
-					and !is_LequivalentR	([ $cols{$col1} => $cols{$col2} ]))
+				and is_LsubsetR		([ $cols{$col1} => $cols{$col2} ])
+				and !is_LequivalentR	([ $cols{$col1} => $cols{$col2} ]))
 			{
-				remel $col2, $primes->{$_} for keys %$primes;
+				$self->remel($col2, $primes->{$_}) for keys %$primes;
 			}
 		}
 	}
-	%$primes;
+
+	carp "    Primes hash after col_dom processing:\n";
+	carp Dumper($primes);
+	return $primes;
 }
 
 =item find_essentials
 
-Finding essential prime implicants
+Finding essential prime implicants. Called from the solve(), but may also
+be called by itself for testing purposes.
 
 =cut
 
@@ -472,16 +486,6 @@ sub find_essentials
 	$self->clear_essentials;
 
 carp "find_essentials:\n";
-carp "    Keys of \$primes are [", join(", ", @kp), "]\n    Dump:\n";
-
-#
-# Find out what each is holding.
-#
-foreach my $kp (@kp)
-{
-	my @pt = @{ $primes->{$kp}};
-	carp "    $kp => [", join(", ", @pt), "]\n";
-}
 
 	for my $term (@terms)
 	{
@@ -498,6 +502,8 @@ carp "    term/prime list is (", join(", ", @tp), "), ";
 		}
 	}
 
+carp "    Setting essentials with:\n";
+carp Dumper(\%essentials);
 	$self->_set_essentials(\%essentials);
 	return $self;
 }
@@ -511,13 +517,15 @@ Delete essential primes from table
 sub purge_essentials
 {
 	my $self = shift;
-	my %ess = @_ ? %{ shift() } : %{$self->get_essentials};
-	my $primes = shift || \%{$self->get_primes};
+	my %ess = %{ shift() };
+	my $primes = shift;
 
 	# Delete columns associated with this term
-	for my $col (keys %$primes) {
-		remel $_, $primes->{$col} for keys %ess;
+	for my $col (keys %$primes)
+	{
+		$self->remel($_, $primes->{$col}) for keys %ess;
 	}
+
 	delete ${$primes}{$_} for keys %ess;
 	return $self;
 }
@@ -588,7 +596,8 @@ sub recurse_solve
 
 	while (!is_LequivalentR([
 			[ keys %ess ] => [ %ess = $self->find_essentials(\%primes) ]
-			])) {
+			]))
+	{
 		$self->purge_essentials(\%ess, \%primes);
 		push @prefix, grep { $ess{$_} } keys %ess;
 		$self->row_dom(\%primes);
@@ -619,7 +628,7 @@ sub recurse_solve
 			$_ => [ grep { $_ ne $term } @{ $primes{$_} } ]
 		} keys %primes;
 		# Use this prime implicant -- delete its row and columns
-		remel $ta, $reduced{$_} for keys %reduced;
+		$self->remel($ta, $reduced{$_}) for keys %reduced;
 		delete $reduced{$ta};
 		# Remove empty rows (necessary?)
 		%reduced = map { $_ => $reduced{$_} } grep { @{ $reduced{$_} } } keys %reduced;
