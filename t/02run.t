@@ -9,7 +9,6 @@ use Carp;
 #
 
 use Test::More tests => 2;
-use Data::Dumper;
 
 my $q = Algorithm::QuineMcCluskey->new(
 	title	=> "Simple 4-minterm problem",
@@ -27,6 +26,8 @@ my %val1 = (
 
 my %val2 = (
 	'000' => 1,
+	'x11' => 1,
+	'1x1' => 1,
 );
 
 #
@@ -41,6 +42,5 @@ is_deeply($hashref, \%val1, "finding prime implicants");
 #
 $q->find_essentials;
 $hashref = $q->get_essentials;
-carp Dumper($hashref);
 is_deeply($hashref, \%val2, "finding essential prime implicants");
 

@@ -7,7 +7,7 @@ use Algorithm::QuineMcCluskey;
 # Testing code starts here
 #
 
-use Test::More tests => 5;
+use Test::More tests => 3;
 
 my $q = Algorithm::QuineMcCluskey->new(
 	title	=> "Simple 6-minterm problem",
@@ -37,7 +37,6 @@ my %val2 = (
 #
 $q->find_primes;
 
-#CHANGES: use new accessor
 my $r02 = $q->get_primes;
 is_deeply($r02, \%val1, "read field after finding prime implicants");
 
@@ -51,6 +50,6 @@ is_deeply($r03, \%val2, "finding essential prime implicants");
 #
 # 'column dominance',
 #
-my $r05 = $q->col_dom;
-is_deeply($r05, \%val2, "purging essential prime implicants");
+my $r05 = $q->col_dom($r02);
+is_deeply($r05, \%val1, "purging essential prime implicants");
 
