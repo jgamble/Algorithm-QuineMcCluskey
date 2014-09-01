@@ -31,6 +31,13 @@ my %val2 = (
 	'10x0' => 1
 );
 
+my %val3 = (
+	'01x1' => [ '0101', '0111' ],
+	'100x' => [ '1000', '1001' ],
+	'0x11' => [ '0011', '0111' ],
+	'10x0' => [ '1000', '1010' ]
+);
+
 #
 # 'finding prime implicants',
 # 'read field after finding prime implicants',
@@ -51,5 +58,5 @@ is_deeply($r03, \%val2, "finding essential prime implicants");
 # 'column dominance',
 #
 my $r05 = $q->col_dom($r02);
-is_deeply($r05, \%val1, "purging essential prime implicants");
+is_deeply($r05, \%val3, "purging essential prime implicants");
 
