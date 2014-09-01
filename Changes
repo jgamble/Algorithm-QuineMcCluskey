@@ -1,6 +1,21 @@
 Revision history for Algorithm-QuineMcCluskey
 
 "deAlias"
+	2014-09-01
+	- Start work on col_dom() -- Mostly carp stmts for now.
+	  New (but not corrected) test hash for it in run03.t
+	2014-08-20
+	- No more default arguments (in the form of $self->get_primes())
+	  for row_dom(), col_dom(), and purge_essentials(). Always
+	  pass in the argument -- it's less confusing that way.
+	- Trim Util.pm of tobits() -- it's embedded in BUILD now.
+	- Make tests in 02run.t and 03run.t actually match what's
+	  being tested. Still need to fix third test of 03run.t
+	  though.
+	- Former function remel is now method remel(), but I forgot
+	  to add the $self-> before it everywhere.
+	- Those parentheses around remel()'s arguments aren't optional
+	  when we're pushing the limits of the parser. Added them.
 	2014-08-19
 	- More work in find_primes(). An array slice in a hash isn't
 	  working as originally coded (I seem to recall the rules
