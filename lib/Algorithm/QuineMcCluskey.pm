@@ -446,17 +446,23 @@ sub col_dom
 	my $primes = shift;
 
 	my %cols = columns $primes, $self->minmax_terms();
-	for my $col1 (keys %cols) {
-		for my $col2 (keys %cols) {
+
+	for my $col1 (keys %cols)
+	{
+		for my $col2 (keys %cols)
+		{
 			next if $col1 eq $col2;
-			
+
+			#
 			# If col1 is a non-empty proper subset of col2,
 			# remove col2
+			#
 			if (@{ $cols{$col1} }
-				and is_LsubsetR		([ $cols{$col1} => $cols{$col2} ])
-				and !is_LequivalentR	([ $cols{$col1} => $cols{$col2} ]))
+				and is_LsubsetR([ $cols{$col1} => $cols{$col2} ])
+				and !is_LequivalentR([ $cols{$col1} => $cols{$col2} ]))
 			{
 				$self->remel($col2, $primes->{$_}) for keys %$primes;
+				carp "$col1 is a proper subset of $col2 (<-- removed)";
 			}
 		}
 	}
@@ -489,11 +495,10 @@ carp "find_essentials:\n";
 
 	for my $term (@terms)
 	{
-carp "    For term '$term', ";
 		my @tp = grep {
 			grep { $_ eq $term } @{ $primes->{$_} } } @kp;
 
-carp "    term/prime list is (", join(", ", @tp), "), ";
+carp "    For term '$term', term/prime list is (", join(", ", @tp), "), ";
 
 		# TODO: It would be nice to track the terms that make this essential
 		if (scalar @tp == 1)
