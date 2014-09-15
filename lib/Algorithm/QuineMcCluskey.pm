@@ -236,36 +236,24 @@ sub minmax_terms
 	return @terms;
 }
 
-=item maskmatch
+=item maskmatcher
 
-Returns true if a mask matches a minterm, false otherwise.
-
-=cut
-
-sub maskmatch
-{
-	my $self = shift;
-	my ($mask, $term) = @_;
-	my $dc = $self->dc;
-
-	(my $mask0 = $mask) =~ s/$dc/0/g;
-	(my $mask1 = $mask) =~ s/$dc/1/g;
-
-	((bin $mask0 & bin $term) == bin $mask0) &&
-		((bin $mask1 & bin $term) == bin $term)
-}
-
-=item maskmatches
-
-Returns the elements that match a mask, selected from an array
+Returns the terms that match a mask.
 
 =cut
 
-sub maskmatches
+sub maskmatcher
 {
 	my $self = shift;
 	my $m = shift;
-	grep { $self->maskmatch($m, $_) } @_;
+	my $dc = $self->dc;
+
+	(my $mask0 = $m) =~ s/$dc/0/g;
+	(my $mask1 = $m) =~ s/$dc/1/g;
+	$mask0 = bin $mask0;
+	$mask1 = bin $mask1;
+
+	grep { (($mask0 & bin $_) == $mask0) && (($mask1 & bin $_) == bin $_) } @_;
 }
 
 =item remel
@@ -278,7 +266,7 @@ sub remel
 {
 	my $self = shift;
 	my ($el, $a) = @_;
-	my $pos = firstidx { $self->maskmatches($el, $_) } @$a;
+	my $pos = firstidx { $self->maskmatcher($el, $_) } @$a;
 	splice(@$a, $pos, 1) if $pos >= 0;
 	$a;
 }
@@ -397,7 +385,7 @@ sub find_primes
 	# minterms (or maxterms). The resulting hash of arrays is our
 	# set of prime implicants.
 	#
-	my %p = map { $_ => [ $self->maskmatches($_, $self->minmax_terms()) ] }
+	my %p = map { $_ => [ $self->maskmatcher($_, $self->minmax_terms()) ] }
 		grep { !$implicant{$_} } keys %implicant;
 
 	#
