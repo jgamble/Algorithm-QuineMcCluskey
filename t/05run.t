@@ -11,7 +11,7 @@ use Test::More tests => 1;
 my $q = Algorithm::QuineMcCluskey->new(
 	title	=> 'Four-bit, 8-minterm Boolean expression test',
 	width => 4,
-	minterms => [ qw(1 3 7 11 12 13 14 15) ]
+	minterms => [ 1, 3, 7, 11, 12, 13, 14, 15 ]
 );
 
 my @val1	=> [
