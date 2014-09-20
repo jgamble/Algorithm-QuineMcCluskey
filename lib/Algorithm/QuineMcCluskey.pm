@@ -24,18 +24,33 @@ use Tie::Cycle;
 #
 # Required attributes to create the object.
 #
+# 1. 'width' is absolutely required (handled via Moose).
+#
+# 2. if 'characteristic' is present, 'dontcares', 'minterms', and
+#    'maxterms' cannot be used.
+#
+# 3. if either 'minterms' or 'maxterms' is used (but not both),
+#    then 'characteristic' can't be used.
+#
+# 4. 'dontcares' are used with either 'minterms' or 'maxterms', but
+#    cannot be used by itself.
+#
 has 'dontcares'	=> (
 	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
 	predicate => 'has_dontcares'
-	);
+);
 has 'minterms'	=> (
 	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
 	predicate => 'has_minterms'
-	);
+);
 has 'maxterms'	=> (
 	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
 	predicate => 'has_maxterms'
-	);
+);
+has 'characteristic' => (
+	isa => 'String', is => 'rw', required => 0,
+	predicate => 'has_characteristic'
+);
 has 'width'	=> (
 	isa => 'Int', is => 'rw', required => 1
 );
@@ -75,17 +90,17 @@ has 'dc_bits'	=> (
 	isa => 'ArrayRef[Str]', is => 'rw', required => 0,
 	init_arg => undef,
 	predicate => 'has_dc_bits'
-	);
+);
 has 'min_bits'	=> (
 	isa => 'ArrayRef[Str]', is => 'rw', required => 0,
 	init_arg => undef,
 	predicate => 'has_min_bits'
-	);
+);
 has 'max_bits'	=> (
 	isa => 'ArrayRef[Str]', is => 'rw', required => 0,
 	init_arg => undef,
 	predicate => 'has_max_bits'
-	);
+);
 has 'ess'	=> (
 	isa => 'HashRef', is => 'ro', required => 0,
 	init_arg => undef,
@@ -93,7 +108,7 @@ has 'ess'	=> (
 	writer => '_set_essentials',
 	predicate => 'has_essentials',
 	clearer => 'clear_essentials'
-	);
+);
 has 'primes'	=> (
 	isa => 'HashRef', is => 'ro', required => 0,
 	init_arg => undef,
@@ -101,7 +116,7 @@ has 'primes'	=> (
 	writer => '_set_primes',
 	predicate => 'has_primes',
 	clearer => 'clear_primes'
-	);
+);
 has 'covers'	=> (
 	isa => 'ArrayRef[Int]', is => 'ro', required => 0,
 	init_arg => undef,
@@ -126,8 +141,8 @@ our $VERSION = 0.02;
 	# Five-bit, 12-minterm Boolean expression test with don't-cares
 	my $q = new Algorithm::QuineMcCluskey(
 		width => 5,
-		minterms => [ qw(0 5 7 8 10 11 15 17 18 23 26 27) ],
-		dontcares => [ qw(2 16 19 21 24 25) ]
+		minterms => [ 0, 5, 7, 8, 10, 11, 15, 17, 18, 23, 26, 27 ],
+		dontcares => [ 2, 16, 19, 21, 24, 25 ]
 	);
 	my @result = $q->solve;
 	# @result is (
@@ -173,39 +188,68 @@ sub BUILD
 {
 	my $self = shift;
 	my $w = $self->width;
+	my @terms;
 
 	#
 	# Catch errors.
 	#
 	croak "Mixing minterms and maxterms not allowed"
 		if ($self->has_minterms and $self->has_maxterms);
-	croak "Must supply either minterms or maxterms"
-		unless ($self->has_minterms or $self->has_maxterms);
+
+	if ($self->has_characteristic)
+	{
+		croak "No other terms necessary when using the characteristic attribute"
+			if ($self->has_minterms or $self->has_maxterms or $self->has_dontcares);
+	}
+	else
+	{
+		croak "Must supply either minterms or maxterms"
+			unless ($self->has_minterms or $self->has_maxterms);
+	}
 
 	#
 	# Convert terms to strings of bits as needed.
 	#
+	if ($self->has_characteristic)
+	{
+		croak "Not yet implemented";
+		# Set minterms here.
+	}
 	if ($self->has_minterms)
 	{
+		@terms = @{$self->minterms};
+
 		my @bitstrings = map {
 			substr(unpack("B32", pack("N", $_)), -$w)
-		} @{$self->minterms};
+		} @terms;
 
 		$self->min_bits(\@bitstrings);
 	}
 	if ($self->has_maxterms)
 	{
+		@terms = @{$self->maxterms};
+
 		my @bitstrings = map {
 			substr(unpack("B32", pack("N", $_)), -$w)
-		} @{$self->minterms};
+		} @terms;
 
 		$self->max_bits(\@bitstrings);
 	}
+
 	if ($self->has_dontcares)
 	{
+		my @dontcares = @{$self->dontcares};
+
+		my @intersect = get_intersection([\@dontcares, \@terms]);
+		if (scalar @intersect != 0)
+		{
+			croak "Term(s) ", join(", ", @intersect),
+				" are in both the don't-care list and the term list.";
+		}
+
 		my @bitstrings = map {
 			substr(unpack("B32", pack("N", $_)), -$w)
-		} @{$self->minterms};
+		} @dontcares;
 
 		$self->dc_bits(\@bitstrings);
 	}
@@ -215,7 +259,63 @@ sub BUILD
 	return $self;
 }
 
-sub allterms
+sub complement
+{
+	my $self = shift;
+	my %paramset;
+
+	my $termtype = ($self->has_minterms)? "minterms": "maxterms";
+
+	my $highterm = (1 << $self->width) - 1;
+	my @allterms = (0 .. $highterm);
+	my @terms = @{$self->{$termtype}};
+
+	$paramset{$termtype} = [get_complement(\@terms, \@allterms)];
+
+	$paramset{dontcares} = $self->dontcares if ($self->has_dontcares);
+
+	return $self->makenew(%paramset);
+}
+
+#
+# Return a new object (via complement()) that is the dual of this object's state.
+#
+sub dual
+{
+	my $self = shift;
+	my %paramset;
+
+	my $termtype = ($self->has_minterms)? "minterms": "maxterms";
+
+	my $highterm = (1 << $self->width) - 1;
+	my @allterms = (0 .. $highterm);
+	my @terms = map { $highterm - $_} @{$self->{$termtype} };
+
+	$paramset{$termtype} = [get_complement(\@terms, \@allterms)];
+
+	if ($self->has_dontcares)
+	{
+		@terms = map { $highterm - $_} @{$self->dontcares};
+		$paramset{dontcares} = [@terms];
+	}
+
+	return $self->makenew(%paramset);
+}
+
+sub makenew
+{
+	my $self = shift;
+	my %paramset = @_;
+
+	for $k (qw(dc title minonly sortterms vars))
+	{
+		$paramset{$k} = $self->{$k} unless (exists $paramset{$k});
+	}
+
+	return Algorithm::QuineMcCluskey->new(%paramset);
+}
+
+sub all_bit_terms
 {
 	my $self = shift;
 	my @terms;
@@ -226,7 +326,7 @@ sub allterms
 	return @terms;
 }
 
-sub minmax_terms
+sub minmax_bit_terms
 {
 	my $self = shift;
 	my @terms;
@@ -291,7 +391,7 @@ sub find_primes
 	#
 	# Separate into bins based on number of 1's (the weight).
 	#
-	for ($self->allterms())
+	for ($self->all_bit_terms())
 	{
 		my $l = sum stl $_;
 		carp "    $_ : $l bits set.";
@@ -385,7 +485,7 @@ sub find_primes
 	# minterms (or maxterms). The resulting hash of arrays is our
 	# set of prime implicants.
 	#
-	my %p = map { $_ => [ $self->maskmatcher($_, $self->minmax_terms()) ] }
+	my %p = map { $_ => [ $self->maskmatcher($_, $self->minmax_bit_terms()) ] }
 		grep { !$implicant{$_} } keys %implicant;
 
 	#
@@ -433,7 +533,7 @@ sub col_dom
 	my $self = shift;
 	my $primes = shift;
 
-	my %cols = columns $primes, $self->minmax_terms();
+	my %cols = columns $primes, $self->minmax_bit_terms();
 
 	for my $col1 (keys %cols)
 	{
@@ -472,7 +572,7 @@ sub find_essentials
 	my $self = shift;
 
 	my $primes = @_ ? shift : \%{$self->get_primes};
-	my @terms = @_ ? @{ shift() } : ($self->minmax_terms());
+	my @terms = @_ ? @{ shift() } : ($self->minmax_bit_terms());
 
 	my @kp = keys %$primes;
 	my %essentials;
@@ -529,12 +629,14 @@ Generating Boolean expressions
 
 =cut
 
-sub to_boolean {
+sub to_boolean
+{
 	my $self = shift;
 	my @boolean;
 
 	# Group separators (grouping character pairs)
 	my @gs = ('(', ')');
+
 	# Group joiner, element joiner, match condition
 	my ($gj, $ej, $cond) = $self->has_min_bits ? (' + ', '', 1) : ('', ' + ', 0);
 	tie my $var, 'Tie::Cycle', [ @{$self->vars}[0 .. $self->width - 1] ];
@@ -605,7 +707,7 @@ sub recurse_solve
 	my @t = grep {
 		my $o = $_;
 		sum map { sum map { $_ eq $o } @$_ } values %primes
-	} ($self->minmax_terms());
+	} ($self->minmax_bit_terms());
 
 	# Flip table so terms are keys
 	my %ic = columns \%primes, @t;
