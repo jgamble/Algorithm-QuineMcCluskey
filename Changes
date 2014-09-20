@@ -1,6 +1,24 @@
 Revision history for Algorithm-QuineMcCluskey
 
 "deAlias"
+	2014-09-19
+	- For internal clarity, renamed allterms() to all_bit_terms(),
+	  and minmax_terms() to minmax_bit_terms().
+	- Added methods dual() and complement() to return new objects
+	  that are the dual and complement of the existing object.
+	- Fixed a couple of bugs in BUILD() where the minterms were
+	  used where maxterms was the correct usage.
+	- Added the 'characteristic' attribute, and checked for its
+	  correct usage in BUILD(). Not actually implemented yet though.
+	- Methods maskmatch() and maskmatches() combined into a single
+	  method (one called the other, but there was no reason for the
+	  separate internal function, and it saved on re-creating some
+	  utility variables over and over).
+	- Check if there's an overlap between the don't-care list and
+	  the min or max term list, and call it an error if there is.
+	- Attributes actually check the type now (thanks Moose) so
+	  the qw operators around the term lists are not removed in
+	  the documentation and in the test files.
 	2014-09-01
 	- Start work on col_dom() -- Mostly carp stmts for now.
 	  New (but not corrected) test hash for it in run03.t
