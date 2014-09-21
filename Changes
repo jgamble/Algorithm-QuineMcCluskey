@@ -1,6 +1,11 @@
 Revision history for Algorithm-QuineMcCluskey
 
 "deAlias"
+	2014-09-21
+	- Added namespace::autoclean as recommended in the Moose Best
+	  Practices manual.
+	- Forgot to declare a loop variable.
+	- Changed the "terms" attributes to 'ro'.
 	2014-09-19
 	- For internal clarity, renamed allterms() to all_bit_terms(),
 	  and minmax_terms() to minmax_bit_terms().
