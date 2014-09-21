@@ -11,6 +11,8 @@ use warnings;
 use 5.008003;
 
 use Moose;
+use namespace::autoclean;
+
 use Moose::Util::TypeConstraints;
 use Carp qw(carp croak);
 use Data::Dumper;
@@ -36,23 +38,23 @@ use Tie::Cycle;
 #    cannot be used by itself.
 #
 has 'dontcares'	=> (
-	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
+	isa => 'ArrayRef[Int]', is => 'ro', required => 0,
 	predicate => 'has_dontcares'
 );
 has 'minterms'	=> (
-	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
+	isa => 'ArrayRef[Int]', is => 'ro', required => 0,
 	predicate => 'has_minterms'
 );
 has 'maxterms'	=> (
-	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
+	isa => 'ArrayRef[Int]', is => 'ro', required => 0,
 	predicate => 'has_maxterms'
 );
 has 'characteristic' => (
-	isa => 'String', is => 'rw', required => 0,
+	isa => 'String', is => 'ro', required => 0,
 	predicate => 'has_characteristic'
 );
 has 'width'	=> (
-	isa => 'Int', is => 'rw', required => 1
+	isa => 'Int', is => 'ro', required => 1
 );
 
 #
@@ -307,7 +309,7 @@ sub makenew
 	my $self = shift;
 	my %paramset = @_;
 
-	for $k (qw(dc title minonly sortterms vars))
+	for my $k (qw(dc title minonly sortterms vars))
 	{
 		$paramset{$k} = $self->{$k} unless (exists $paramset{$k});
 	}
