@@ -120,7 +120,7 @@ has 'primes'	=> (
 	clearer => 'clear_primes'
 );
 has 'covers'	=> (
-	isa => 'ArrayRef[Int]', is => 'ro', required => 0,
+	isa => 'ArrayRef[Str]', is => 'ro', required => 0,
 	init_arg => undef,
 	reader => 'get_covers',
 	writer => '_set_covers',
@@ -600,7 +600,7 @@ carp "    For term '$term', term/prime list is (", join(", ", @tp), "), ";
 carp "    Setting essentials with:\n";
 carp Dumper(\%essentials);
 	$self->_set_essentials(\%essentials);
-	return $self;
+	return %essentials;
 }
 
 =item purge_essentials
@@ -685,6 +685,7 @@ sub recurse_solve
 
 	# begin (slightly) optimized block : do not touch without good reason
 	my %ess = $self->find_essentials(\%primes);
+
 	$self->purge_essentials(\%ess, \%primes);
 	push @prefix, grep { $ess{$_} } keys %ess;
 
@@ -701,7 +702,9 @@ sub recurse_solve
 		$self->col_dom(\%primes);
 	}
 	# end optimized block
-	unless (keys %primes) {
+
+	unless (keys %primes)
+	{
 		return [ reverse sort @prefix ];
 	}
 	# Find the term with the fewest implicant covers
