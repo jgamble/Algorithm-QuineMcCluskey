@@ -1,6 +1,14 @@
 Revision history for Algorithm-QuineMcCluskey
 
 "deAlias"
+	2014-09-28
+	- 03run.t now tests against the correct values.
+	- The 'covers' attribute gets changed from ArrayRef[Int] to
+	  ArrayRef[Str].
+	- Changed find_essentials() to return the essentials hash instead
+	  of $self, as there is code in recursive_solve() that uses it
+	  in an inline fashion, and I'm not ready to touch that part
+	  of the code yet.
 	2014-09-21
 	- Added namespace::autoclean as recommended in the Moose Best
 	  Practices manual.
