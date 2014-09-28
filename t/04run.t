@@ -22,10 +22,12 @@ my %val1 = (
 	'xx1x1' => 2
 );
 
-my %r01 = $q->find_primes;
+$q->find_primes;
+my $r01 = $q->get_primes;
 
-my %r02 = $q->find_essentials;
+$q->find_essentials;
+my $r02 = $q->get_essentials;
 
-is_deeply(\%r02, \%val1, "finding essential prime implicants");
+is_deeply($r02, \%val1, "finding essential prime implicants");
 
 
