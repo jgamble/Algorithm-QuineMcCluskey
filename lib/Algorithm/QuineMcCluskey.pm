@@ -368,6 +368,8 @@ sub remel
 {
 	my $self = shift;
 	my ($el, $a) = @_;
+carp "remel: ", Data::Dumper->Dump([$el, $a], [qw(el, a)]);
+
 	my $pos = firstidx { $self->maskmatcher($el, $_) } @$a;
 	splice(@$a, $pos, 1) if $pos >= 0;
 	$a;
@@ -403,8 +405,7 @@ sub find_primes
 	#
 	# Dump here.
 	#
-	carp "    Dump of \@bits:\n";
-	carp Dumper(\@bits);
+	carp "    Dump of \@bits:", Data::Dumper->Dump([\@bits], [qw(bits)]);
 
 	#
 	# Now for each level, we look for terms that be absorbed into
@@ -479,8 +480,7 @@ sub find_primes
 		}
 	}
 
-	carp "    Dump of implicant table:\n";
-	carp Dumper(\%implicant);
+	carp "Dump of implicants: ", Data::Dumper->Dump([\%implicant], [qw(implicant)]);
 
 	#
 	# For each unmarked (value == 0) implicant, match it against the
@@ -493,8 +493,7 @@ sub find_primes
 	#
 	# Carp the primes.
 	#
-	carp "    Setting attribute primes with:\n";
-	carp Dumper(\%p);
+	carp "    Setting attribute primes with:\n", Data::Dumper->Dump([\%p], [qw(p)]);
 
 	$self->_set_primes( \%p );
 	return $self->get_primes;
@@ -512,6 +511,8 @@ sub row_dom
 	my $self = shift;
 	my $primes = shift;
 
+	carp "row_dom: primes hash before processing: ", Data::Dumper->Dump([$primes], [qw(primes)]);
+
 	$primes = { map {
 		my $o = $_;
 		(sum map {
@@ -520,6 +521,8 @@ sub row_dom
 			} grep { $_ ne $o } keys %$primes)
 		? () : ( $_ => $primes->{$_} )
 	} keys %$primes };
+
+	carp "row_dom: primes hash after processing: ", Data::Dumper->Dump([$primes], [qw(primes)]);
 
 	return $primes;
 }
@@ -534,6 +537,8 @@ sub col_dom
 {
 	my $self = shift;
 	my $primes = shift;
+
+	carp "col_dom: primes hash before processing: ", Data::Dumper->Dump([$primes], [qw(primes)]);
 
 	my %cols = columns $primes, $self->minmax_bit_terms();
 
@@ -557,8 +562,8 @@ sub col_dom
 		}
 	}
 
-	carp "    Primes hash after col_dom processing:\n";
-	carp Dumper($primes);
+	carp "col_dom: primes hash after processing: ", Data::Dumper->Dump([$primes], [qw(primes)]);
+
 	return $primes;
 }
 
@@ -597,8 +602,8 @@ carp "    For term '$term', term/prime list is (", join(", ", @tp), "), ";
 		}
 	}
 
-carp "    Setting essentials with:\n";
-carp Dumper(\%essentials);
+carp "    Setting essentials with: ", Data::Dumper->Dump([\%essentials], [qw(essentials)]);
+
 	$self->_set_essentials(\%essentials);
 	return %essentials;
 }
@@ -615,6 +620,8 @@ sub purge_essentials
 	my %ess = %{ shift() };
 	my $primes = shift;
 
+carp "purge_essentials(ess, primes): ", Data::Dumper->Dump([\%ess, $primes], ['%ess', '$primes']);
+
 	# Delete columns associated with this term
 	for my $col (keys %$primes)
 	{
@@ -622,6 +629,8 @@ sub purge_essentials
 	}
 
 	delete ${$primes}{$_} for keys %ess;
+
+carp "    After: ";
 	return $self;
 }
 
@@ -661,10 +670,16 @@ Main solution sub (wraps recurse_solve())
 
 =cut
 
-sub solve {
+sub solve
+{
 	my $self = shift;
 	$self->find_primes unless ($self->has_primes);
-	$self->_set_covers($self->recurse_solve($self->get_primes));
+
+	my $p = $self->get_primes;
+
+	carp "solve with primes: ", Data::Dumper->Dump([$p], [qw(p)]);
+
+	$self->_set_covers($self->recurse_solve($p));
 	$self->to_boolean();
 }
 
@@ -683,11 +698,17 @@ sub recurse_solve
 	my @prefix;
 	my @covers;
 
+carp "recurse_solve:";
+
 	# begin (slightly) optimized block : do not touch without good reason
 	my %ess = $self->find_essentials(\%primes);
 
+	carp " ", Data::Dumper->Dump([\%primes, \%ess], ['%primes', '%ess']);
+
 	$self->purge_essentials(\%ess, \%primes);
 	push @prefix, grep { $ess{$_} } keys %ess;
+
+carp "    prefix: [", join(", ", @prefix), "]\n";
 
 	$self->row_dom(\%primes);
 	$self->col_dom(\%primes);
@@ -703,10 +724,12 @@ sub recurse_solve
 	}
 	# end optimized block
 
-	unless (keys %primes)
-	{
-		return [ reverse sort @prefix ];
-	}
+carp "    After 'optimized' block:";
+carp "    prefix: [", join(", ", reverse sort @prefix), "]\n";
+
+
+	return [ reverse sort @prefix ] unless (keys %primes);
+
 	# Find the term with the fewest implicant covers
 	# Columns actually in %primes
 	my @t = grep {
