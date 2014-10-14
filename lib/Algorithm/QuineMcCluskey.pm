@@ -368,7 +368,7 @@ sub remel
 {
 	my $self = shift;
 	my ($el, $a) = @_;
-carp "remel: ", Data::Dumper->Dump([$el, $a], [qw(el, a)]);
+carp "remel: ", Data::Dumper->Dump([$el, $a], ['el', 'a']);
 
 	my $pos = firstidx { $self->maskmatcher($el, $_) } @$a;
 	splice(@$a, $pos, 1) if $pos >= 0;
@@ -630,7 +630,7 @@ carp "purge_essentials(ess, primes): ", Data::Dumper->Dump([\%ess, $primes], ['%
 
 	delete ${$primes}{$_} for keys %ess;
 
-carp "    After: ";
+carp "    After: purge_essentials(ess, primes): ", Data::Dumper->Dump([\%ess, $primes], ['%ess', '$primes']);
 	return $self;
 }
 
@@ -677,7 +677,7 @@ sub solve
 
 	my $p = $self->get_primes;
 
-	carp "solve with primes: ", Data::Dumper->Dump([$p], [qw(p)]);
+	carp "solve with primes: ", Data::Dumper->Dump([$p], ['p']);
 
 	$self->_set_covers($self->recurse_solve($p));
 	$self->to_boolean();
@@ -712,7 +712,7 @@ carp "    prefix: [", join(", ", @prefix), "]\n";
 
 	$self->row_dom(\%primes);
 	$self->col_dom(\%primes);
-
+my $lercount  = 0;
 	while (!is_LequivalentR([
 			[ keys %ess ] => [ %ess = $self->find_essentials(\%primes) ]
 			]))
@@ -721,10 +721,11 @@ carp "    prefix: [", join(", ", @prefix), "]\n";
 		push @prefix, grep { $ess{$_} } keys %ess;
 		$self->row_dom(\%primes);
 		$self->col_dom(\%primes);
+$lercount++;
 	}
 	# end optimized block
 
-carp "    After 'optimized' block:";
+carp "    After $lercount 'optimized' block runs:";
 carp "    prefix: [", join(", ", reverse sort @prefix), "]\n";
 
 
