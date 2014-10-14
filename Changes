@@ -1,6 +1,8 @@
 Revision history for Algorithm-QuineMcCluskey
 
 "deAlias"
+	2014-10-14
+	- Fixed 06run.t.
 	2014-09-28
 	- 03run.t now tests against the correct values.
 	- The 'covers' attribute gets changed from ArrayRef[Int] to
