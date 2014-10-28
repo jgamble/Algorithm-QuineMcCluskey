@@ -15,10 +15,10 @@ my $q = Algorithm::QuineMcCluskey->new(
 	dontcares => [ 2, 16, 19, 21, 24, 25 ]
 );
 
-my @val1 => [
-	q/(B'CE) + (C'E') + (AC') + (A'BDE)/
-];
+my @expected = (
+	q/(AC') + (A'BDE) + (B'CE) + (C'E')/
+);
 
 my @r01 = $q->solve;
-is_deeply(\@r01, \@val1, "getting Boolean expression");
+is_deeply(\@r01, \@expected, "getting Boolean expression");
 
