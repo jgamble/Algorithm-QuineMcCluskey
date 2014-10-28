@@ -511,7 +511,7 @@ sub row_dom
 	my $self = shift;
 	my $primes = shift;
 
-	carp "row_dom: primes hash before processing: ", Data::Dumper->Dump([$primes], [qw(primes)]);
+	#carp "row_dom: primes hash before processing: ", Data::Dumper->Dump([$primes], [qw(primes)]);
 
 	$primes = { map {
 		my $o = $_;
@@ -522,7 +522,7 @@ sub row_dom
 		? () : ( $_ => $primes->{$_} )
 	} keys %$primes };
 
-	carp "row_dom: primes hash after processing: ", Data::Dumper->Dump([$primes], [qw(primes)]);
+	#carp "row_dom: primes hash after processing: ", Data::Dumper->Dump([$primes], [qw(primes)]);
 
 	return $primes;
 }
@@ -538,7 +538,7 @@ sub col_dom
 	my $self = shift;
 	my $primes = shift;
 
-	carp "col_dom: primes hash before processing: ", Data::Dumper->Dump([$primes], [qw(primes)]);
+	#carp "col_dom: primes hash before processing: ", Data::Dumper->Dump([$primes], [qw(primes)]);
 
 	my %cols = columns $primes, $self->minmax_bit_terms();
 
@@ -562,7 +562,7 @@ sub col_dom
 		}
 	}
 
-	carp "col_dom: primes hash after processing: ", Data::Dumper->Dump([$primes], [qw(primes)]);
+	#carp "col_dom: primes hash after processing: ", Data::Dumper->Dump([$primes], [qw(primes)]);
 
 	return $primes;
 }
@@ -586,14 +586,14 @@ sub find_essentials
 
 	$self->clear_essentials;
 
-carp "find_essentials:\n";
+#carp "find_essentials:\n";
 
 	for my $term (@terms)
 	{
 		my @tp = grep {
 			grep { $_ eq $term } @{ $primes->{$_} } } @kp;
 
-carp "    For term '$term', term/prime list is (", join(", ", @tp), "), ";
+#carp "    For term '$term', term/prime list is (", join(", ", @tp), "), ";
 
 		# TODO: It would be nice to track the terms that make this essential
 		if (scalar @tp == 1)
@@ -602,7 +602,7 @@ carp "    For term '$term', term/prime list is (", join(", ", @tp), "), ";
 		}
 	}
 
-carp "    Setting essentials with: ", Data::Dumper->Dump([\%essentials], [qw(essentials)]);
+#carp "    Setting essentials with: ", Data::Dumper->Dump([\%essentials], [qw(essentials)]);
 
 	$self->_set_essentials(\%essentials);
 	return %essentials;
@@ -620,7 +620,7 @@ sub purge_essentials
 	my %ess = %{ shift() };
 	my $primes = shift;
 
-carp "purge_essentials(ess, primes): ", Data::Dumper->Dump([\%ess, $primes], ['%ess', '$primes']);
+#carp "purge_essentials(ess, primes): ", Data::Dumper->Dump([\%ess, $primes], ['%ess', '$primes']);
 
 	# Delete columns associated with this term
 	for my $col (keys %$primes)
@@ -630,7 +630,7 @@ carp "purge_essentials(ess, primes): ", Data::Dumper->Dump([\%ess, $primes], ['%
 
 	delete ${$primes}{$_} for keys %ess;
 
-carp "    After: purge_essentials(ess, primes): ", Data::Dumper->Dump([\%ess, $primes], ['%ess', '$primes']);
+#carp "    After: purge_essentials(ess, primes): ", Data::Dumper->Dump([\%ess, $primes], ['%ess', '$primes']);
 	return $self;
 }
 
@@ -643,25 +643,51 @@ Generating Boolean expressions
 sub to_boolean
 {
 	my $self = shift;
+	my @terms = @_;
 	my @boolean;
 
+	#
 	# Group separators (grouping character pairs)
+	#
 	my @gs = ('(', ')');
 
-	# Group joiner, element joiner, match condition
-	my ($gj, $ej, $cond) = $self->has_min_bits ? (' + ', '', 1) : ('', ' + ', 0);
+	#
+	# Group joiner string.
+	#
+	my $gj = $self->has_min_bits ? ' + ': '';
 	tie my $var, 'Tie::Cycle', [ @{$self->vars}[0 .. $self->width - 1] ];
 
 	push @boolean,
-		join $gj, map { $gs[0] . (
-			join $ej, map {
-				my $var = $var;	# Activate cycle even if not used
-				$_ eq $self->dc ? () : $var . ($_ == $cond ? '' : "'")
-			} stl $_) . $gs[1]
-		} @$_
-		for ($self->get_covers);
+		join $gj,
+			map { $gs[0] . $self->boolean_term($_) . $gs[1] } @$_
+		for (@terms);
+
+	carp "to_boolean called with:\n", Data::Dumper->Dump([\@terms], ['@terms']);
+	carp "to_boolean returns with:\n", Data::Dumper->Dump([\@boolean], ['@boolean']);
 
 	return @boolean;
+}
+
+#
+# Convert an individual term or prime implicant to a boolean variable string.
+#
+sub boolean_term
+{
+	my $self = shift;
+	my $term = $_[0];
+
+	#
+	# Element joiner and match condition
+	#
+	my ($ej, $cond) = $self->has_min_bits ? ('', 1) : (' + ', 0);
+	tie my $var, 'Tie::Cycle', [ @{$self->vars}[0 .. $self->width - 1] ];
+
+	my $varstring = join $ej, map {
+			my $var = $var;	# Activate cycle even if not used
+			$_ eq $self->dc ? () : $var . ($_ == $cond ? '' : "'")
+		} stl $term;
+
+	return $varstring;
 }
 
 =item solve
@@ -680,7 +706,7 @@ sub solve
 	carp "solve with primes: ", Data::Dumper->Dump([$p], ['p']);
 
 	$self->_set_covers($self->recurse_solve($p));
-	$self->to_boolean();
+	$self->to_boolean($self->get_covers);
 }
 
 =item recurse_solve

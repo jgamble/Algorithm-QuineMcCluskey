@@ -1,6 +1,16 @@
 Revision history for Algorithm-QuineMcCluskey
 
 "deAlias"
+	2014-10-28
+	- Changed to_boolean() to take an argument list instead of
+	  automatically using the covers attribute internally. This
+	  will allow the user (or the test files) to check terms before
+	  or during minimization.
+	- Separated out the var-by-var code from to_boolean(). Now it
+	  calls a new method boolean_term() for each individual term
+	  in the covers (or other) list, for easier output manipulation.
+	- Put the expected solution in 06run.t in order, so that the
+	  comparison with the returned solution will make sense.
 	2014-10-14
 	- Fixed 06run.t.
 	2014-09-28
@@ -32,7 +42,7 @@ Revision history for Algorithm-QuineMcCluskey
 	- Check if there's an overlap between the don't-care list and
 	  the min or max term list, and call it an error if there is.
 	- Attributes actually check the type now (thanks Moose) so
-	  the qw operators around the term lists are not removed in
+	  the qw operators around the term lists are now removed in
 	  the documentation and in the test files.
 	2014-09-01
 	- Start work on col_dom() -- Mostly carp stmts for now.
