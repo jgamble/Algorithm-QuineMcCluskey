@@ -14,10 +14,10 @@ my $q = Algorithm::QuineMcCluskey->new(
 	minterms => [ 1, 3, 7, 11, 12, 13, 14, 15 ]
 );
 
-my @val1	=> [
+my @expected = (
 	q/(AB) + (A'B'D) + (CD)/
-];
+);
 
 my @r01 = $q->solve;
-is_deeply(\@r01, \@val1, "getting Boolean expression");
+is_deeply(\@r01, \@expected, "getting Boolean expression");
 
