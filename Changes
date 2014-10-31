@@ -1,6 +1,11 @@
 Revision history for Algorithm-QuineMcCluskey
 
 "deAlias"
+	2014-10-31
+	- Added columnstring attribute. Adapted the bitstring code
+	  for setting and getting it.
+	- Changed minterms, maxterms, and dontcares from 'ro' to
+	  'rw', allowing the columnstring attribute to set them.
 	2014-10-30
 	- Added bitstring() method to return the output column of
 	  the function. May be used for creating other truth table
