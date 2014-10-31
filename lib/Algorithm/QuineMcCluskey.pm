@@ -14,21 +14,24 @@ use Moose;
 use namespace::autoclean;
 
 use Moose::Util::TypeConstraints;
-use Carp qw(carp croak);
-use Data::Dumper;
+use Carp qw(croak);
 
 use Algorithm::QuineMcCluskey::Util qw(bin columns diffpos hdist stl uniqels);
 use List::Compare::Functional qw(:main is_LequivalentR);
 use List::MoreUtils qw(firstidx);
 use List::Util qw(sum min);
 use Tie::Cycle;
+use Smart::Comments q(####);
 
 #
 # Required attributes to create the object.
 #
 # 1. 'width' is absolutely required (handled via Moose).
 #
-# 2. Either 'minterms' or 'maxterms' is used, but not both.
+# 2. If 'columnstring' is provided, 'minterms', 'maxterms', and
+#    'dontcares' can't be used.
+#
+# 3. Either 'minterms' or 'maxterms' is used, but not both.
 #
 # 4. 'dontcares' are used with either 'minterms' or 'maxterms', but
 #    cannot be used by itself.
@@ -38,16 +41,22 @@ has 'width'	=> (
 );
 
 has 'minterms'	=> (
-	isa => 'ArrayRef[Int]', is => 'ro', required => 0,
+	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
 	predicate => 'has_minterms'
 );
 has 'maxterms'	=> (
-	isa => 'ArrayRef[Int]', is => 'ro', required => 0,
+	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
 	predicate => 'has_maxterms'
 );
 has 'dontcares'	=> (
-	isa => 'ArrayRef[Int]', is => 'ro', required => 0,
+	isa => 'ArrayRef[Int]', is => 'rw', required => 0,
 	predicate => 'has_dontcares'
+);
+has 'columnstring'	=> (
+	isa => 'Str', is => 'ro', required => 0,
+	predicate => 'has_columnstring',
+	lazy => 1,
+	builder => 'to_columnstring'
 );
 
 #
@@ -191,8 +200,21 @@ sub BUILD
 	croak "Mixing minterms and maxterms not allowed"
 		if ($self->has_minterms and $self->has_maxterms);
 
-	croak "Must supply either minterms or maxterms"
-		unless ($self->has_minterms or $self->has_maxterms);
+	if ($self->has_columnstring)
+	{
+		croak "No other terms necessary when using the columnstring attribute"
+			if ($self->has_minterms or $self->has_maxterms or $self->has_dontcares);
+
+		my $cl = length $self->columnstring;
+		my $wl = 1 << $self->width;
+
+		croak "Columnstring length is off by ", $wl - $cl unless ($wl == $cl);
+	}
+	else
+	{
+		croak "Must supply either minterms or maxterms"
+			unless ($self->has_minterms or $self->has_maxterms);
+	}
 
 	#
 	# Do we really need to check if they've set the
@@ -205,6 +227,13 @@ sub BUILD
 	# And make sure we have enough variable names.
 	#
 	croak "Not enough variable names for your width" if (scalar @{$self->vars} < $self->width);
+
+	if ($self->has_columnstring)
+	{
+		my($min_ref, $max_ref, $dc_ref) = $self->break_columnstring();
+		$self->minterms($min_ref) if (scalar @{$min_ref} );
+		$self->dontcares($dc_ref) if (scalar @{$dc_ref} );
+	}
 
 	if ($self->has_minterms)
 	{
@@ -250,16 +279,16 @@ sub BUILD
 	return $self;
 }
 
-sub bitstring
+sub to_columnstring
 {
 	my $self = shift;
 	my ($dfltbit, $setbit) = ($self->has_min_bits)? qw(0 1): qw(1 0);
+	my @bitlist = ($dfltbit) x (1 << $self->width);
+
 	my @terms;
 
 	push @terms, @{$self->minterms} if ($self->has_minterms);
 	push @terms, @{$self->maxterms} if ($self->has_maxterms);
-
-	my @bitlist = ($dfltbit) x (1 << $self->width);
 
 	map {$bitlist[$_] = $setbit} @terms;
 
@@ -269,6 +298,25 @@ sub bitstring
 	}
 
 	return join "", @bitlist;
+}
+
+sub break_columnstring
+{
+	my $self = shift;
+	my @bitlist = stl $self->columnstring;
+	my $x = 0;
+
+	my(@maxterms, @minterms, @dontcares);
+
+	for (@bitlist)
+	{
+		push @minterms, $x if ($_ eq '1');
+		push @maxterms, $x if ($_ eq '0');
+		push @dontcares, $x if ($_ eq $self->dc);
+		$x++;
+	}
+
+	return (\@minterms, \@maxterms, \@dontcares);
 }
 
 sub all_bit_terms
@@ -322,11 +370,13 @@ sub remel
 {
 	my $self = shift;
 	my ($el, $a) = @_;
-carp "remel: ", Data::Dumper->Dump([$el, $a], ['el', 'a']);
+
+	#### remel() removing: $el
+	#### remel() from array ref: $a
 
 	my $pos = firstidx { $self->maskmatcher($el, $_) } @$a;
 	splice(@$a, $pos, 1) if $pos >= 0;
-	$a;
+	return $a;
 }
 
 =item find_primes
@@ -342,11 +392,6 @@ sub find_primes
 	my %implicant;
 
 	#
-	# Entering the sub message.
-	#
-	carp "find_primes:\n";
-
-	#
 	# Separate into bins based on number of 1's (the weight).
 	#
 	for ($self->all_bit_terms())
@@ -356,9 +401,8 @@ sub find_primes
 	}
 
 	#
-	# Dump here.
+	#### find_primes() group the bit terms by bit count: @bits
 	#
-	carp "    Dump of \@bits:", Data::Dumper->Dump([\@bits], [qw(bits)]);
 
 	#
 	# Now for each level, we look for terms that be absorbed into
@@ -433,8 +477,9 @@ sub find_primes
 		}
 	}
 
-	carp "Dump of implicants -- we're interested in the 0-valued ones:\n",
-		Data::Dumper->Dump([\%implicant], [qw(implicant)]);
+	#
+	#### find_primes() implicant hash (we use the unmarked [i.e., 0] ones: %implicant
+	#
 
 	#
 	# For each unmarked (value == 0) implicant, match it against the
@@ -445,12 +490,11 @@ sub find_primes
 		grep { !$implicant{$_} } keys %implicant;
 
 	#
-	# Carp the primes.
+	#### find_primes() -- attributes primes: %p
 	#
-	carp "    Setting attribute primes with:\n", Data::Dumper->Dump([\%p], [qw(p)]);
 
 	$self->_set_primes( \%p );
-	return $self->get_primes;
+	return $self;
 }
 
 
@@ -465,7 +509,7 @@ sub row_dom
 	my $self = shift;
 	my $primes = shift;
 
-	#carp "row_dom: primes hash before processing: ", Data::Dumper->Dump([$primes], [qw(primes)]);
+	#### row_dom() primes hash before processing: $primes
 
 	$primes = { map {
 		my $o = $_;
@@ -476,7 +520,7 @@ sub row_dom
 		? () : ( $_ => $primes->{$_} )
 	} keys %$primes };
 
-	#carp "row_dom: primes hash after processing: ", Data::Dumper->Dump([$primes], [qw(primes)]);
+	#### row_dom() primes hash after processing: $primes
 
 	return $primes;
 }
@@ -492,7 +536,7 @@ sub col_dom
 	my $self = shift;
 	my $primes = shift;
 
-	#carp "col_dom: primes hash before processing: ", Data::Dumper->Dump([$primes], [qw(primes)]);
+	#### col_dom() primes hash before processing: $primes
 
 	my %cols = columns $primes, $self->minmax_bit_terms();
 
@@ -511,12 +555,11 @@ sub col_dom
 				and !is_LequivalentR([ $cols{$col1} => $cols{$col2} ]))
 			{
 				$self->remel($col2, $primes->{$_}) for keys %$primes;
-				carp "$col1 is a proper subset of $col2 (<-- removed)";
 			}
 		}
 	}
 
-	#carp "col_dom: primes hash after processing: ", Data::Dumper->Dump([$primes], [qw(primes)]);
+	#### col_dom() primes hash after processing: $primes
 
 	return $primes;
 }
@@ -540,14 +583,15 @@ sub find_essentials
 
 	$self->clear_essentials;
 
-#carp "find_essentials:\n";
-
 	for my $term (@terms)
 	{
 		my @tp = grep {
 			grep { $_ eq $term } @{ $primes->{$_} } } @kp;
 
-#carp "    For term '$term', term/prime list is (", join(", ", @tp), "), ";
+		#
+		### Examining term: $term
+		### Prime list for term is: @tp
+		#
 
 		# TODO: It would be nice to track the terms that make this essential
 		if (scalar @tp == 1)
@@ -556,7 +600,7 @@ sub find_essentials
 		}
 	}
 
-#carp "    Setting essentials with: ", Data::Dumper->Dump([\%essentials], [qw(essentials)]);
+	#### "find_essentials() found: %essentials
 
 	$self->_set_essentials(\%essentials);
 	return %essentials;
@@ -574,7 +618,8 @@ sub purge_essentials
 	my %ess = %{ shift() };
 	my $primes = shift;
 
-#carp "purge_essentials(ess, primes): ", Data::Dumper->Dump([\%ess, $primes], ['%ess', '$primes']);
+	#### purge_essentials() called with essentials hash: ", %ess
+	#### purge_essentials() called with primes hash ref: ", $primes
 
 	# Delete columns associated with this term
 	for my $col (keys %$primes)
@@ -584,7 +629,8 @@ sub purge_essentials
 
 	delete ${$primes}{$_} for keys %ess;
 
-#carp "    After: purge_essentials(ess, primes): ", Data::Dumper->Dump([\%ess, $primes], ['%ess', '$primes']);
+	#### purge_essentials() returning having set primes to: $primes
+
 	return $self;
 }
 
@@ -601,6 +647,8 @@ sub to_boolean
 	my @boolean;
 
 	#
+	#### "to_boolean() called with: @terms
+	#
 	# Group separators (grouping character pairs)
 	#
 	my @gs = ('(', ')');
@@ -615,8 +663,7 @@ sub to_boolean
 			map { $gs[0] . $self->to_boolean_term($_) . $gs[1] } @$_
 		for (@terms);
 
-	carp "to_boolean called with:\n", Data::Dumper->Dump([\@terms], ['@terms']);
-	carp "to_boolean returns with:\n", Data::Dumper->Dump([\@boolean], ['@boolean']);
+	#### to_boolean() returns @boolean
 
 	return @boolean;
 }
@@ -656,10 +703,9 @@ sub solve
 
 	my $p = $self->get_primes;
 
-	carp "solve with primes: ", Data::Dumper->Dump([$p], ['p']);
-
 	$self->_set_covers($self->recurse_solve($p));
-	$self->to_boolean($self->get_covers);
+
+	return $self->to_boolean($self->get_covers);
 }
 
 =item recurse_solve
@@ -677,21 +723,23 @@ sub recurse_solve
 	my @prefix;
 	my @covers;
 
-carp "recurse_solve:";
+	#
+	#### recursive_solve() called with primes: %primes
+	#
 
-	# begin (slightly) optimized block : do not touch without good reason
+	#
+	### Begin (slightly) optimized block : do not touch without good reason
+	#
 	my %ess = $self->find_essentials(\%primes);
-
-	carp " ", Data::Dumper->Dump([\%primes, \%ess], ['%primes', '%ess']);
 
 	$self->purge_essentials(\%ess, \%primes);
 	push @prefix, grep { $ess{$_} } keys %ess;
 
-carp "    prefix: [", join(", ", @prefix), "]\n";
+	#### recursive_solve() \@prefix now: @prefix
 
 	$self->row_dom(\%primes);
 	$self->col_dom(\%primes);
-my $lercount  = 0;
+
 	while (!is_LequivalentR([
 			[ keys %ess ] => [ %ess = $self->find_essentials(\%primes) ]
 			]))
@@ -700,18 +748,19 @@ my $lercount  = 0;
 		push @prefix, grep { $ess{$_} } keys %ess;
 		$self->row_dom(\%primes);
 		$self->col_dom(\%primes);
-$lercount++;
 	}
-	# end optimized block
 
-carp "    After $lercount 'optimized' block runs:";
-carp "    prefix: [", join(", ", reverse sort @prefix), "]\n";
-
+	#
+	### end optimized block
+	#### recursive_solve(): Prefixes acquired: reverse sort @prefix
+	#
 
 	return [ reverse sort @prefix ] unless (keys %primes);
 
+	#
 	# Find the term with the fewest implicant covers
 	# Columns actually in %primes
+	#
 	my @t = grep {
 		my $o = $_;
 		sum map { sum map { $_ eq $o } @$_ } values %primes
@@ -720,6 +769,7 @@ carp "    prefix: [", join(", ", reverse sort @prefix), "]\n";
 	# Flip table so terms are keys
 	my %ic = columns \%primes, @t;
 	my $term = (sort { @{ $ic{$a} } <=> @{ $ic{$b} } } keys %ic)[0];
+
 	# Rows of %primes that contain $term
 	my @ta = grep { sum map { $_ eq $term } @{ $primes{$_} } } keys %primes;
 	
@@ -747,7 +797,9 @@ carp "    prefix: [", join(", ", reverse sort @prefix), "]\n";
 		push @covers, @results;
 	}
 
+	#
 	# Weed out expensive solutions
+	#
 	sub cost { sum map { /$self->dc/ ? 0 : 1 } stl join '', @{ shift() } }
 	my $mincost = min map { cost $_ } @covers;
 	@covers = grep { cost($_) == $mincost } @covers if $self->minonly;
