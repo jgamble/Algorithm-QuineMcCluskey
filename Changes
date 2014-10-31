@@ -1,6 +1,10 @@
 Revision history for Algorithm-QuineMcCluskey
 
 "deAlias"
+	2014-10-30
+	- Added bitstring() method to return the output column of
+	  the function. May be used for creating other truth table
+	  columns.
 	2014-10-28
 	- Changed to_boolean() to take an argument list instead of
 	  automatically using the covers attribute internally. This
@@ -29,12 +33,8 @@ Revision history for Algorithm-QuineMcCluskey
 	2014-09-19
 	- For internal clarity, renamed allterms() to all_bit_terms(),
 	  and minmax_terms() to minmax_bit_terms().
-	- Added methods dual() and complement() to return new objects
-	  that are the dual and complement of the existing object.
 	- Fixed a couple of bugs in BUILD() where the minterms were
 	  used where maxterms was the correct usage.
-	- Added the 'characteristic' attribute, and checked for its
-	  correct usage in BUILD(). Not actually implemented yet though.
 	- Methods maskmatch() and maskmatches() combined into a single
 	  method (one called the other, but there was no reason for the
 	  separate internal function, and it saved on re-creating some
