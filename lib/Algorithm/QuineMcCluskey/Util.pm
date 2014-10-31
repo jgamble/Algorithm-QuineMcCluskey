@@ -12,7 +12,7 @@ use warnings;
 
 use Data::Dumper;
 use List::MoreUtils qw(pairwise firstidx);
-use List::Util qw(sum min);
+use List::Util qw(sum);
 
 use base qw(Exporter);
 our @EXPORT = qw(
