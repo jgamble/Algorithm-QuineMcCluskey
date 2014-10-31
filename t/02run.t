@@ -1,14 +1,13 @@
 #!/usr/bin/perl -w
 use strict;
 use Algorithm::QuineMcCluskey;
-use Carp;
 
 
 #
 # Testing code starts here
 #
 
-use Test::More tests => 2;
+use Test::More tests => 3;
 
 my $q = Algorithm::QuineMcCluskey->new(
 	title	=> "Simple 4-minterm problem",
@@ -17,7 +16,7 @@ my $q = Algorithm::QuineMcCluskey->new(
 	dc => "x"
 );
 
-my %val1 = (
+my %expected_primes = (
 	'000' => [ '000' ],
 	'x11' => [ '011', '111' ],
 	'1x1' => [ '101', '111' ],
@@ -35,7 +34,7 @@ my %val2 = (
 #
 $q->find_primes;
 my $hashref = $q->get_primes;
-is_deeply($hashref, \%val1, "finding prime implicants");
+is_deeply($hashref, \%expected_primes, "finding prime implicants");
 
 #
 # 'finding essential prime implicants',
@@ -44,3 +43,5 @@ $q->find_essentials;
 $hashref = $q->get_essentials;
 is_deeply($hashref, \%val2, "finding essential prime implicants");
 
+my $bitstring = $q->bitstring;
+ok($bitstring eq "10010101", "Unexpected bitstring.");
