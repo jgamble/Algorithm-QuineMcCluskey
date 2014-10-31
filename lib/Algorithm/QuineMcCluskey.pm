@@ -28,19 +28,15 @@ use Tie::Cycle;
 #
 # 1. 'width' is absolutely required (handled via Moose).
 #
-# 2. if 'characteristic' is present, 'dontcares', 'minterms', and
-#    'maxterms' cannot be used.
-#
-# 3. if either 'minterms' or 'maxterms' is used (but not both),
-#    then 'characteristic' can't be used.
+# 2. Either 'minterms' or 'maxterms' is used, but not both.
 #
 # 4. 'dontcares' are used with either 'minterms' or 'maxterms', but
 #    cannot be used by itself.
 #
-has 'dontcares'	=> (
-	isa => 'ArrayRef[Int]', is => 'ro', required => 0,
-	predicate => 'has_dontcares'
+has 'width'	=> (
+	isa => 'Int', is => 'ro', required => 1
 );
+
 has 'minterms'	=> (
 	isa => 'ArrayRef[Int]', is => 'ro', required => 0,
 	predicate => 'has_minterms'
@@ -49,12 +45,9 @@ has 'maxterms'	=> (
 	isa => 'ArrayRef[Int]', is => 'ro', required => 0,
 	predicate => 'has_maxterms'
 );
-has 'characteristic' => (
-	isa => 'String', is => 'ro', required => 0,
-	predicate => 'has_characteristic'
-);
-has 'width'	=> (
-	isa => 'Int', is => 'ro', required => 1
+has 'dontcares'	=> (
+	isa => 'ArrayRef[Int]', is => 'ro', required => 0,
+	predicate => 'has_dontcares'
 );
 
 #
@@ -68,17 +61,17 @@ has 'dc'	=> (
 	isa => 'Str', is => 'rw',
 	default => '-'
 );
-has 'minonly'	=> (
-	isa => 'Bool', is => 'rw',
-	default => 1
-);
-has 'sortterms'	=> (
-	isa => 'Bool', is => 'rw',
-	default => 1
-);
 has 'vars'	=> (
 	isa => 'ArrayRef[Str]', is => 'rw', required => 0,
 	default => sub{['A' .. 'Z']}
+);
+
+#
+# Change behavior.
+#
+has ['minonly', 'sortterms'] => (
+	isa => 'Bool', is => 'rw',
+	default => 1
 );
 
 #
@@ -198,25 +191,21 @@ sub BUILD
 	croak "Mixing minterms and maxterms not allowed"
 		if ($self->has_minterms and $self->has_maxterms);
 
-	if ($self->has_characteristic)
-	{
-		croak "No other terms necessary when using the characteristic attribute"
-			if ($self->has_minterms or $self->has_maxterms or $self->has_dontcares);
-	}
-	else
-	{
-		croak "Must supply either minterms or maxterms"
-			unless ($self->has_minterms or $self->has_maxterms);
-	}
+	croak "Must supply either minterms or maxterms"
+		unless ($self->has_minterms or $self->has_maxterms);
 
 	#
-	# Convert terms to strings of bits as needed.
+	# Do we really need to check if they've set the
+	# don't-care character to '0' or '1'? Oh well...
 	#
-	if ($self->has_characteristic)
-	{
-		croak "Not yet implemented";
-		# Set minterms here.
-	}
+	croak "Don't-care must be a single character" if (length $self->dc != 1);
+	croak "The don't-care character can not be '0' or '1'" if ($self->dc =~ qr([01]));
+
+	#
+	# And make sure we have enough variable names.
+	#
+	croak "Not enough variable names for your width" if (scalar @{$self->vars} < $self->width);
+
 	if ($self->has_minterms)
 	{
 		@terms = @{$self->minterms};
@@ -261,60 +250,25 @@ sub BUILD
 	return $self;
 }
 
-sub complement
+sub bitstring
 {
 	my $self = shift;
-	my %paramset;
+	my ($dfltbit, $setbit) = ($self->has_min_bits)? qw(0 1): qw(1 0);
+	my @terms;
 
-	my $termtype = ($self->has_minterms)? "minterms": "maxterms";
+	push @terms, @{$self->minterms} if ($self->has_minterms);
+	push @terms, @{$self->maxterms} if ($self->has_maxterms);
 
-	my $highterm = (1 << $self->width) - 1;
-	my @allterms = (0 .. $highterm);
-	my @terms = @{$self->{$termtype}};
+	my @bitlist = ($dfltbit) x (1 << $self->width);
 
-	$paramset{$termtype} = [get_complement(\@terms, \@allterms)];
-
-	$paramset{dontcares} = $self->dontcares if ($self->has_dontcares);
-
-	return $self->makenew(%paramset);
-}
-
-#
-# Return a new object (via complement()) that is the dual of this object's state.
-#
-sub dual
-{
-	my $self = shift;
-	my %paramset;
-
-	my $termtype = ($self->has_minterms)? "minterms": "maxterms";
-
-	my $highterm = (1 << $self->width) - 1;
-	my @allterms = (0 .. $highterm);
-	my @terms = map { $highterm - $_} @{$self->{$termtype} };
-
-	$paramset{$termtype} = [get_complement(\@terms, \@allterms)];
+	map {$bitlist[$_] = $setbit} @terms;
 
 	if ($self->has_dontcares)
 	{
-		@terms = map { $highterm - $_} @{$self->dontcares};
-		$paramset{dontcares} = [@terms];
+		map {$bitlist[$_] = $self->dc} (@{ $self->dontcares});
 	}
 
-	return $self->makenew(%paramset);
-}
-
-sub makenew
-{
-	my $self = shift;
-	my %paramset = @_;
-
-	for my $k (qw(dc title minonly sortterms vars))
-	{
-		$paramset{$k} = $self->{$k} unless (exists $paramset{$k});
-	}
-
-	return Algorithm::QuineMcCluskey->new(%paramset);
+	return join "", @bitlist;
 }
 
 sub all_bit_terms
@@ -398,7 +352,6 @@ sub find_primes
 	for ($self->all_bit_terms())
 	{
 		my $l = sum stl $_;
-		carp "    $_ : $l bits set.";
 		push  @{$bits[0][ $l ]}, $_;
 	}
 
@@ -480,7 +433,8 @@ sub find_primes
 		}
 	}
 
-	carp "Dump of implicants: ", Data::Dumper->Dump([\%implicant], [qw(implicant)]);
+	carp "Dump of implicants -- we're interested in the 0-valued ones:\n",
+		Data::Dumper->Dump([\%implicant], [qw(implicant)]);
 
 	#
 	# For each unmarked (value == 0) implicant, match it against the
@@ -655,11 +609,10 @@ sub to_boolean
 	# Group joiner string.
 	#
 	my $gj = $self->has_min_bits ? ' + ': '';
-	tie my $var, 'Tie::Cycle', [ @{$self->vars}[0 .. $self->width - 1] ];
 
 	push @boolean,
 		join $gj,
-			map { $gs[0] . $self->boolean_term($_) . $gs[1] } @$_
+			map { $gs[0] . $self->to_boolean_term($_) . $gs[1] } @$_
 		for (@terms);
 
 	carp "to_boolean called with:\n", Data::Dumper->Dump([\@terms], ['@terms']);
@@ -671,7 +624,7 @@ sub to_boolean
 #
 # Convert an individual term or prime implicant to a boolean variable string.
 #
-sub boolean_term
+sub to_boolean_term
 {
 	my $self = shift;
 	my $term = $_[0];
