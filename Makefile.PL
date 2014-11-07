@@ -9,7 +9,7 @@ WriteMakefile(
     ABSTRACT_FROM       => 'lib/Algorithm/QuineMcCluskey.pm',
     PL_FILES            => {},
     PREREQ_PM => {
-        'Alias' => 0,
+        'Moose' => 0,
         'Carp' => 0,
 		'Data::Dumper' => 0,
         'List::Compare::Functional' => 0,

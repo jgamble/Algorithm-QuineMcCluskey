@@ -12,16 +12,14 @@ use warnings;
 
 use Data::Dumper;
 use List::MoreUtils qw(pairwise firstidx);
-use List::Util qw(sum min);
+use List::Util qw(sum);
 
 use base qw(Exporter);
 our @EXPORT = qw(
-	bin columns diffpos diffposes hdist maskmatch maskmatches remel stl tobit
-	uniqels
+	bin columns diffpos diffposes hdist stl uniqels
 );
 our @EXPORT_OK = qw(
-	bin columns diffpos diffposes hdist maskmatch maskmatches remel stl tobit
-	uniqels
+	bin columns diffpos diffposes hdist stl uniqels
 );
 
 =head1 VERSION
@@ -45,9 +43,7 @@ Algorithm::QuineMcCluskey.
 sub uniqels (@);
 sub columns ($@);
 sub diffpos ($$);
-sub tobit ($$);
 sub bin ($);
-sub remel ($$);
 sub diffposes;
 sub stl ($);
 
@@ -91,49 +87,6 @@ Wrap oct() to provide easy conversion of a binary string to a number
 =cut
 
 sub bin ($) { oct "0b" . shift }
-
-=item tobit
-
-Convert a number to an n-wide string of bits representing it
-
-=cut
-
-sub tobit ($$) { substr(unpack("B32", pack("N", shift)), -shift) }
-
-=item maskmatch
-
-Returns true if a mask matches a minterm, false otherwise.
-
-=cut
-
-sub maskmatch {
-	my ($mask, $term) = @_;
-	(my $mask0 = $mask) =~ s/$::dc/0/g;
-	(my $mask1 = $mask) =~ s/$::dc/1/g;
-	((bin $mask0 & bin $term) == bin $mask0) &&
-		((bin $mask1 & bin $term) == bin $term)
-}
-
-=item maskmatches
-
-Returns the elements that match a mask, selected from an array
-
-=cut
-
-sub maskmatches ($@) { my $m = shift; grep { maskmatch($m, $_) } @_ }
-
-=item remel
-
-Remove a value from an arrayref if it matches a mask
-
-=cut
-
-sub remel ($$) {
-	my ($el, $a) = @_;
-	my $pos = firstidx { maskmatch($el, $_) } @$a;
-	splice(@$a, $pos, 1) if $pos >= 0;
-	$a;
-}
 
 =item diffpos
 
