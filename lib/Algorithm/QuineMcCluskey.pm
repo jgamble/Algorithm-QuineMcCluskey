@@ -13,7 +13,6 @@ use 5.008003;
 use Moose;
 use namespace::autoclean;
 
-use Moose::Util::TypeConstraints;
 use Carp qw(croak);
 
 use Algorithm::QuineMcCluskey::Util qw(bin columns diffpos hdist stl uniqels);
@@ -21,7 +20,7 @@ use List::Compare::Functional qw(:main is_LequivalentR);
 use List::MoreUtils qw(firstidx);
 use List::Util qw(sum min);
 use Tie::Cycle;
-use Smart::Comments q(####);
+#use Smart::Comments q(####);
 
 #
 # Required attributes to create the object.
@@ -231,6 +230,11 @@ sub BUILD
 	if ($self->has_columnstring)
 	{
 		my($min_ref, $max_ref, $dc_ref) = $self->break_columnstring();
+
+		#### min_ref: $min_ref
+		#### max_ref: $max_ref
+		#### don't cars: $dc_ref
+
 		$self->minterms($min_ref) if (scalar @{$min_ref} );
 		$self->dontcares($dc_ref) if (scalar @{$dc_ref} );
 	}
@@ -279,6 +283,10 @@ sub BUILD
 	return $self;
 }
 
+#
+# Return a string made up of the function column. Position 0 in the string is
+# the 0th row of the column, and so on.
+#
 sub to_columnstring
 {
 	my $self = shift;
@@ -300,6 +308,10 @@ sub to_columnstring
 	return join "", @bitlist;
 }
 
+#
+# Take a column string and return array refs usable as parameters for
+# minterm, maxterm, and don't-care attributes.
+#
 sub break_columnstring
 {
 	my $self = shift;
@@ -586,14 +598,16 @@ sub find_essentials
 	for my $term (@terms)
 	{
 		my @tp = grep {
-			grep { $_ eq $term } @{ $primes->{$_} } } @kp;
+				grep { $_ eq $term } @{ $primes->{$_} }
+			} @kp;
 
 		#
 		### Examining term: $term
 		### Prime list for term is: @tp
 		#
 
-		# TODO: It would be nice to track the terms that make this essential
+		# TODO: It would be nice to track the terms that make
+		# this essential
 		if (scalar @tp == 1)
 		{
 			$essentials{$tp[0]}++;
@@ -647,7 +661,7 @@ sub to_boolean
 	my @boolean;
 
 	#
-	#### "to_boolean() called with: @terms
+	#### to_boolean() called with: @terms
 	#
 	# Group separators (grouping character pairs)
 	#
