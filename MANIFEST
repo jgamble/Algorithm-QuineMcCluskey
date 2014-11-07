@@ -7,11 +7,8 @@ README
 lib/Algorithm/QuineMcCluskey.pm
 lib/Algorithm/QuineMcCluskey/Util.pm
 t/00-load.t
-t/01run.t
-t/02run.t
-t/03run.t
-t/04run.t
-t/05run.t
-t/06run.t
+t/01-object.t
+t/02-simple.t
+t/05-solve.t
 t/pod-coverage.t
 t/pod.t
