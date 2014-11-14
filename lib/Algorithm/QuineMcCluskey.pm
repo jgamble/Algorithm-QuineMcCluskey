@@ -20,7 +20,7 @@ use List::Compare::Functional qw(:main is_LequivalentR);
 use List::MoreUtils qw(firstidx);
 use List::Util qw(sum min);
 use Tie::Cycle;
-#use Smart::Comments q(####);
+use Smart::Comments qw(#####);
 
 #
 # Required attributes to create the object.
@@ -231,9 +231,9 @@ sub BUILD
 	{
 		my($min_ref, $max_ref, $dc_ref) = $self->break_columnstring();
 
-		#### min_ref: $min_ref
-		#### max_ref: $max_ref
-		#### don't cars: $dc_ref
+		### min_ref: $min_ref
+		### max_ref: $max_ref
+		### don't cars: $dc_ref
 
 		$self->minterms($min_ref) if (scalar @{$min_ref} );
 		$self->dontcares($dc_ref) if (scalar @{$dc_ref} );
@@ -413,7 +413,7 @@ sub find_primes
 	}
 
 	#
-	#### find_primes() group the bit terms by bit count: @bits
+	### find_primes() group the bit terms by bit count: @bits
 	#
 
 	#
@@ -490,7 +490,7 @@ sub find_primes
 	}
 
 	#
-	#### find_primes() implicant hash (we use the unmarked [i.e., 0] ones: %implicant
+	### find_primes() implicant hash (we use the unmarked [i.e., 0] ones: %implicant
 	#
 
 	#
@@ -502,7 +502,7 @@ sub find_primes
 		grep { !$implicant{$_} } keys %implicant;
 
 	#
-	#### find_primes() -- attributes primes: %p
+	### find_primes() -- attributes primes: %p
 	#
 
 	$self->_set_primes( \%p );
@@ -632,8 +632,8 @@ sub purge_essentials
 	my %ess = %{ shift() };
 	my $primes = shift;
 
-	#### purge_essentials() called with essentials hash: ", %ess
-	#### purge_essentials() called with primes hash ref: ", $primes
+	#### purge_essentials() called with essentials hash: %ess
+	#### purge_essentials() called with primes hash ref: $primes
 
 	# Delete columns associated with this term
 	for my $col (keys %$primes)
@@ -643,7 +643,7 @@ sub purge_essentials
 
 	delete ${$primes}{$_} for keys %ess;
 
-	#### purge_essentials() returning having set primes to: $primes
+	#### purge_essentials() returns having set primes to: $primes
 
 	return $self;
 }
@@ -661,7 +661,7 @@ sub to_boolean
 	my @boolean;
 
 	#
-	#### to_boolean() called with: @terms
+	### to_boolean() called with: @terms
 	#
 	# Group separators (grouping character pairs)
 	#
@@ -677,7 +677,7 @@ sub to_boolean
 			map { $gs[0] . $self->to_boolean_term($_) . $gs[1] } @$_
 		for (@terms);
 
-	#### to_boolean() returns @boolean
+	### to_boolean() returns: @boolean
 
 	return @boolean;
 }
@@ -738,7 +738,7 @@ sub recurse_solve
 	my @covers;
 
 	#
-	#### recursive_solve() called with primes: %primes
+	##### recursive_solve() called with primes: %primes
 	#
 
 	#
@@ -790,17 +790,25 @@ sub recurse_solve
 	# For each such cover, recursively solve the table with that column removed
 	# and add the result(s) to the covers table after adding back the removed
 	# term
-	for my $ta (@ta) {
+	for my $ta (@ta)
+	{
 		my %reduced = map {
 			$_ => [ grep { $_ ne $term } @{ $primes{$_} } ]
 		} keys %primes;
+
 		# Use this prime implicant -- delete its row and columns
 		$self->remel($ta, $reduced{$_}) for keys %reduced;
 		delete $reduced{$ta};
+
 		# Remove empty rows (necessary?)
 		%reduced = map { $_ => $reduced{$_} } grep { @{ $reduced{$_} } } keys %reduced;
 		
 		my @c = $self->recurse_solve(\%reduced);
+
+		#
+		##### For ta: $ta
+		##### recursive_solve() returns (to recursive_sove()): @c
+		#
 		my @results = $self->sortterms
 			? @c
 				? map { [ reverse sort (@prefix, $ta, @$_) ] } @c
@@ -814,9 +822,12 @@ sub recurse_solve
 	#
 	# Weed out expensive solutions
 	#
-	sub cost { sum map { /$self->dc/ ? 0 : 1 } stl join '', @{ shift() } }
-	my $mincost = min map { cost $_ } @covers;
-	@covers = grep { cost($_) == $mincost } @covers if $self->minonly;
+	if ($self->minonly)
+	{
+		sub cost { sum map { /$self->dc/ ? 0 : 1 } stl join '', @{ shift() } }
+		my $mincost = min map { cost $_ } @covers;
+		@covers = grep { cost($_) == $mincost } @covers;
+	}
 
 	# Return our covers table to be treated similarly one level up
 	# FIXME: How to best ensure non-duplicated answers?
