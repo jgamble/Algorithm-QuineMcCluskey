@@ -1,5 +1,10 @@
 Revision history for Algorithm-QuineMcCluskey
 
+	2014-11-13
+	- The test with don't-care terms randomly fails two thirds
+	  of the time. Separate it into its own file, and add
+	  debugging statements.
+
 "deAlias"
 	2014-11-4
 	- Extended the object test to consider minterms, maxterms,
