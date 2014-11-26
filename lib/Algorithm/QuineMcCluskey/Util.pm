@@ -16,10 +16,10 @@ use List::Util qw(sum);
 
 use base qw(Exporter);
 our @EXPORT = qw(
-	bin columns diffpos diffposes hdist stl uniqels
+	bin columns diffpos diffposes hdist maskmatcher remel_hoa stl uniqels
 );
 our @EXPORT_OK = qw(
-	bin columns diffpos diffposes hdist stl uniqels
+	bin columns diffpos diffposes hdist maskmatcher remel_hoa stl uniqels
 );
 
 =head1 VERSION
@@ -40,6 +40,8 @@ Algorithm::QuineMcCluskey.
 ################################################################################
 # Sub declarations
 ################################################################################
+sub maskmatcher ($$@);
+sub remel_hoa ($$$);
 sub uniqels (@);
 sub columns ($@);
 sub diffpos ($$);
@@ -50,6 +52,60 @@ sub stl ($);
 =head1 FUNCTIONS
 
 =over 4
+
+
+=item maskmatcher
+
+Returns the terms that match a mask.
+
+=cut
+
+sub maskmatcher ($$@)
+{
+	my($m, $dc, @terms) = @_;
+	my @t;
+
+	(my $mask0 = $m) =~ s/$dc/0/g;
+	(my $mask1 = $m) =~ s/$dc/1/g;
+	$mask0 = bin $mask0;
+	$mask1 = bin $mask1;
+
+	for my $x (@terms)
+	{
+		my $b = bin $x;
+		push @t, $x if ((($mask0 & $b) == $mask0) && (($mask1 & $b) == $b));
+	}
+
+	return @t;
+}
+
+=item remel_hoa
+
+Given a value and a reference to a hash of arrayrefs, remove the value
+from the individual arrayrefs if the value matches the masks.
+
+Returns the number of removals made.
+
+=cut
+
+sub remel_hoa ($$$)
+{
+	my ($el, $dc, $href) = @_;
+	my $rems = 0;
+
+	for my $k (keys %$href)
+	{
+		my $pos = firstidx { maskmatcher($el, $dc, $_) } @{$href->{$k}};
+		if ($pos >= 0)
+		{
+			splice(@{$href->{$k}}, $pos, 1);
+			$rems++;
+		}
+	}
+
+	return $rems;
+}
+
 
 =item uniqels
 

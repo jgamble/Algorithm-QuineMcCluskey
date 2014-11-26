@@ -15,12 +15,11 @@ use namespace::autoclean;
 
 use Carp qw(croak);
 
-use Algorithm::QuineMcCluskey::Util qw(bin columns diffpos hdist stl uniqels);
+use Algorithm::QuineMcCluskey::Util qw(columns diffpos hdist maskmatcher remel_hoa stl uniqels);
 use List::Compare::Functional qw(:main is_LequivalentR);
-use List::MoreUtils qw(firstidx);
 use List::Util qw(sum min);
 use Tie::Cycle;
-use Smart::Comments qw(#####);
+use Smart::Comments ('####', '#####');
 
 #
 # Required attributes to create the object.
@@ -352,45 +351,6 @@ sub minmax_bit_terms
 	return @terms;
 }
 
-=item maskmatcher
-
-Returns the terms that match a mask.
-
-=cut
-
-sub maskmatcher
-{
-	my $self = shift;
-	my $m = shift;
-	my $dc = $self->dc;
-
-	(my $mask0 = $m) =~ s/$dc/0/g;
-	(my $mask1 = $m) =~ s/$dc/1/g;
-	$mask0 = bin $mask0;
-	$mask1 = bin $mask1;
-
-	grep { (($mask0 & bin $_) == $mask0) && (($mask1 & bin $_) == bin $_) } @_;
-}
-
-=item remel
-
-Remove a value from an arrayref if it matches a mask
-
-=cut
-
-sub remel
-{
-	my $self = shift;
-	my ($el, $a) = @_;
-
-	#### remel() removing: $el
-	#### remel() from array ref: $a
-
-	my $pos = firstidx { $self->maskmatcher($el, $_) } @$a;
-	splice(@$a, $pos, 1) if $pos >= 0;
-	return $a;
-}
-
 =item find_primes
 
 Finding prime essentials
@@ -498,7 +458,7 @@ sub find_primes
 	# minterms (or maxterms). The resulting hash of arrays is our
 	# set of prime implicants.
 	#
-	my %p = map { $_ => [ $self->maskmatcher($_, $self->minmax_bit_terms()) ] }
+	my %p = map { $_ => [ maskmatcher($_, $self->dc, $self->minmax_bit_terms()) ] }
 		grep { !$implicant{$_} } keys %implicant;
 
 	#
@@ -508,7 +468,6 @@ sub find_primes
 	$self->_set_primes( \%p );
 	return $self;
 }
-
 
 =item row_dom
 
@@ -520,6 +479,8 @@ sub row_dom
 {
 	my $self = shift;
 	my $primes = shift;
+
+	return $primes if (scalar keys %$primes == 0);
 
 	#### row_dom() primes hash before processing: $primes
 
@@ -548,6 +509,8 @@ sub col_dom
 	my $self = shift;
 	my $primes = shift;
 
+	return $primes if (scalar keys %$primes == 0);
+
 	#### col_dom() primes hash before processing: $primes
 
 	my %cols = columns $primes, $self->minmax_bit_terms();
@@ -566,7 +529,7 @@ sub col_dom
 				and is_LsubsetR([ $cols{$col1} => $cols{$col2} ])
 				and !is_LequivalentR([ $cols{$col1} => $cols{$col2} ]))
 			{
-				$self->remel($col2, $primes->{$_}) for keys %$primes;
+				remel_hoa($col2, $self->dc, $primes);
 			}
 		}
 	}
@@ -614,7 +577,7 @@ sub find_essentials
 		}
 	}
 
-	#### "find_essentials() found: %essentials
+	### find_essentials() found: %essentials
 
 	$self->_set_essentials(\%essentials);
 	return %essentials;
@@ -632,13 +595,15 @@ sub purge_essentials
 	my %ess = %{ shift() };
 	my $primes = shift;
 
+	return $self if (scalar keys %ess == 0 or scalar keys %$primes == 0);
+
 	#### purge_essentials() called with essentials hash: %ess
 	#### purge_essentials() called with primes hash ref: $primes
 
 	# Delete columns associated with this term
-	for my $col (keys %$primes)
+	for my $el (keys %ess)
 	{
-		$self->remel($_, $primes->{$col}) for keys %ess;
+		remel_hoa($el, $self->dc, $primes);
 	}
 
 	delete ${$primes}{$_} for keys %ess;
@@ -738,7 +703,7 @@ sub recurse_solve
 	my @covers;
 
 	#
-	##### recursive_solve() called with primes: %primes
+	##### recurse_solve() called with primes: %primes
 	#
 
 	#
@@ -749,7 +714,7 @@ sub recurse_solve
 	$self->purge_essentials(\%ess, \%primes);
 	push @prefix, grep { $ess{$_} } keys %ess;
 
-	#### recursive_solve() \@prefix now: @prefix
+	##### recurse_solve() \@prefix now: @prefix
 
 	$self->row_dom(\%primes);
 	$self->col_dom(\%primes);
@@ -766,7 +731,7 @@ sub recurse_solve
 
 	#
 	### end optimized block
-	#### recursive_solve(): Prefixes acquired: reverse sort @prefix
+	##### recurse_solve(): Prefixes acquired: @prefix
 	#
 
 	return [ reverse sort @prefix ] unless (keys %primes);
@@ -780,16 +745,26 @@ sub recurse_solve
 		sum map { sum map { $_ eq $o } @$_ } values %primes
 	} ($self->minmax_bit_terms());
 
-	# Flip table so terms are keys
+	#
+	##### Flipping table so terms are keys using: @t
+	#
 	my %ic = columns \%primes, @t;
+
+	#
+	##### Resulting table is: %ic
+	#
 	my $term = (sort { @{ $ic{$a} } <=> @{ $ic{$b} } } keys %ic)[0];
 
 	# Rows of %primes that contain $term
 	my @ta = grep { sum map { $_ eq $term } @{ $primes{$_} } } keys %primes;
-	
-	# For each such cover, recursively solve the table with that column removed
-	# and add the result(s) to the covers table after adding back the removed
-	# term
+
+	# For each such cover, recursively solve the table with that column
+	# removed and add the result(s) to the covers table after adding
+	# back the removed term.
+	#
+	# Term used to filter primes list is: $term
+	# ta: @ta
+	#
 	for my $ta (@ta)
 	{
 		my %reduced = map {
@@ -797,17 +772,17 @@ sub recurse_solve
 		} keys %primes;
 
 		# Use this prime implicant -- delete its row and columns
-		$self->remel($ta, $reduced{$_}) for keys %reduced;
+		remel_hoa($ta, $self->dc, \%reduced);
 		delete $reduced{$ta};
 
 		# Remove empty rows (necessary?)
 		%reduced = map { $_ => $reduced{$_} } grep { @{ $reduced{$_} } } keys %reduced;
-		
+
 		my @c = $self->recurse_solve(\%reduced);
 
 		#
 		##### For ta: $ta
-		##### recursive_solve() returns (to recursive_sove()): @c
+		##### recurse_solve() returns (to recurse_solve()): @c
 		#
 		my @results = $self->sortterms
 			? @c
