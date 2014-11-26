@@ -1,5 +1,14 @@
 Revision history for Algorithm-QuineMcCluskey
 
+	2014-11-26
+	- Changed maskmatcher() and remel() back from methods to
+	  plain functions by passing in the dc field as a parameter.
+	- Was looping around remel() for each arrayref in the hash.
+	  Now just pass the hash in directly (this necessitated
+	  changing one of the outer loops in purge_essentials).
+	- And now that they're functions again, moved maskmatcher()
+	  and remel() back to Util.pm, although remel() is now
+	  called remel_hoa().
 	2014-11-13
 	- The test with don't-care terms randomly fails two thirds
 	  of the time. Separate it into its own file, and add
