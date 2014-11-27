@@ -16,10 +16,10 @@ use List::Util qw(sum);
 
 use base qw(Exporter);
 our @EXPORT = qw(
-	bin columns diffpos diffposes hdist maskmatcher remel_hoa stl uniqels
+	columns diffpos diffposes hdist maskmatcher remel_hoa stl uniqels
 );
 our @EXPORT_OK = qw(
-	bin columns diffpos diffposes hdist maskmatcher remel_hoa stl uniqels
+	columns diffpos diffposes hdist maskmatcher remel_hoa stl uniqels
 );
 
 =head1 VERSION
@@ -65,8 +65,14 @@ sub maskmatcher ($$@)
 	my($m, $dc, @terms) = @_;
 	my @t;
 
-	(my $mask0 = $m) =~ s/$dc/0/g;
-	(my $mask1 = $m) =~ s/$dc/1/g;
+	#
+	# Make two patterns based on the don't-care
+	# characters in the mask ("quoted" in case
+	# the don't-care character happens to be a
+	# metacharacter).
+	#
+	(my $mask0 = $m) =~ s/\Q$dc\E/0/g;
+	(my $mask1 = $m) =~ s/\Q$dc\E/1/g;
 	$mask0 = bin $mask0;
 	$mask1 = bin $mask1;
 
