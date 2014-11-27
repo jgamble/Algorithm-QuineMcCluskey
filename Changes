@@ -1,5 +1,9 @@
 Revision history for Algorithm-QuineMcCluskey
 
+	2014-11-27
+	- Add \Q and \E around don't-care character in maskmatcher()
+	  substitution code in case someone chose a substitution
+	  metacharacter as their don't-care character.
 	2014-11-26
 	- Changed maskmatcher() and remel() back from methods to
 	  plain functions by passing in the dc field as a parameter.
