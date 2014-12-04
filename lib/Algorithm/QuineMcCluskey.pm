@@ -15,7 +15,8 @@ use namespace::autoclean;
 
 use Carp qw(croak);
 
-use Algorithm::QuineMcCluskey::Util qw(columns diffpos hdist maskmatcher remel_hoa stl uniqels);
+use Algorithm::QuineMcCluskey::Util qw(columns diffpos hdist maskmatcher remels
+	strsearchcount stl uniqels);
 use List::Compare::Functional qw(:main is_LequivalentR);
 use List::Util qw(sum min);
 use Tie::Cycle;
@@ -368,8 +369,7 @@ sub find_primes
 	#
 	for ($self->all_bit_terms())
 	{
-		my $l = sum stl $_;
-		push  @{$bits[0][ $l ]}, $_;
+		push  @{$bits[0][ strsearchcount($_, '1') ]}, $_;
 	}
 
 	#
@@ -529,7 +529,7 @@ sub col_dom
 				and is_LsubsetR([ $cols{$col1} => $cols{$col2} ])
 				and !is_LequivalentR([ $cols{$col1} => $cols{$col2} ]))
 			{
-				remel_hoa($col2, $self->dc, $primes);
+				remels($col2, $self->dc, $primes);
 			}
 		}
 	}
@@ -603,7 +603,7 @@ sub purge_essentials
 	# Delete columns associated with this term
 	for my $el (keys %ess)
 	{
-		remel_hoa($el, $self->dc, $primes);
+		remels($el, $self->dc, $primes);
 	}
 
 	delete ${$primes}{$_} for keys %ess;
@@ -772,7 +772,7 @@ sub recurse_solve
 		} keys %primes;
 
 		# Use this prime implicant -- delete its row and columns
-		remel_hoa($ta, $self->dc, \%reduced);
+		remels($ta, $self->dc, \%reduced);
 		delete $reduced{$ta};
 
 		# Remove empty rows (necessary?)
@@ -795,14 +795,34 @@ sub recurse_solve
 	}
 
 	#
-	# Weed out expensive solutions
+	#### Covers is: @covers
+	#### before weeding out expensive solutions.
 	#
 	if ($self->minonly)
 	{
-		sub cost { sum map { /$self->dc/ ? 0 : 1 } stl join '', @{ shift() } }
-		my $mincost = min map { cost $_ } @covers;
-		@covers = grep { cost($_) == $mincost } @covers;
+		my $mincost = 1 << $self->width;
+		my @weededcovers;
+
+		for my $c (@covers)
+		{
+			my $cost = strsearchcount(join('', @$c), "[01]");
+
+			next if ($cost > $mincost);
+
+			if ($cost < $mincost)
+			{
+				$mincost = $cost;
+				@weededcovers = ();
+			}
+			push @weededcovers, $c;
+		}
+		@covers = @weededcovers;
 	}
+
+	#
+	#### Covers is: @covers
+	#### after the weeding out.
+	#
 
 	# Return our covers table to be treated similarly one level up
 	# FIXME: How to best ensure non-duplicated answers?
