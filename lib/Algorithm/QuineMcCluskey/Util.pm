@@ -16,10 +16,12 @@ use List::Util qw(sum);
 
 use base qw(Exporter);
 our @EXPORT = qw(
-	columns diffpos diffposes hdist maskmatcher remel_hoa stl uniqels
+	columns diffpos diffposes hdist maskmatcher remels
+	strsearchcount stl uniqels
 );
 our @EXPORT_OK = qw(
-	columns diffpos diffposes hdist maskmatcher remel_hoa stl uniqels
+	columns diffpos diffposes hdist maskmatcher remels
+	strsearchcount stl uniqels
 );
 
 =head1 VERSION
@@ -41,18 +43,44 @@ Algorithm::QuineMcCluskey.
 # Sub declarations
 ################################################################################
 sub maskmatcher ($$@);
-sub remel_hoa ($$$);
+sub remels ($$$);
 sub uniqels (@);
 sub columns ($@);
 sub diffpos ($$);
 sub bin ($);
 sub diffposes;
+sub strsearchcount ($$);
 sub stl ($);
 
 =head1 FUNCTIONS
 
 =over 4
 
+=item strsearchcount
+
+Returns the count of a search string Y found in the source string X.
+Pattern matching is turned off.
+
+E.g.:
+      my $str = "d10d11d1d"; 
+      strsearchcount($str, "d");     # returns 4
+      strsearchcount($str, "d1");    # returns 3
+
+To search for only the string without a regular expression accidentally
+interfering, enclose the search string between '\Q' and '\E'. E.g.:
+
+      # We don't know what's in $looking, so de-magic it.
+      my $str = "d10d11d1d"; 
+      strsearchcount($str, '\E' . $looking . '\Q]);
+
+=cut
+
+sub strsearchcount($$)
+{
+	my($x, $y) = @_;
+
+	return scalar(() = $x=~ m/$y/g);
+}
 
 =item maskmatcher
 
@@ -85,7 +113,7 @@ sub maskmatcher ($$@)
 	return @t;
 }
 
-=item remel_hoa
+=item remels
 
 Given a value and a reference to a hash of arrayrefs, remove the value
 from the individual arrayrefs if the value matches the masks.
@@ -94,7 +122,7 @@ Returns the number of removals made.
 
 =cut
 
-sub remel_hoa ($$$)
+sub remels ($$$)
 {
 	my ($el, $dc, $href) = @_;
 	my $rems = 0;
@@ -111,7 +139,6 @@ sub remel_hoa ($$$)
 
 	return $rems;
 }
-
 
 =item uniqels
 
