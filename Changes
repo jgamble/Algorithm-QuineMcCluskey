@@ -1,5 +1,10 @@
 Revision history for Algorithm-QuineMcCluskey
 
+	2014-12-3
+	- The weight count in find_primes() and the cost count in
+	  recursive_solve() were using sum of a map block using
+	  split. A match in list context is much simpler, changed
+	  them to that (and put the function for it in Util.pm).
 	2014-11-27
 	- Add \Q and \E around don't-care character in maskmatcher()
 	  substitution code in case someone chose a substitution
@@ -12,7 +17,7 @@ Revision history for Algorithm-QuineMcCluskey
 	  changing one of the outer loops in purge_essentials).
 	- And now that they're functions again, moved maskmatcher()
 	  and remel() back to Util.pm, although remel() is now
-	  called remel_hoa().
+	  called remels().
 	2014-11-13
 	- The test with don't-care terms randomly fails two thirds
 	  of the time. Separate it into its own file, and add
