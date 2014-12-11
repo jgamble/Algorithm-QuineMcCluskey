@@ -15,11 +15,21 @@ use namespace::autoclean;
 
 use Carp qw(croak);
 
-use Algorithm::QuineMcCluskey::Util qw(columns diffpos hdist maskmatcher remels
-	strsearchcount stl uniqels);
-use List::Compare::Functional qw(:main is_LequivalentR);
+use Algorithm::QuineMcCluskey::Util qw(columns countels diffpos hdist
+	maskmatcher remels matchcount stl uniqels);
+use List::Compare::Functional qw(get_intersection is_LequivalentR is_LsubsetR);
 use List::Util qw(sum min);
 use Tie::Cycle;
+
+#
+# Vaguely consistent Smart-Comment rules:
+# 3 pound signs for the code in BUILD(), find_primes() and find_essentials().
+#
+# 4 pound signs for code that manipulates prime/essentials/covers hashes:
+#      col_dom(), row_dom(), and purge_essentials().
+#
+# 5 pound signs for the solve() and recursive_solve() code.
+#
 use Smart::Comments ('####', '#####');
 
 #
@@ -369,7 +379,7 @@ sub find_primes
 	#
 	for ($self->all_bit_terms())
 	{
-		push  @{$bits[0][ strsearchcount($_, '1') ]}, $_;
+		push  @{$bits[0][ matchcount($_, '1') ]}, $_;
 	}
 
 	#
@@ -484,18 +494,18 @@ sub row_dom
 
 	#### row_dom() primes hash before processing: $primes
 
-	$primes = { map {
+	%$primes = ( map {
 		my $o = $_;
 		(sum map {
 			is_LsubsetR([ $primes->{$o} => $primes->{$_} ])
 				&& !is_LequivalentR([ $primes->{$o} => $primes->{$_} ])
 			} grep { $_ ne $o } keys %$primes)
 		? () : ( $_ => $primes->{$_} )
-	} keys %$primes };
+	} keys %$primes );
 
 	#### row_dom() primes hash after processing: $primes
 
-	return $primes;
+	return $self;
 }
 
 =item col_dom
@@ -536,7 +546,7 @@ sub col_dom
 
 	#### col_dom() primes hash after processing: $primes
 
-	return $primes;
+	return $self;
 }
 
 =item find_essentials
@@ -707,16 +717,17 @@ sub recurse_solve
 	#
 
 	#
-	### Begin (slightly) optimized block : do not touch without good reason
+	##### Begin (slightly) optimized block. Do not touch without good reason
 	#
 	my %ess = $self->find_essentials(\%primes);
 
 	$self->purge_essentials(\%ess, \%primes);
 	push @prefix, grep { $ess{$_} } keys %ess;
 
+	##### recurse_solve(): Primes before processing: %primes
 	##### recurse_solve() \@prefix now: @prefix
 
-	$self->row_dom(\%primes);
+	#$self->row_dom(\%primes);
 	$self->col_dom(\%primes);
 
 	while (!is_LequivalentR([
@@ -725,12 +736,13 @@ sub recurse_solve
 	{
 		$self->purge_essentials(\%ess, \%primes);
 		push @prefix, grep { $ess{$_} } keys %ess;
-		$self->row_dom(\%primes);
+		#$self->row_dom(\%primes);
 		$self->col_dom(\%primes);
 	}
 
 	#
-	### end optimized block
+	##### end optimized block
+	##### recurse_solve(): Primes after processing: %primes
 	##### recurse_solve(): Prefixes acquired: @prefix
 	#
 
@@ -742,7 +754,8 @@ sub recurse_solve
 	#
 	my @t = grep {
 		my $o = $_;
-		sum map { sum map { $_ eq $o } @$_ } values %primes
+		#sum map { sum map { $_ eq $o } @$_ } values %primes
+		sum map { countels( $o, $_ ) } values %primes
 	} ($self->minmax_bit_terms());
 
 	#
@@ -756,7 +769,8 @@ sub recurse_solve
 	my $term = (sort { @{ $ic{$a} } <=> @{ $ic{$b} } } keys %ic)[0];
 
 	# Rows of %primes that contain $term
-	my @ta = grep { sum map { $_ eq $term } @{ $primes{$_} } } keys %primes;
+	#my @ta = grep { sum map { $_ eq $term } @{ $primes{$_} } } keys %primes;
+	my @ta = grep { countels($term, $primes{$_})  } keys %primes;
 
 	# For each such cover, recursively solve the table with that column
 	# removed and add the result(s) to the covers table after adding
@@ -795,8 +809,8 @@ sub recurse_solve
 	}
 
 	#
-	#### Covers is: @covers
-	#### before weeding out expensive solutions.
+	##### Covers is: @covers
+	##### before weeding out expensive solutions.
 	#
 	if ($self->minonly)
 	{
@@ -805,7 +819,7 @@ sub recurse_solve
 
 		for my $c (@covers)
 		{
-			my $cost = strsearchcount(join('', @$c), "[01]");
+			my $cost = matchcount(join('', @$c), "[01]");
 
 			next if ($cost > $mincost);
 
