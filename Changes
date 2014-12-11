@@ -1,5 +1,16 @@
 Revision history for Algorithm-QuineMcCluskey
-
+	2014-12-11
+	- Method row_dom() was not actually affecting anything,
+	  as it was creating its own hash ref without affecting
+	  the contents of the hash ref passed in. Fixed that, but...
+	- ... that left some empty arrays in the hash-of-arrays,
+	  which were causing undef warnings in a "sum map" construct.
+	  Created a new function countels() in Util.pm that does the
+	  counting with a guard against empty array refs.
+	  But unfortunately...
+	- ... tests failed as no covers were being generated --
+	  everything gets removed from the primes hash. So in the end,
+	  commented out the calls to row_dom().
 	2014-12-3
 	- The weight count in find_primes() and the cost count in
 	  recursive_solve() were using sum of a map block using
