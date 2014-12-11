@@ -16,12 +16,12 @@ use List::Util qw(sum);
 
 use base qw(Exporter);
 our @EXPORT = qw(
-	columns diffpos diffposes hdist maskmatcher remels
-	strsearchcount stl uniqels
+	columns countels diffpos diffposes hdist maskmatcher remels
+	matchcount stl uniqels
 );
 our @EXPORT_OK = qw(
-	columns diffpos diffposes hdist maskmatcher remels
-	strsearchcount stl uniqels
+	columns countels diffpos diffposes hdist maskmatcher remels
+	matchcount stl uniqels
 );
 
 =head1 VERSION
@@ -42,40 +42,40 @@ Algorithm::QuineMcCluskey.
 ################################################################################
 # Sub declarations
 ################################################################################
-sub maskmatcher ($$@);
-sub remels ($$$);
-sub uniqels (@);
-sub columns ($@);
-sub diffpos ($$);
 sub bin ($);
+sub columns ($@);
+sub countels($$);
+sub diffpos ($$);
 sub diffposes;
-sub strsearchcount ($$);
+sub maskmatcher ($$@);
+sub matchcount ($$);
+sub remels ($$$);
 sub stl ($);
+sub uniqels (@);
 
 =head1 FUNCTIONS
 
 =over 4
 
-=item strsearchcount
+=item matchcount
 
 Returns the count of a search string Y found in the source string X.
-Pattern matching is turned off.
 
 E.g.:
       my $str = "d10d11d1d"; 
-      strsearchcount($str, "d");     # returns 4
-      strsearchcount($str, "d1");    # returns 3
+      matchcount($str, "d");     # returns 4
+      matchcount($str, "d1");    # returns 3
 
 To search for only the string without a regular expression accidentally
 interfering, enclose the search string between '\Q' and '\E'. E.g.:
 
       # We don't know what's in $looking, so de-magic it.
       my $str = "d10d11d1d"; 
-      strsearchcount($str, '\E' . $looking . '\Q]);
+      matchcount($str, '\E' . $looking . '\Q]);
 
 =cut
 
-sub strsearchcount($$)
+sub matchcount($$)
 {
 	my($x, $y) = @_;
 
@@ -94,10 +94,9 @@ sub maskmatcher ($$@)
 	my @t;
 
 	#
-	# Make two patterns based on the don't-care
-	# characters in the mask ("quoted" in case
-	# the don't-care character happens to be a
-	# metacharacter).
+	# Make two patterns based on the don't-care characters
+	# in the mask ("quoted" in case the don't-care character
+	# happens to be a metacharacter).
 	#
 	(my $mask0 = $m) =~ s/\Q$dc\E/0/g;
 	(my $mask1 = $m) =~ s/\Q$dc\E/1/g;
@@ -138,6 +137,14 @@ sub remels ($$$)
 	}
 
 	return $rems;
+}
+
+sub countels($$)
+{
+	my($el, $aref) = @_;
+
+	return 0 unless (@$aref);
+	return sum map { $_ eq $el } @$aref;
 }
 
 =item uniqels
