@@ -519,7 +519,7 @@ sub col_dom
 	my $self = shift;
 	my $primes = shift;
 
-	return $primes if (scalar keys %$primes == 0);
+	return $self if (scalar keys %$primes == 0);
 
 	#### col_dom() primes hash before processing: $primes
 
@@ -754,7 +754,6 @@ sub recurse_solve
 	#
 	my @t = grep {
 		my $o = $_;
-		#sum map { sum map { $_ eq $o } @$_ } values %primes
 		sum map { countels( $o, $_ ) } values %primes
 	} ($self->minmax_bit_terms());
 
@@ -769,7 +768,6 @@ sub recurse_solve
 	my $term = (sort { @{ $ic{$a} } <=> @{ $ic{$b} } } keys %ic)[0];
 
 	# Rows of %primes that contain $term
-	#my @ta = grep { sum map { $_ eq $term } @{ $primes{$_} } } keys %primes;
 	my @ta = grep { countels($term, $primes{$_})  } keys %primes;
 
 	# For each such cover, recursively solve the table with that column
