@@ -30,11 +30,11 @@ my %expected_ess = (
 );
 
 $q->find_primes;
-my $hashref = $q->get_primes;
-is_deeply($hashref, \%expected_primes, $q->title);
+my $primes = $q->get_primes;
+is_deeply($primes, \%expected_primes, $q->title);
 
-$q->find_essentials;
-$hashref = $q->get_essentials;
+$q->find_essentials($primes);
+my $hashref = $q->get_essentials;
 is_deeply($hashref, \%expected_ess, $q->title);
 
 
@@ -62,10 +62,10 @@ $q = Algorithm::QuineMcCluskey->new(
 
 
 $q->find_primes;
-$hashref = $q->get_primes;
-is_deeply($hashref, \%expected_primes, $q->title);
+$primes = $q->get_primes;
+is_deeply($primes, \%expected_primes, $q->title);
 
-$q->find_essentials;
+$q->find_essentials($primes);
 $hashref = $q->get_essentials;
 is_deeply($hashref, \%expected_ess, $q->title);
 
@@ -85,7 +85,8 @@ $q = Algorithm::QuineMcCluskey->new(
 );
 
 $q->find_primes;
-$q->find_essentials;
+$primes = $q->get_primes;
+$q->find_essentials($primes);
 $hashref = $q->get_essentials;
 is_deeply($hashref, \%expected_ess, $q->title);
 

@@ -560,8 +560,8 @@ sub find_essentials
 {
 	my $self = shift;
 
-	my $primes = @_ ? shift : \%{$self->get_primes};
-	my @terms = @_ ? @{ shift() } : ($self->minmax_bit_terms());
+	my $primes = shift;
+	my @terms = $self->minmax_bit_terms();
 
 	my @kp = keys %$primes;
 	my %essentials;
@@ -595,7 +595,10 @@ sub find_essentials
 
 =item purge_essentials
 
-Delete essential primes from table
+Given a table (hash form) of prime implicants, delete the essential
+prime implicants from the table (row-wise and column-wise), leaving
+those implicants that must be chosen for the remaining elements of
+the boolean function.
 
 =cut
 
@@ -610,12 +613,17 @@ sub purge_essentials
 	#### purge_essentials() called with essentials hash: %ess
 	#### purge_essentials() called with primes hash ref: $primes
 
-	# Delete columns associated with this term
+	#
+	# Delete the columns associated with each essential prime implicant.
+	#
 	for my $el (keys %ess)
 	{
 		remels($el, $self->dc, $primes);
 	}
 
+	#
+	# Now delete the rows.
+	#
 	delete ${$primes}{$_} for keys %ess;
 
 	#### purge_essentials() returns having set primes to: $primes
@@ -749,7 +757,7 @@ sub recurse_solve
 	return [ reverse sort @prefix ] unless (keys %primes);
 
 	#
-	# Find the term with the fewest implicant covers
+	# Find the term with the fewest implicant covers.
 	# Columns actually in %primes
 	#
 	my @t = grep {
