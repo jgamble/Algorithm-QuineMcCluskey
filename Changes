@@ -1,4 +1,8 @@
 Revision history for Algorithm-QuineMcCluskey
+	2015-1-1
+	- No default parameters for find_essentials(). The primes
+	  hash must be passed in, while the binary-formatted terms
+	  are collectd from the object.
 	2014-12-11
 	- Method row_dom() was not actually affecting anything,
 	  as it was creating its own hash ref without affecting
