@@ -18,7 +18,7 @@ use Carp qw(croak);
 use Algorithm::QuineMcCluskey::Util qw(columns countels diffpos hdist
 	maskmatcher remels matchcount stl uniqels);
 use List::Compare::Functional qw(get_intersection is_LequivalentR is_LsubsetR);
-use List::Util qw(sum min);
+use List::Util qw(sum any);
 use Tie::Cycle;
 
 #
@@ -30,7 +30,7 @@ use Tie::Cycle;
 #
 # 5 pound signs for the solve() and recursive_solve() code.
 #
-use Smart::Comments ('####', '#####');
+use Smart::Comments ('#####');
 
 #
 # Required attributes to create the object.
@@ -762,10 +762,11 @@ sub recurse_solve
 	#
 	my @t = grep {
 		my $o = $_;
-		sum map { countels( $o, $_ ) } values %primes
+		any { countels( $o, $_ ) } values %primes
 	} ($self->minmax_bit_terms());
 
 	#
+	##### Primes table is: %primes
 	##### Flipping table so terms are keys using: @t
 	#
 	my %ic = columns \%primes, @t;
