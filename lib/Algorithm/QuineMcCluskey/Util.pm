@@ -12,7 +12,7 @@ use warnings;
 
 use Data::Dumper;
 use List::MoreUtils qw(pairwise firstidx);
-use List::Util qw(sum);
+use List::Util qw(any sum);
 
 use base qw(Exporter);
 our @EXPORT = qw(
@@ -42,7 +42,6 @@ Algorithm::QuineMcCluskey.
 ################################################################################
 # Sub declarations
 ################################################################################
-sub bin ($);
 sub columns ($@);
 sub countels($$);
 sub diffpos ($$);
@@ -100,12 +99,12 @@ sub maskmatcher ($$@)
 	#
 	(my $mask0 = $m) =~ s/\Q$dc\E/0/g;
 	(my $mask1 = $m) =~ s/\Q$dc\E/1/g;
-	$mask0 = bin $mask0;
-	$mask1 = bin $mask1;
+	$mask0 = oct "0b" . $mask0;
+	$mask1 = oct "0b" . $mask1;
 
 	for my $x (@terms)
 	{
-		my $b = bin $x;
+		my $b = oct "0b" . $x;
 		push @t, $x if ((($mask0 & $b) == $mask0) && (($mask1 & $b) == $b));
 	}
 
@@ -160,29 +159,20 @@ sub uniqels (@) {
 
 =item columns
 
-Rotates 90 degrees a hashtable of the type used for %::primes
+Rotates 90 degrees a hashtable of the type used for %primes
 
 =cut
 
-sub columns ($@) {
+sub columns ($@)
+{
 	my ($r, @c) = @_;
 	map {
 		my $o = $_;
 		$o => [ grep {
-			sum map {
-				$_ eq $o ? 1 : 0
-			} @{ $r->{$_} }
+			any { $_ eq $o } @{ $r->{$_} }
 		} keys %$r ]
 	} @c
 }
-
-=item bin
-
-Wrap oct() to provide easy conversion of a binary string to a number
-
-=cut
-
-sub bin ($) { oct "0b" . shift }
 
 =item diffpos
 
