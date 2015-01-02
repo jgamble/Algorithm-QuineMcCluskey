@@ -3,6 +3,12 @@ Revision history for Algorithm-QuineMcCluskey
 	- No default parameters for find_essentials(). The primes
 	  hash must be passed in, while the binary-formatted terms
 	  are collectd from the object.
+	- Tweaked Util.pm. Only maskmatcher() was using bin() (it was
+	  just 'return oct "0b" . $_;'), so just put those lines in 
+	  maskmatcher() and removed bin().
+	- Found spots in QM.pm and Util.pm where a "sum map {}"
+	  construct can be replaced with "any {}", which has the
+	  advantage of early break out of the loop on a match.
 	2014-12-11
 	- Method row_dom() was not actually affecting anything,
 	  as it was creating its own hash ref without affecting
@@ -134,7 +140,7 @@ Revision history for Algorithm-QuineMcCluskey
 	  dontcares attributes from the passed-in list of decimal
 	  into bitstrings, and saved them back in the attributes.
 	  We can't do that now, because Moose has set those fields
-	  are now typed as 'ArrarRef[Int]'.
+	  typed as 'ArrarRef[Int]'.
 	  So, set up three new fields that represent the three fields
 	  in their bitstring form: min_bits, max_bits, and dc_bits.
 	2014-04-30
