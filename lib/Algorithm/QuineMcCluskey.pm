@@ -341,6 +341,44 @@ sub break_columnstring
 	return (\@minterms, \@maxterms, \@dontcares);
 }
 
+#
+# Build another Quine-McCluskey object that's the complement
+# of the existing object.
+#
+sub complement
+{
+	my $self = shift;
+	my $cstring = $self->columnstring();
+
+	my $comp = $cstring =~ tr/01/10/r;
+	my $title = "Complement of '" . $self->title() . "'";
+
+	return Algorithm::QuineMcCluskey->new(columnstring => $comp,
+		width => $self->width,
+		dc => $self->dc,
+		vars => $self->vars,
+		title => $title);
+}
+
+#
+# Build another Quine-McCluskey object that's the dual
+# of the existing object.
+#
+sub dual
+{
+	my $self = shift;
+	my $cstring = $self->columnstring();
+
+	my $dual = reverse $cstring =~ tr/01/10/r;
+	my $title = "Dual of '" . $self->title() . "'";
+
+	return Algorithm::QuineMcCluskey->new(columnstring => $dual,
+		width => $self->width,
+		dc => $self->dc,
+		vars => $self->vars,
+		title => $title);
+}
+
 sub all_bit_terms
 {
 	my $self = shift;
