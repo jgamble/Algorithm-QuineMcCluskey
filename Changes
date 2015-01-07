@@ -1,4 +1,7 @@
 Revision history for Algorithm-QuineMcCluskey
+	2015-1-6
+	- Added new object-creating methods dual() and complement().
+	- Added tests for the new methods.
 	2015-1-1
 	- No default parameters for find_essentials(). The primes
 	  hash must be passed in, while the binary-formatted terms
