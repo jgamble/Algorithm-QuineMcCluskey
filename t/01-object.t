@@ -6,7 +6,7 @@ use Algorithm::QuineMcCluskey;
 # Test object creation.
 #
 
-use Test::More tests => 4;
+use Test::More tests => 6;
 
 my $q = Algorithm::QuineMcCluskey->new(
 	title => "Null Test",
@@ -35,7 +35,7 @@ $columnstring = $q->columnstring;
 ok($columnstring eq "00100110", $q->title);
 
 $q = Algorithm::QuineMcCluskey->new(
-	title => "Maxterms from columnstring",
+	title => "Minterms from columnstring",
 	width => 3,
 	columnstring => "11011001"
 );
@@ -43,3 +43,10 @@ $q = Algorithm::QuineMcCluskey->new(
 my @terms_ref = @{$q->minterms};
 is_deeply(\@terms_ref, [0, 1, 3, 4, 7], $q->title);
 
+my $q_comp = $q->complement();
+@terms_ref = @{$q_comp->minterms};
+is_deeply(\@terms_ref, [2, 5, 6], $q_comp->title);
+
+my $q_dual = $q->dual();
+@terms_ref = @{$q_dual->minterms};
+is_deeply(\@terms_ref, [1, 2, 5], $q_dual->title);
