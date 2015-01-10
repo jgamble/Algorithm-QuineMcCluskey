@@ -628,7 +628,7 @@ sub find_essentials
 	### find_essentials() found: %essentials
 
 	$self->_set_essentials(\%essentials);
-	return %essentials;
+	return $self;
 }
 
 =item purge_essentials
@@ -757,39 +757,37 @@ sub recurse_solve
 	my %primes = %{ $_[0] };
 	my @prefix;
 	my @covers;
+	my @essentials_keys;
 
 	#
 	##### recurse_solve() called with primes: %primes
 	#
+	$self->find_essentials(\%primes);
+	my %ess = %{ $self->get_essentials() };
 
 	#
-	##### Begin (slightly) optimized block. Do not touch without good reason
+	##### Begin prefix/essentials loop.
 	#
-	my %ess = $self->find_essentials(\%primes);
-
-	$self->purge_essentials(\%ess, \%primes);
-	push @prefix, grep { $ess{$_} } keys %ess;
-
-	##### recurse_solve(): Primes before processing: %primes
-	##### recurse_solve() \@prefix now: @prefix
-
-	#$self->row_dom(\%primes);
-	$self->col_dom(\%primes);
-
-	while (!is_LequivalentR([
-			[ keys %ess ] => [ %ess = $self->find_essentials(\%primes) ]
-			]))
+	do
 	{
 		$self->purge_essentials(\%ess, \%primes);
-		push @prefix, grep { $ess{$_} } keys %ess;
+		@essentials_keys = keys %ess;
+		push @prefix, grep { $ess{$_} } @essentials_keys;
+
+		##### recurse_solve() \@prefix now: @prefix
+
 		#$self->row_dom(\%primes);
 		$self->col_dom(\%primes);
-	}
+		$self->find_essentials(\%primes);
+		%ess = %{ $self->get_essentials() };
+
+	} while (!is_LequivalentR([
+			[ @essentials_keys ] => [ %ess ]
+			]));
 
 	#
-	##### end optimized block
-	##### recurse_solve(): Primes after processing: %primes
-	##### recurse_solve(): Prefixes acquired: @prefix
+	##### recurse_solve() Primes after loop: %primes
+	##### recurse_solve() Prefixes acquired: @prefix
 	#
 
 	return [ reverse sort @prefix ] unless (keys %primes);
@@ -826,6 +824,9 @@ sub recurse_solve
 	#
 	for my $ta (@ta)
 	{
+		#
+		##### For ta: $ta
+		#
 		my %reduced = map {
 			$_ => [ grep { $_ ne $term } @{ $primes{$_} } ]
 		} keys %primes;
@@ -879,8 +880,8 @@ sub recurse_solve
 	}
 
 	#
-	#### Covers is: @covers
-	#### after the weeding out.
+	##### Covers is: @covers
+	##### after the weeding out.
 	#
 
 	# Return our covers table to be treated similarly one level up
