@@ -1,4 +1,12 @@
 Revision history for Algorithm-QuineMcCluskey
+	2015-1-9
+	- There's a block marked as "do not touch". Finally got
+	  around to modifying it. Checking it over it's apparent
+	  that the lead-in statements to the while loop are the
+	  same as the loop's block. Changed it to a do-while.
+	- Working this out allowed me to finally change
+	  find_essentials() to return $self instead of the essentials
+	  hash.
 	2015-1-6
 	- Added new object-creating methods dual() and complement().
 	- Added tests for the new methods.
