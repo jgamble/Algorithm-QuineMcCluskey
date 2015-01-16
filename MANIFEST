@@ -6,6 +6,7 @@ Makefile.PL
 README
 lib/Algorithm/QuineMcCluskey.pm
 lib/Algorithm/QuineMcCluskey/Util.pm
+lib/Algorithm/QuineMcCluskey/Format.pm
 t/00-load.t
 t/01-object.t
 t/02-simple.t
