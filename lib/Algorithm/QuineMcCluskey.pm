@@ -826,6 +826,8 @@ sub recurse_solve
 	#
 	for my $ta (@ta)
 	{
+		my @results;
+
 		#
 		##### For ta: $ta
 		#
@@ -842,18 +844,27 @@ sub recurse_solve
 			$_ => $reduced{$_} } grep { @{ $reduced{$_} }
 		} keys %reduced;
 
-		my @c = $self->recurse_solve(\%reduced);
+		if (keys %reduced)
+		{
+			my @c = $self->recurse_solve(\%reduced);
 
-		#
-		##### recurse_solve() returns (to recurse_solve()): @c
-		#
-		my @results = $self->sortterms
-			? @c
-				? map { [ reverse sort (@prefix, $ta, @$_) ] } @c
-				: [ reverse sort (@prefix, $ta) ]
-			: @c
-				? map { [ @prefix, $ta, @$_ ] } @c
+			#
+			##### recurse_solve() returns (to recurse_solve()): @c
+			#
+			@results = $self->sortterms
+				? @c
+					? map { [ reverse sort (@prefix, $ta, @$_) ] } @c
+					: [ reverse sort (@prefix, $ta) ]
+				: @c
+					? map { [ @prefix, $ta, @$_ ] } @c
+					: [ @prefix, $ta ];
+		}
+		else
+		{
+			@results = $self->sortterms
+				? [ reverse sort (@prefix, $ta) ]
 				: [ @prefix, $ta ];
+		}
 		push @covers, @results;
 	}
 
