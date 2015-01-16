@@ -31,7 +31,7 @@ use Tie::Cycle;
 #
 # 5 pound signs for the solve() and recursive_solve() code.
 #
-#use Smart::Comments ('####');
+use Smart::Comments ('#####');
 
 #
 # Required attributes to create the object.
@@ -590,8 +590,10 @@ sub col_dom
 
 =item find_essentials
 
-Finding essential prime implicants. Called from the solve(), but may also
-be called by itself for testing purposes.
+Find the essential prime implicants.
+
+Called from the solve(), but may also be called by itself for testing
+purposes.
 
 =cut
 
@@ -759,10 +761,8 @@ sub recurse_solve
 	my @essentials_keys;
 
 	#
-	##### recurse_solve() called with primes: %primes
+	##### recurse_solve() called with: "\n" . tableform(\%primes, $self->width)
 	#
-	print STDERR "recurse_solve() called with primes:\n", tableform(\%primes, $self->width) . "\n";
-
 	$self->find_essentials(\%primes);
 	my %ess = %{ $self->get_essentials() };
 
@@ -771,9 +771,11 @@ sub recurse_solve
 	#
 	do
 	{
+		##### recurse_solve() essentials: %ess
+
 		$self->purge_essentials(\%ess, \%primes);
 		@essentials_keys = keys %ess;
-		push @prefix, grep { $ess{$_} } @essentials_keys;
+		push @prefix, grep { $ess{$_} > 0} @essentials_keys;
 
 		##### recurse_solve() \@prefix now: @prefix
 
@@ -783,12 +785,11 @@ sub recurse_solve
 		%ess = %{ $self->get_essentials() };
 
 	} while (!is_LequivalentR([
-			[ @essentials_keys ] => [ %ess ]
+			[ @essentials_keys ] => [ keys %ess ]
 			]));
 
 	#
-	##### recurse_solve() Primes after loop: %primes
-	##### recurse_solve() Prefixes acquired: @prefix
+	##### recurse_solve() Primes after loop: "\n" . tableform(\%primes, $self->width)
 	#
 
 	return [ reverse sort @prefix ] unless (keys %primes);
@@ -814,14 +815,14 @@ sub recurse_solve
 	my $term = (sort { @{ $ic{$a} } <=> @{ $ic{$b} } } keys %ic)[0];
 
 	# Rows of %primes that contain $term
-	my @ta = grep { countels($term, $primes{$_})  } keys %primes;
+	my @ta = grep { countels($term, $primes{$_}) } keys %primes;
 
 	# For each such cover, recursively solve the table with that column
 	# removed and add the result(s) to the covers table after adding
 	# back the removed term.
 	#
-	# Term used to filter primes list is: $term
-	# ta: @ta
+	##### Term used to filter primes list is: $term
+	##### keys are: @ta
 	#
 	for my $ta (@ta)
 	{
@@ -844,7 +845,6 @@ sub recurse_solve
 		my @c = $self->recurse_solve(\%reduced);
 
 		#
-		##### For ta: $ta
 		##### recurse_solve() returns (to recurse_solve()): @c
 		#
 		my @results = $self->sortterms
