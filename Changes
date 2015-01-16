@@ -1,8 +1,17 @@
 Revision history for Algorithm-QuineMcCluskey
 	2015-1-16
-	- New module Format.pm, to help me understand the primes
-	  structure. Will probably be useful as a tool for the
-	  user also.
+	- New function tableformat() (current name, at least) to show
+	  primes hash in the table form used in textbook Quine-McCluskey
+	  descriptions. Should help users understand what's going on,
+	  and help in debugging too.
+	- New module to contain tableforms() (and future functions),
+	  named it Algorithm::QuineMcCluskey::Format.
+	- MANIFEST updated with new module name.
+	- Do-while using is_LequivalentR() was supposed to be comparing
+	  hash keys, but a 'keys' had been left off on one side.
+	  Fixing that saves at least one loop.
+	- Avoid calling recurse_solve() if the reduced primes hash is
+	  empty.
 	2015-1-9
 	- There's a block marked as "do not touch". Finally got
 	  around to modifying it. Checking it over it's apparent
