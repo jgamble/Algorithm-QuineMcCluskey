@@ -17,6 +17,7 @@ use Carp qw(croak);
 
 use Algorithm::QuineMcCluskey::Util qw(columns countels diffpos hdist
 	maskmatcher remels matchcount stl uniqels);
+use Algorithm::QuineMcCluskey::Format qw(tableform);
 use List::Compare::Functional qw(get_intersection is_LequivalentR is_LsubsetR);
 use List::Util qw(sum any);
 use Tie::Cycle;
@@ -30,7 +31,7 @@ use Tie::Cycle;
 #
 # 5 pound signs for the solve() and recursive_solve() code.
 #
-use Smart::Comments ('#####');
+#use Smart::Comments ('####');
 
 #
 # Required attributes to create the object.
@@ -751,8 +752,6 @@ Recursive divide-and-conquer solver
 
 sub recurse_solve
 {
-	no warnings 'closure';
-
 	my $self = shift;
 	my %primes = %{ $_[0] };
 	my @prefix;
@@ -762,6 +761,8 @@ sub recurse_solve
 	#
 	##### recurse_solve() called with primes: %primes
 	#
+	print STDERR "recurse_solve() called with primes:\n", tableform(\%primes, $self->width) . "\n";
+
 	$self->find_essentials(\%primes);
 	my %ess = %{ $self->get_essentials() };
 
@@ -836,7 +837,9 @@ sub recurse_solve
 		delete $reduced{$ta};
 
 		# Remove empty rows (necessary?)
-		%reduced = map { $_ => $reduced{$_} } grep { @{ $reduced{$_} } } keys %reduced;
+		%reduced = map {
+			$_ => $reduced{$_} } grep { @{ $reduced{$_} }
+		} keys %reduced;
 
 		my @c = $self->recurse_solve(\%reduced);
 
