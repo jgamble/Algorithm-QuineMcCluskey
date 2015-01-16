@@ -1,4 +1,8 @@
 Revision history for Algorithm-QuineMcCluskey
+	2015-1-16
+	- New module Format.pm, to help me understand the primes
+	  structure. Will probably be useful as a tool for the
+	  user also.
 	2015-1-9
 	- There's a block marked as "do not touch". Finally got
 	  around to modifying it. Checking it over it's apparent
