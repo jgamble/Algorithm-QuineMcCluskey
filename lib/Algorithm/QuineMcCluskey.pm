@@ -17,7 +17,6 @@ use Carp qw(croak);
 
 use Algorithm::QuineMcCluskey::Util qw(columns countels diffpos hdist
 	maskmatcher remels matchcount stl uniqels);
-use Algorithm::QuineMcCluskey::Format qw(tableform);
 use List::Compare::Functional qw(get_intersection is_LequivalentR is_LsubsetR);
 use List::Util qw(sum any);
 use Tie::Cycle;
@@ -32,6 +31,7 @@ use Tie::Cycle;
 # 5 pound signs for the solve() and recursive_solve() code.
 #
 use Smart::Comments ('#####');
+use Algorithm::QuineMcCluskey::Format qw(tableform); # Only needed for Smart Comments.
 
 #
 # Required attributes to create the object.
@@ -88,7 +88,7 @@ has 'vars'	=> (
 #
 # Change behavior.
 #
-has ['minonly', 'sortterms'] => (
+has ['minonly'] => (
 	isa => 'Bool', is => 'rw',
 	default => 1
 );
@@ -851,19 +851,13 @@ sub recurse_solve
 			#
 			##### recurse_solve() returns (to recurse_solve()): @c
 			#
-			@results = $self->sortterms
-				? @c
-					? map { [ reverse sort (@prefix, $ta, @$_) ] } @c
-					: [ reverse sort (@prefix, $ta) ]
-				: @c
-					? map { [ @prefix, $ta, @$_ ] } @c
-					: [ @prefix, $ta ];
+			@results = @c
+				? map { [ reverse sort (@prefix, $ta, @$_) ] } @c
+				: [ reverse sort (@prefix, $ta) ]
 		}
 		else
 		{
-			@results = $self->sortterms
-				? [ reverse sort (@prefix, $ta) ]
-				: [ @prefix, $ta ];
+			@results = [ reverse sort (@prefix, $ta) ]
 		}
 		push @covers, @results;
 	}
