@@ -1,4 +1,9 @@
 Revision history for Algorithm-QuineMcCluskey
+	2015-1-18
+	- Removed sortterms attribute -- always sort.
+	- Simplified covers loop (helped by removing sortterms).
+	- Moved a constant calculation of the %reduced hash out
+	  a loop.
 	2015-1-16
 	- New function tableformat() (current name, at least) to show
 	  primes hash in the table form used in textbook Quine-McCluskey
