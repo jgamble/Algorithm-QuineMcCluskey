@@ -826,7 +826,7 @@ sub recurse_solve
 	#
 	for my $ta (@ta)
 	{
-		my @results;
+		my (@c, @results);
 
 		#
 		##### For ta: $ta
@@ -844,16 +844,12 @@ sub recurse_solve
 			$_ => $reduced{$_} } grep { @{ $reduced{$_} }
 		} keys %reduced;
 
-		if (keys %reduced)
+		if (keys %reduced and scalar(@c = $self->recurse_solve(\%reduced)))
 		{
-			my @c = $self->recurse_solve(\%reduced);
-
 			#
 			##### recurse_solve() returns (to recurse_solve()): @c
 			#
-			@results = @c
-				? map { [ reverse sort (@prefix, $ta, @$_) ] } @c
-				: [ reverse sort (@prefix, $ta) ]
+			@results = map { [ reverse sort (@prefix, $ta, @$_) ] } @c;
 		}
 		else
 		{
