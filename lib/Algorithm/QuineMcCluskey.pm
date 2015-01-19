@@ -804,7 +804,6 @@ sub recurse_solve
 	} ($self->minmax_bit_terms());
 
 	#
-	##### Primes table is: %primes
 	##### Flipping table so terms are keys using: @t
 	#
 	my %ic = columns \%primes, @t;
@@ -816,6 +815,9 @@ sub recurse_solve
 
 	# Rows of %primes that contain $term
 	my @ta = grep { countels($term, $primes{$_}) } keys %primes;
+	my %r = map {
+		$_ => [ grep { $_ ne $term } @{ $primes{$_} } ]
+	} keys %primes;
 
 	# For each such cover, recursively solve the table with that column
 	# removed and add the result(s) to the covers table after adding
@@ -831,11 +833,8 @@ sub recurse_solve
 		#
 		##### For ta: $ta
 		#
-		my %reduced = map {
-			$_ => [ grep { $_ ne $term } @{ $primes{$_} } ]
-		} keys %primes;
-
 		# Use this prime implicant -- delete its row and columns
+		my %reduced = %r;
 		remels($ta, $self->dc, \%reduced);
 		delete $reduced{$ta};
 
