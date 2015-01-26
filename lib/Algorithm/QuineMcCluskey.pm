@@ -647,18 +647,18 @@ the boolean function.
 sub purge_essentials
 {
 	my $self = shift;
-	my %ess = %{ shift() };
 	my $primes = shift;
+	my @ess = @_;
 
-	return $self if (scalar keys %ess == 0 or scalar keys %$primes == 0);
+	return $self if (scalar @ess == 0 or scalar keys %$primes == 0);
 
-	#### purge_essentials() called with essentials hash: %ess
+	#### purge_essentials() called with essentials list: @ess
 	#### purge_essentials() called with primes hash ref: $primes
 
 	#
 	# Delete the columns associated with each essential prime implicant.
 	#
-	for my $el (keys %ess)
+	for my $el (@ess)
 	{
 		##### purge_essentials() remels: $el
 		remels($el, $self->dc, $primes);
@@ -667,7 +667,7 @@ sub purge_essentials
 	#
 	# Now delete the rows.
 	#
-	delete ${$primes}{$_} for keys %ess;
+	delete ${$primes}{$_} for @ess;
 
 	#### purge_essentials() returns having set primes to: $primes
 
@@ -775,8 +775,8 @@ sub recurse_solve
 	{
 		##### recurse_solve() essentials: %ess
 
-		$self->purge_essentials(\%ess, \%primes);
 		@essentials_keys = keys %ess;
+		$self->purge_essentials(\%primes, @essentials_keys);
 		push @prefix, grep { $ess{$_} > 0} @essentials_keys;
 
 		##### recurse_solve() \@prefix now: @prefix
