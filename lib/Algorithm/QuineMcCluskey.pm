@@ -28,7 +28,7 @@ use Tie::Cycle;
 # 4 pound signs for code that manipulates prime/essentials/covers hashes:
 #      col_dom(), row_dom(), and purge_essentials().
 #
-# 5 pound signs for the solve() and recursive_solve() code.
+# 5 pound signs for the solve() and recurse_solve() code, and the remels() calls.
 #
 use Smart::Comments ('#####');
 use Algorithm::QuineMcCluskey::Format qw(tableform); # Only needed for Smart Comments.
@@ -578,6 +578,7 @@ sub col_dom
 				and is_LsubsetR([ $cols{$col1} => $cols{$col2} ])
 				and !is_LequivalentR([ $cols{$col1} => $cols{$col2} ]))
 			{
+				##### col_dom() remels: $col2
 				remels($col2, $self->dc, $primes);
 			}
 		}
@@ -659,6 +660,7 @@ sub purge_essentials
 	#
 	for my $el (keys %ess)
 	{
+		##### purge_essentials() remels: $el
 		remels($el, $self->dc, $primes);
 	}
 
@@ -780,7 +782,7 @@ sub recurse_solve
 		##### recurse_solve() \@prefix now: @prefix
 
 		#$self->row_dom(\%primes);
-		$self->col_dom(\%primes);
+		#$self->col_dom(\%primes);
 		$self->find_essentials(\%primes);
 		%ess = %{ $self->get_essentials() };
 
@@ -831,7 +833,7 @@ sub recurse_solve
 		my (@c, @results);
 
 		#
-		##### For ta: $ta
+		##### recurse_solve() remels: $ta
 		#
 		# Use this prime implicant -- delete its row and columns
 		my %reduced = %r;
