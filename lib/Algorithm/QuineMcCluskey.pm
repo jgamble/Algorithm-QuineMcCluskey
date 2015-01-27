@@ -776,13 +776,18 @@ sub recurse_solve
 		##### recurse_solve() essentials: %ess
 
 		@essentials_keys = keys %ess;
+
+		#
+		# Remove the essential prime implicants from
+		# the prime implicants table.
+		#
 		$self->purge_elements(\%primes, @essentials_keys);
 		push @prefix, grep { $ess{$_} > 0} @essentials_keys;
 
 		##### recurse_solve() \@prefix now: @prefix
 
 		#$self->row_dom(\%primes);
-		#$self->col_dom(\%primes);
+		$self->col_dom(\%primes);
 		$self->find_essentials(\%primes);
 		%ess = %{ $self->get_essentials() };
 
@@ -790,12 +795,10 @@ sub recurse_solve
 			[ @essentials_keys ] => [ keys %ess ]
 			]));
 
-	#
-	##### recurse_solve() Primes after loop: "\n" . tableform(\%primes, $self->width)
-	#
-
 	return [ reverse sort @prefix ] unless (keys %primes);
 
+	#
+	##### recurse_solve() Primes after loop: "\n" . tableform(\%primes, $self->width)
 	#
 	# Find the term with the fewest implicant covers.
 	# Columns actually in %primes
