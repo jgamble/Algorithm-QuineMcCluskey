@@ -1,4 +1,18 @@
 Revision history for Algorithm-QuineMcCluskey
+	2015-1-26
+	- Changed argument list to purge_essentials(). Had been
+	  taking an esssentials hash, but since it was only using the
+	  keys of the hash, we only need to pass those.
+	- In purge_essentials() change the order of deletion. The
+	  primes hash "rows" (hash entries) are removed first,
+	  *before* going through the hash to look for the "column"
+	  in the array ref. Shortens the search for the "column".
+	- The argument list change lets me use purge_essentials()
+	  later in recurse_solve(), replacing a remels()/delete
+	  pair of lines.
+	- Renamed purge_essentials() to purge_elements(), since
+	  the above change means we're not just purging essentials
+	  now.
 	2015-1-18
 	- Removed sortterms attribute -- always sort.
 	- Simplified covers loop (helped by removing sortterms).
