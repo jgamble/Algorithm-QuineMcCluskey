@@ -26,7 +26,7 @@ use Tie::Cycle;
 # 3 pound signs for the code in BUILD(), find_primes() and find_essentials().
 #
 # 4 pound signs for code that manipulates prime/essentials/covers hashes:
-#      col_dom(), row_dom(), and purge_essentials().
+#      col_dom(), row_dom(), and purge_elements().
 #
 # 5 pound signs for the solve() and recurse_solve() code, and the remels() calls.
 #
@@ -635,16 +635,16 @@ sub find_essentials
 	return $self;
 }
 
-=item purge_essentials
+=item purge_elements
 
-Given a table (hash form) of prime implicants, delete the essential
-prime implicants from the table (row-wise and column-wise), leaving
-those implicants that must be chosen for the remaining elements of
+Given a table (hash form) of prime implicants, delete the list of elements
+(usually essential prime implicants) from the table (row-wise and column-wise),
+leaving those implicants that must be chosen for the remaining elements of
 the boolean function.
 
 =cut
 
-sub purge_essentials
+sub purge_elements
 {
 	my $self = shift;
 	my $primes = shift;
@@ -652,24 +652,24 @@ sub purge_essentials
 
 	return $self if (scalar @ess == 0 or scalar keys %$primes == 0);
 
-	#### purge_essentials() called with essentials list: @ess
-	#### purge_essentials() called with primes hash ref: $primes
+	#### purge_elements() called with essentials list: @ess
+	#### purge_elements() called with primes hash ref: $primes
 
 	#
-	# Delete the columns associated with each essential prime implicant.
-	#
-	for my $el (@ess)
-	{
-		##### purge_essentials() remels: $el
-		remels($el, $self->dc, $primes);
-	}
-
-	#
-	# Now delete the rows.
+	# Delete the rows of each element.
 	#
 	delete ${$primes}{$_} for @ess;
 
-	#### purge_essentials() returns having set primes to: $primes
+	#
+	# Now delete the columns associated with each element.
+	#
+	for my $el (@ess)
+	{
+		##### purge_elements() remels: $el
+		remels($el, $self->dc, $primes);
+	}
+
+	#### purge_elements() returns having set primes to: $primes
 
 	return $self;
 }
@@ -776,7 +776,7 @@ sub recurse_solve
 		##### recurse_solve() essentials: %ess
 
 		@essentials_keys = keys %ess;
-		$self->purge_essentials(\%primes, @essentials_keys);
+		$self->purge_elements(\%primes, @essentials_keys);
 		push @prefix, grep { $ess{$_} > 0} @essentials_keys;
 
 		##### recurse_solve() \@prefix now: @prefix
@@ -831,14 +831,12 @@ sub recurse_solve
 	for my $ta (@ta)
 	{
 		my (@c, @results);
+		my %reduced = %r;
 
 		#
-		##### recurse_solve() remels: $ta
-		#
 		# Use this prime implicant -- delete its row and columns
-		my %reduced = %r;
-		remels($ta, $self->dc, \%reduced);
-		delete $reduced{$ta};
+		#
+		$self->purge_elements(\%reduced, $ta);
 
 		# Remove empty rows (necessary?)
 		%reduced = map {
