@@ -10,7 +10,8 @@ lib/Algorithm/QuineMcCluskey/Format.pm
 t/00-load.t
 t/01-object.t
 t/02-simple.t
-t/04-solvesimple.t
-t/05-solve.t
+t/11-solvesimple.t
+t/21-solve.t
+t/22-solve.t
 t/pod-coverage.t
 t/pod.t
