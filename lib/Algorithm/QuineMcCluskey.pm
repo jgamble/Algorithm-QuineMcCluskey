@@ -16,7 +16,7 @@ use namespace::autoclean;
 use Carp qw(croak);
 
 use Algorithm::QuineMcCluskey::Util qw(columns countels diffpos hdist
-	maskmatcher remels matchcount stl uniqels);
+	maskmatcher purge_elements remels matchcount stl uniqels);
 use List::Compare::Functional qw(get_intersection is_LequivalentR is_LsubsetR);
 use List::Util qw(sum any);
 use Tie::Cycle;
@@ -26,7 +26,7 @@ use Tie::Cycle;
 # 3 pound signs for the code in BUILD(), find_primes() and find_essentials().
 #
 # 4 pound signs for code that manipulates prime/essentials/covers hashes:
-#      col_dom(), row_dom(), and purge_elements().
+#      col_dom(), row_dom().
 #
 # 5 pound signs for the solve() and recurse_solve() code, and the remels() calls.
 #
@@ -244,7 +244,7 @@ sub BUILD
 
 		### min_ref: $min_ref
 		### max_ref: $max_ref
-		### don't cars: $dc_ref
+		### don't cares: $dc_ref
 
 		$self->minterms($min_ref) if (scalar @{$min_ref} );
 		$self->dontcares($dc_ref) if (scalar @{$dc_ref} );
@@ -635,45 +635,6 @@ sub find_essentials
 	return $self;
 }
 
-=item purge_elements
-
-Given a table (hash form) of prime implicants, delete the list of elements
-(usually essential prime implicants) from the table (row-wise and column-wise),
-leaving those implicants that must be chosen for the remaining elements of
-the boolean function.
-
-=cut
-
-sub purge_elements
-{
-	my $self = shift;
-	my $primes = shift;
-	my @ess = @_;
-
-	return $self if (scalar @ess == 0 or scalar keys %$primes == 0);
-
-	#### purge_elements() called with essentials list: @ess
-	#### purge_elements() called with primes hash ref: $primes
-
-	#
-	# Delete the rows of each element.
-	#
-	delete ${$primes}{$_} for @ess;
-
-	#
-	# Now delete the columns associated with each element.
-	#
-	for my $el (@ess)
-	{
-		##### purge_elements() remels: $el
-		remels($el, $self->dc, $primes);
-	}
-
-	#### purge_elements() returns having set primes to: $primes
-
-	return $self;
-}
-
 =item to_boolean
 
 Generating Boolean expressions
@@ -781,7 +742,9 @@ sub recurse_solve
 		# Remove the essential prime implicants from
 		# the prime implicants table.
 		#
-		$self->purge_elements(\%primes, @essentials_keys);
+		##### Purging prime hash of : @essentials_keys
+		#
+		purge_elements(\%primes, $self->dc, @essentials_keys);
 		push @prefix, grep { $ess{$_} > 0} @essentials_keys;
 
 		##### recurse_solve() \@prefix now: @prefix
@@ -839,7 +802,9 @@ sub recurse_solve
 		#
 		# Use this prime implicant -- delete its row and columns
 		#
-		$self->purge_elements(\%reduced, $ta);
+		##### Purging reduced hash of $ta
+		#
+		purge_elements(\%reduced, $self->dc, $ta);
 
 		# Remove empty rows (necessary?)
 		%reduced = map {

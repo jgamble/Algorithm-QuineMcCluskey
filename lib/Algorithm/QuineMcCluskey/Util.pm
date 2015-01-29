@@ -16,11 +16,11 @@ use List::Util qw(any sum);
 
 use base qw(Exporter);
 our @EXPORT = qw(
-	columns countels diffpos diffposes hdist maskmatcher remels
+	columns countels diffpos diffposes hdist maskmatcher purge_elements remels
 	matchcount stl uniqels
 );
 our @EXPORT_OK = qw(
-	columns countels diffpos diffposes hdist maskmatcher remels
+	columns countels diffpos diffposes hdist maskmatcher purge_elements remels
 	matchcount stl uniqels
 );
 
@@ -48,6 +48,7 @@ sub diffpos ($$);
 sub diffposes;
 sub maskmatcher ($$@);
 sub matchcount ($$);
+sub purge_elements($$@);
 sub remels ($$$);
 sub stl ($);
 sub uniqels (@);
@@ -110,6 +111,37 @@ sub maskmatcher ($$@)
 
 	return @t;
 }
+
+=item purge_elements
+
+Given a table (hash form) of prime implicants, delete the list of elements
+(usually essential prime implicants) from the table (row-wise and column-wise),
+leaving behind implicants that must be chosen for the remaining elements of
+the boolean function.
+
+=cut
+
+sub purge_elements($$@)
+{
+	my($primes, $dc, @ess) = @_;
+	my $count = 0;
+
+	return $count if (scalar @ess == 0 or scalar keys %$primes == 0);
+
+	#
+	# Delete the rows of each element,
+	# then delete the columns associated with each element.
+	#
+	delete ${$primes}{$_} for @ess;
+
+	for my $el (@ess)
+	{
+		$count += remels($el, $dc, $primes);
+	}
+
+	return $count;
+}
+
 
 =item remels
 
