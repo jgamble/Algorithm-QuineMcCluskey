@@ -1,4 +1,9 @@
 Revision history for Algorithm-QuineMcCluskey
+	2015-1-28
+	- Extended tests -- grouped the "solve" test with name
+	  change, and added a simpler test-with-don't-cares.
+	- Moved purge_essentials() to Util.pm, after changing
+	  it to a function from a method.
 	2015-1-26
 	- Changed argument list to purge_essentials(). Had been
 	  taking an esssentials hash, but since it was only using the
