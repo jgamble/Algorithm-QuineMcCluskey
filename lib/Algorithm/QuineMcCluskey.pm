@@ -618,7 +618,7 @@ sub find_essentials
 
 		#
 		### Examining term: $term
-		### Prime list for term is: @tp
+		### Prime list for term is: "[" . join(", ", @tp) . "]"
 		#
 
 		# TODO: It would be nice to track the terms that make
@@ -648,7 +648,7 @@ sub to_boolean
 	my @boolean;
 
 	#
-	### to_boolean() called with: @terms
+	### to_boolean() called with: "[" . join(", ", @terms) . "]"
 	#
 	# Group separators (grouping character pairs)
 	#
@@ -664,7 +664,7 @@ sub to_boolean
 			map { $gs[0] . $self->to_boolean_term($_) . $gs[1] } @$_
 		for (@terms);
 
-	### to_boolean() returns: @boolean
+	### to_boolean() returns: "[" . join(", ", @boolean) . "]"
 
 	return @boolean;
 }
@@ -742,12 +742,12 @@ sub recurse_solve
 		# Remove the essential prime implicants from
 		# the prime implicants table.
 		#
-		##### Purging prime hash of : @essentials_keys
+		##### Purging prime hash of: "[" . join(", ", @essentials_keys) . "]"
 		#
 		purge_elements(\%primes, $self->dc, @essentials_keys);
 		push @prefix, grep { $ess{$_} > 0} @essentials_keys;
 
-		##### recurse_solve() \@prefix now: @prefix
+		##### recurse_solve() @prefix now: "[" . join(", ", @prefix) . "]"
 
 		#$self->row_dom(\%primes);
 		$self->col_dom(\%primes);
@@ -772,7 +772,7 @@ sub recurse_solve
 	} ($self->minmax_bit_terms());
 
 	#
-	##### Flipping table so terms are keys using: @t
+	##### Flipping table so terms are keys using: "[" . join(", ", @t) . "]"
 	#
 	my %ic = columns \%primes, @t;
 
@@ -787,12 +787,13 @@ sub recurse_solve
 		$_ => [ grep { $_ ne $term } @{ $primes{$_} } ]
 	} keys %primes;
 
+	#
+	##### Term used to filter primes list is: $term
+	##### keys are: "[" . join(", ", @ta) . "]"
+	#
 	# For each such cover, recursively solve the table with that column
 	# removed and add the result(s) to the covers table after adding
 	# back the removed term.
-	#
-	##### Term used to filter primes list is: $term
-	##### keys are: @ta
 	#
 	for my $ta (@ta)
 	{
@@ -802,7 +803,7 @@ sub recurse_solve
 		#
 		# Use this prime implicant -- delete its row and columns
 		#
-		##### Purging reduced hash of $ta
+		##### Purging reduced hash of: $ta
 		#
 		purge_elements(\%reduced, $self->dc, $ta);
 
