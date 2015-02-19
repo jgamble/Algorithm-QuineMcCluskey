@@ -1,4 +1,6 @@
 Revision history for Algorithm-QuineMcCluskey
+	2015-2-18
+	- Added test 17-solvesimple.t.
 	2015-1-28
 	- Extended tests -- grouped the "solve" test with name
 	  change, and added a simpler test-with-don't-cares.
