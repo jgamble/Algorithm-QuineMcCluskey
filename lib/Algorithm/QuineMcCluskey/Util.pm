@@ -11,7 +11,7 @@ use strict;
 use warnings;
 
 use Data::Dumper;
-use List::MoreUtils qw(pairwise firstidx);
+use List::MoreUtils qw(pairwise indexes firstidx);
 use List::Util qw(any sum);
 
 use base qw(Exporter);
@@ -159,8 +159,8 @@ sub remels ($$$)
 
 	for my $k (keys %$href)
 	{
-		my $pos = firstidx { maskmatcher($el, $dc, $_) } @{$href->{$k}};
-		if ($pos >= 0)
+		my @pos = indexes { maskmatcher($el, $dc, $_) } @{$href->{$k}};
+		for my $pos (reverse @pos)
 		{
 			splice(@{$href->{$k}}, $pos, 1);
 			$rems++;
