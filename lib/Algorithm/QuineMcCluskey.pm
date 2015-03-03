@@ -30,8 +30,8 @@ use Tie::Cycle;
 #
 # 5 pound signs for the solve() and recurse_solve() code, and the remels() calls.
 #
-use Smart::Comments ('#####');
-use Algorithm::QuineMcCluskey::Format qw(tableform); # Only needed for Smart Comments.
+use Smart::Comments ('####', '#####');
+use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray tableform); # Only needed for Smart Comments.
 
 #
 # Required attributes to create the object.
@@ -499,7 +499,7 @@ sub find_primes
 	}
 
 	#
-	### find_primes() implicant hash (we use the unmarked [i.e., 0] ones: %implicant
+	### find_primes() implicant hash (we use the unmarked [i.e., 0] ones: hasharray(\%implicant)
 	#
 
 	#
@@ -511,7 +511,7 @@ sub find_primes
 		grep { !$implicant{$_} } keys %implicant;
 
 	#
-	### find_primes() -- attributes primes: %p
+	### find_primes() -- attributes primes: hasharray(\%p)
 	#
 
 	$self->_set_primes( \%p );
@@ -558,9 +558,9 @@ sub col_dom
 	my $self = shift;
 	my $primes = shift;
 
-	return $self if (scalar keys %$primes == 0);
+	#### col_dom primes: "\n" . tableform($primes, $self->width)
 
-	#### col_dom() primes hash before processing: $primes
+	return $self if (scalar keys %$primes == 0);
 
 	my %cols = columns $primes, $self->minmax_bit_terms();
 
@@ -578,13 +578,13 @@ sub col_dom
 				and is_LsubsetR([ $cols{$col1} => $cols{$col2} ])
 				and !is_LequivalentR([ $cols{$col1} => $cols{$col2} ]))
 			{
-				##### col_dom() remels: $col2
+				#### col_dom primes before: "\n" . tableform($primes, $self->width)
+				#### col_dom() removing column: $col2
 				remels($col2, $self->dc, $primes);
+				#### col_dom primes after: "\n" . tableform($primes, $self->width)
 			}
 		}
 	}
-
-	#### col_dom() primes hash after processing: $primes
 
 	return $self;
 }
@@ -629,7 +629,7 @@ sub find_essentials
 		}
 	}
 
-	### find_essentials() found: %essentials
+	### find_essentials() found: hasharray(\%essentials)
 
 	$self->_set_essentials(\%essentials);
 	return $self;
@@ -777,7 +777,7 @@ sub recurse_solve
 	my %ic = columns \%primes, @t;
 
 	#
-	##### Resulting table is: %ic
+	##### Resulting table is: hasharray(\%ic)
 	#
 	my $term = (sort { @{ $ic{$a} } <=> @{ $ic{$b} } } keys %ic)[0];
 
@@ -815,7 +815,7 @@ sub recurse_solve
 		if (keys %reduced and scalar(@c = $self->recurse_solve(\%reduced)))
 		{
 			#
-			##### recurse_solve() returns (to recurse_solve()): @c
+			##### recurse_solve() returns (to recurse_solve()): arrayarray(\@c)
 			#
 			@results = map { [ reverse sort (@prefix, $ta, @$_) ] } @c;
 		}
@@ -827,7 +827,7 @@ sub recurse_solve
 	}
 
 	#
-	##### Covers is: @covers
+	##### Covers is: arrayarray(\@covers)
 	##### before weeding out expensive solutions.
 	#
 	if ($self->minonly)
@@ -852,7 +852,7 @@ sub recurse_solve
 	}
 
 	#
-	##### Covers is: @covers
+	##### Covers is: arrayarray(\@covers)
 	##### after the weeding out.
 	#
 

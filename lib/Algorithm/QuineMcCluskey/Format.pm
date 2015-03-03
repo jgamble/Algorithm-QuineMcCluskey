@@ -15,7 +15,7 @@ use List::MoreUtils qw(uniq firstidx);
 
 @ISA = qw(Exporter);
 
-our @EXPORT_OK = qw(elem_hash tableform);
+our @EXPORT_OK = qw(arrayarray hasharray tableform);
 
 =head1 VERSION
 
@@ -27,7 +27,7 @@ our $VERSION = 0.01;
 
 =head1 DESCRIPTION
 
-This module provides various utilities designed for (but not limited to) use in
+This module provides formatting utilities designed for (but not limited to) use in
 Algorithm::QuineMcCluskey.
 
 =cut
@@ -43,16 +43,30 @@ Returns string form of primes structure.
 
 =cut
 
-sub elem_hash
+sub arrayarray
 {
-	my ($hr, $width) = @_;
-	my $fmt = "%" . ($width+2) . "s";
+	my ($ar) = @_;
+	my $fmt = "%" . length(scalar @{$ar}) . "d: ";
+	my $idx = 0;
 	my @output;
-	my @rows = sort keys %$hr;
 
-	for my $r (@rows)
+	for my $ref (@{$ar})
 	{
-		push @output, "$r: [" . join(", ", @{ $hr->{$r} }) . "]\n";
+		push @output, sprintf($fmt, $idx) . " [" . join(", ", @{ $ref }) . "]";
+		$idx++;
+	}
+
+	return "\n" . join("\n", @output);
+}
+
+sub hasharray
+{
+	my ($hr) = @_;
+	my @output;
+
+	for my $r (sort keys %$hr)
+	{
+		push @output, "$r: [" . join(", ", @{ $hr->{$r} }) . "]";
 	}
 
 	return join("\n", @output);
@@ -68,6 +82,10 @@ sub tableform
 	my @columns = sort(uniq(map{ @{ $hr->{$_} } } @rows));
 	push @output, join("", map{sprintf($fmt, $_)} ' ', @columns);
 
+	#
+	# Having set up our list of row and column headers, check
+	# to see which column values are present in each row.
+	#
 	for my $r (@rows)
 	{
 		my @present = map {my $v = $_; (firstidx{$v eq $_} @{ $hr->{$r} }) } @columns;
