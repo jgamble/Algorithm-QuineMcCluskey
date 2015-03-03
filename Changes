@@ -1,4 +1,10 @@
 Revision history for Algorithm-QuineMcCluskey
+	2015-3-2
+	- Added formatting functions for Smart Comments lines, which
+	  makes the visualization process easier and will probably be
+	  useful for users as well.
+	- Found an error in remels(), which was only removing one
+	  matched array element instead of all matched elements.
 	2015-2-18
 	- Added test 17-solvesimple.t.
 	2015-1-28
