@@ -30,8 +30,8 @@ use Tie::Cycle;
 #
 # 5 pound signs for the solve() and recurse_solve() code, and the remels() calls.
 #
-use Smart::Comments ('####', '#####');
-use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray tableform); # Only needed for Smart Comments.
+#use Smart::Comments ('####', '#####');
+#use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray tableform); # Only needed for Smart Comments.
 
 #
 # Required attributes to create the object.
