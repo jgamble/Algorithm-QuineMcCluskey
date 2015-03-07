@@ -16,12 +16,12 @@ use List::Util qw(any sum);
 
 use base qw(Exporter);
 our @EXPORT = qw(
-	columns countels diffpos diffposes hdist maskmatcher purge_elements remels
-	matchcount stl uniqels
+	columns countels diffpos diffposes find_essentials hdist maskmatcher
+	purge_elements remels matchcount stl uniqels
 );
 our @EXPORT_OK = qw(
-	columns countels diffpos diffposes hdist maskmatcher purge_elements remels
-	matchcount stl uniqels
+	columns countels diffpos diffposes find_essentials hdist maskmatcher
+	purge_elements remels matchcount stl uniqels
 );
 
 =head1 VERSION
@@ -38,20 +38,6 @@ This module provides various utilities designed for (but not limited to) use in
 Algorithm::QuineMcCluskey.
 
 =cut
-
-################################################################################
-# Sub declarations
-################################################################################
-sub columns ($@);
-sub countels($$);
-sub diffpos ($$);
-sub diffposes;
-sub maskmatcher ($$@);
-sub matchcount ($$);
-sub purge_elements($$@);
-sub remels ($$$);
-sub stl ($);
-sub uniqels (@);
 
 =head1 FUNCTIONS
 
@@ -75,7 +61,7 @@ interfering, enclose the search string between '\Q' and '\E'. E.g.:
 
 =cut
 
-sub matchcount($$)
+sub matchcount
 {
 	my($x, $y) = @_;
 
@@ -88,7 +74,7 @@ Returns the terms that match a mask.
 
 =cut
 
-sub maskmatcher ($$@)
+sub maskmatcher
 {
 	my($m, $dc, @terms) = @_;
 	my @t;
@@ -112,6 +98,39 @@ sub maskmatcher ($$@)
 	return @t;
 }
 
+=item find_essentials
+
+Find the essential prime implicants.
+
+=cut
+
+sub find_essentials
+{
+	my $primes = shift;
+	my(@terms) = @_;
+
+	my @kp = keys %$primes;
+	my %essentials;
+
+	for my $term (@terms)
+	{
+		my @tp = grep {
+				grep { $_ eq $term } @{ $primes->{$_} }
+			} @kp;
+
+		#
+		# TODO: It would be nice to track the terms that make
+		# this essential
+		if (scalar @tp == 1)
+		{
+			$essentials{$tp[0]}++;
+		}
+	}
+
+	return %essentials;
+}
+
+
 =item purge_elements
 
 Given a table (hash form) of prime implicants, delete the list of elements
@@ -121,7 +140,7 @@ the boolean function.
 
 =cut
 
-sub purge_elements($$@)
+sub purge_elements
 {
 	my($primes, $dc, @ess) = @_;
 	my $count = 0;
@@ -152,7 +171,7 @@ Returns the number of removals made.
 
 =cut
 
-sub remels ($$$)
+sub remels
 {
 	my ($el, $dc, $href) = @_;
 	my $rems = 0;
@@ -170,7 +189,7 @@ sub remels ($$$)
 	return $rems;
 }
 
-sub countels($$)
+sub countels
 {
 	my($el, $aref) = @_;
 
@@ -184,7 +203,8 @@ Returns unique elements of an arrayref; usable for deep structures
 
 =cut
 
-sub uniqels (@) {
+sub uniqels
+{
     my %h;
     map { $h{Dumper($_)}++ == 0 ? $_ : () } @_;
 }
@@ -195,7 +215,7 @@ Rotates 90 degrees a hashtable of the type used for %primes
 
 =cut
 
-sub columns ($@)
+sub columns
 {
 	my ($r, @c) = @_;
 	map {
@@ -212,7 +232,7 @@ Find the location of the first difference between two strings
 
 =cut
 
-sub diffpos ($$) { firstidx { $_ } diffposes @_ }
+sub diffpos { firstidx { $_ } diffposes(@_)}
 
 =item hdist
 
@@ -220,7 +240,7 @@ Hamming distance
 
 =cut
 
-sub hdist { sum diffposes @_ }
+sub hdist { sum diffposes(@_)}
 
 =item diffposes
 
@@ -228,7 +248,7 @@ Return pairwise the 'un-sameness' of two strings
 
 =cut
 
-sub diffposes { pairwise { $a ne $b } @{[ stl shift ]}, @{[ stl shift ]} }
+sub diffposes { pairwise { $a ne $b } @{[ stl(shift)]}, @{[ stl(shift)]} }
 
 =item stl
 
@@ -236,7 +256,7 @@ Splits a string into a list of its chars
 
 =cut
 
-sub stl ($) { split //, shift }
+sub stl { split //, shift }
 
 =back
 
