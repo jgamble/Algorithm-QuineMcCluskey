@@ -15,15 +15,15 @@ use namespace::autoclean;
 
 use Carp qw(croak);
 
-use Algorithm::QuineMcCluskey::Util qw(columns countels diffpos hdist
-	maskmatcher purge_elements remels matchcount stl uniqels);
+use Algorithm::QuineMcCluskey::Util qw(columns countels diffpos find_essentials
+	hdist maskmatcher purge_elements remels matchcount stl uniqels);
 use List::Compare::Functional qw(get_intersection is_LequivalentR is_LsubsetR);
 use List::Util qw(sum any);
 use Tie::Cycle;
 
 #
 # Vaguely consistent Smart-Comment rules:
-# 3 pound signs for the code in BUILD(), find_primes() and find_essentials().
+# 3 pound signs for the code in BUILD() and find_primes().
 #
 # 4 pound signs for code that manipulates prime/essentials/covers hashes:
 #      col_dom(), row_dom().
@@ -403,7 +403,7 @@ sub minmax_bit_terms
 
 =item find_primes
 
-Finding prime essentials
+Finding prime implicants
 
 =cut
 
@@ -528,23 +528,35 @@ sub row_dom
 {
 	my $self = shift;
 	my $primes = shift;
+	my @kp = keys %$primes;
+
+	#### row_dom primes: "\n" . tableform($primes, $self->width)
 
 	return $primes if (scalar keys %$primes == 0);
 
-	#### row_dom() primes hash before processing: $primes
-
-	%$primes = ( map {
-		my $o = $_;
-		(sum map {
-			is_LsubsetR([ $primes->{$o} => $primes->{$_} ])
-				&& !is_LequivalentR([ $primes->{$o} => $primes->{$_} ])
-			} grep { $_ ne $o } keys %$primes)
-		? () : ( $_ => $primes->{$_} )
-	} keys %$primes );
-
-	#### row_dom() primes hash after processing: $primes
-
 	return $self;
+
+	for my $row1 (@kp)
+	{
+		for my $row2 (@kp)
+		{
+			next if $row1 eq $row2;
+
+			#
+			# If row1 is a non-empty proper subset of row2,
+			# remove row2
+			#
+			if (@{ $primes->{$row1} }
+				and is_LsubsetR([ $primes->{$row1} => $primes->{$row2} ])
+				and !is_LequivalentR([ $primes->{$row1} => $primes->{$row2} ]))
+			{
+				#### row_dom primes before: "\n" . tableform($primes, $self->width)
+				#### row_dom() removing row: $row2
+				delete ${$primes}{$row2};
+				#### row_dom primes after: "\n" . tableform($primes, $self->width)
+			}
+		}
+	}
 }
 
 =item col_dom
@@ -558,15 +570,17 @@ sub col_dom
 	my $self = shift;
 	my $primes = shift;
 
-	#### col_dom primes: "\n" . tableform($primes, $self->width)
-
 	return $self if (scalar keys %$primes == 0);
 
 	my %cols = columns $primes, $self->minmax_bit_terms();
 
-	for my $col1 (keys %cols)
+	#### col_dom primes (rotated): "\n" . tableform(\%cols, $self->width)
+
+	my @cp = keys %cols;
+
+	for my $col1 (@cp)
 	{
-		for my $col2 (keys %cols)
+		for my $col2 (@cp)
 		{
 			next if $col1 eq $col2;
 
@@ -586,52 +600,6 @@ sub col_dom
 		}
 	}
 
-	return $self;
-}
-
-=item find_essentials
-
-Find the essential prime implicants.
-
-Called from the solve(), but may also be called by itself for testing
-purposes.
-
-=cut
-
-sub find_essentials
-{
-	my $self = shift;
-
-	my $primes = shift;
-	my @terms = $self->minmax_bit_terms();
-
-	my @kp = keys %$primes;
-	my %essentials;
-
-	$self->clear_essentials;
-
-	for my $term (@terms)
-	{
-		my @tp = grep {
-				grep { $_ eq $term } @{ $primes->{$_} }
-			} @kp;
-
-		#
-		### Examining term: $term
-		### Prime list for term is: "[" . join(", ", @tp) . "]"
-		#
-
-		# TODO: It would be nice to track the terms that make
-		# this essential
-		if (scalar @tp == 1)
-		{
-			$essentials{$tp[0]}++;
-		}
-	}
-
-	### find_essentials() found: hasharray(\%essentials)
-
-	$self->_set_essentials(\%essentials);
 	return $self;
 }
 
@@ -700,11 +668,15 @@ Main solution sub (wraps recurse_solve())
 sub solve
 {
 	my $self = shift;
-	$self->find_primes unless ($self->has_primes);
 
-	my $p = $self->get_primes;
+	unless ($self->has_covers)
+	{
+		$self->find_primes unless ($self->has_primes);
 
-	$self->_set_covers($self->recurse_solve($p));
+		my $p = $self->get_primes;
+
+		$self->_set_covers($self->recurse_solve($p));
+	}
 
 	return $self->to_boolean($self->get_covers);
 }
@@ -726,8 +698,8 @@ sub recurse_solve
 	#
 	##### recurse_solve() called with: "\n" . tableform(\%primes, $self->width)
 	#
-	$self->find_essentials(\%primes);
-	my %ess = %{ $self->get_essentials() };
+	
+	my %ess = find_essentials(\%primes, $self->minmax_bit_terms());
 
 	#
 	##### Begin prefix/essentials loop.
@@ -749,10 +721,11 @@ sub recurse_solve
 
 		##### recurse_solve() @prefix now: "[" . join(", ", @prefix) . "]"
 
-		#$self->row_dom(\%primes);
+		$self->row_dom(\%primes);
 		$self->col_dom(\%primes);
-		$self->find_essentials(\%primes);
-		%ess = %{ $self->get_essentials() };
+		%ess = find_essentials(\%primes, $self->minmax_bit_terms());
+
+		##### recurse_solve() essentials after purge/dom: %ess
 
 	} while (!is_LequivalentR([
 			[ @essentials_keys ] => [ keys %ess ]
