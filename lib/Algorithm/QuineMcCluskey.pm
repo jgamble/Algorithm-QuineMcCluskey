@@ -30,7 +30,7 @@ use Tie::Cycle;
 #
 # 5 pound signs for the solve() and recurse_solve() code, and the remels() calls.
 #
-use Smart::Comments ('####', '#####');
+use Smart::Comments ('###', '####', '#####');
 use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray tableform); # Only needed for Smart Comments.
 
 #
@@ -422,7 +422,8 @@ sub find_primes
 	}
 
 	#
-	### find_primes() group the bit terms by bit count: @bits
+	### find_primes() group the bit terms
+	### by bit count: @bits
 	#
 
 	#
@@ -499,7 +500,8 @@ sub find_primes
 	}
 
 	#
-	### find_primes() implicant hash (we use the unmarked [i.e., 0] ones: hasharray(\%implicant)
+	### find_primes() implicant hash (we use the unmarked entries
+	### [i.e., prime => 0] ) : %implicant
 	#
 
 	#
@@ -616,7 +618,7 @@ sub to_boolean
 	my @boolean;
 
 	#
-	### to_boolean() called with: "[" . join(", ", @terms) . "]"
+	### to_boolean() called with:  arrayarray(\@terms)
 	#
 	# Group separators (grouping character pairs)
 	#
@@ -708,7 +710,11 @@ sub recurse_solve
 	{
 		##### recurse_solve() essentials: %ess
 
-		@essentials_keys = keys %ess;
+		#
+		# REMOVE LATER: the sort op isn't necessary
+		# to the algorithm, but it makes debugging easier.
+		#
+		@essentials_keys = sort keys %ess;
 
 		#
 		# Remove the essential prime implicants from
@@ -719,7 +725,7 @@ sub recurse_solve
 		purge_elements(\%primes, $self->dc, @essentials_keys);
 		push @prefix, grep { $ess{$_} > 0} @essentials_keys;
 
-		##### recurse_solve() @prefix now: "[" . join(", ", @prefix) . "]"
+		##### recurse_solve() @prefix now: "[" . join(", ", sort @prefix) . "]"
 
 		$self->row_dom(\%primes);
 		$self->col_dom(\%primes);
