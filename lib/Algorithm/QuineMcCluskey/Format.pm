@@ -69,7 +69,7 @@ sub hasharray
 		push @output, "$r: [" . join(", ", @{ $hr->{$r} }) . "]";
 	}
 
-	return join("\n", @output);
+	return "\n" . join("\n", @output);
 }
 
 sub tableform
