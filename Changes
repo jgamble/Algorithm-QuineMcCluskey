@@ -1,5 +1,10 @@
 Revision history for Algorithm-QuineMcCluskey
 
+     2015-3-27
+	- Changed row_dom() and col_dom() to return the rows/cols
+	  to remove, instead of removing them inside.
+	- Changed row_dom() and col_dom() from methods to functions,
+	  and moved the code to Util.pm
      2015-3-6
 	- Replaced old row_dom() code with code that actually
 	  affects the data. Un-commented out the calls to $self->row_dom().
