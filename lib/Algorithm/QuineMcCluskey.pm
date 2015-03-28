@@ -15,7 +15,7 @@ use namespace::autoclean;
 
 use Carp qw(croak);
 
-use Algorithm::QuineMcCluskey::Util qw(columns countels diffpos find_essentials
+use Algorithm::QuineMcCluskey::Util qw(col_dom row_dom columns countels diffpos find_essentials
 	hdist maskmatcher purge_elements remels matchcount stl uniqels);
 use List::Compare::Functional qw(get_intersection is_LequivalentR is_LsubsetR);
 use List::Util qw(sum any);
@@ -418,7 +418,7 @@ sub find_primes
 	#
 	for ($self->all_bit_terms())
 	{
-		push  @{$bits[0][ matchcount($_, '1') ]}, $_;
+		push @{$bits[0][ matchcount($_, '1') ]}, $_;
 	}
 
 	#
@@ -520,91 +520,6 @@ sub find_primes
 	return $self;
 }
 
-=item row_dom
-
-Row-dominance
-
-=cut
-
-sub row_dom
-{
-	my $self = shift;
-	my $primes = shift;
-	my @kp = keys %$primes;
-
-	#### row_dom primes: "\n" . tableform($primes, $self->width)
-
-	return $primes if (scalar keys %$primes == 0);
-
-	return $self;
-
-	for my $row1 (@kp)
-	{
-		for my $row2 (@kp)
-		{
-			next if $row1 eq $row2;
-
-			#
-			# If row1 is a non-empty proper subset of row2,
-			# remove row2
-			#
-			if (@{ $primes->{$row1} }
-				and is_LsubsetR([ $primes->{$row1} => $primes->{$row2} ])
-				and !is_LequivalentR([ $primes->{$row1} => $primes->{$row2} ]))
-			{
-				#### row_dom primes before: "\n" . tableform($primes, $self->width)
-				#### row_dom() removing row: $row2
-				delete ${$primes}{$row2};
-				#### row_dom primes after: "\n" . tableform($primes, $self->width)
-			}
-		}
-	}
-}
-
-=item col_dom
-
-Column-dominance
-
-=cut
-
-sub col_dom
-{
-	my $self = shift;
-	my $primes = shift;
-
-	return $self if (scalar keys %$primes == 0);
-
-	my %cols = columns $primes, $self->minmax_bit_terms();
-
-	#### col_dom primes (rotated): "\n" . tableform(\%cols, $self->width)
-
-	my @cp = keys %cols;
-
-	for my $col1 (@cp)
-	{
-		for my $col2 (@cp)
-		{
-			next if $col1 eq $col2;
-
-			#
-			# If col1 is a non-empty proper subset of col2,
-			# remove col2
-			#
-			if (@{ $cols{$col1} }
-				and is_LsubsetR([ $cols{$col1} => $cols{$col2} ])
-				and !is_LequivalentR([ $cols{$col1} => $cols{$col2} ]))
-			{
-				#### col_dom primes before: "\n" . tableform($primes, $self->width)
-				#### col_dom() removing column: $col2
-				remels($col2, $self->dc, $primes);
-				#### col_dom primes after: "\n" . tableform($primes, $self->width)
-			}
-		}
-	}
-
-	return $self;
-}
-
 =item to_boolean
 
 Generating Boolean expressions
@@ -680,12 +595,26 @@ sub solve
 		$self->_set_covers($self->recurse_solve($p));
 	}
 
+	#### solve() covers are: $self->get_covers()
+
 	return $self->to_boolean($self->get_covers);
 }
 
 =item recurse_solve
 
 Recursive divide-and-conquer solver
+
+To reduce the complexity of the prime implicant chart:
+
+1. Select all the essential prime impliciants. If these PIs cover all
+minterms, stop; otherwise go the second step.
+
+2. Apply Rules 1 and 2 to eliminate redundant rows and columns from
+the PI chart of non-essential PIs.  When the chart is thus reduced,
+some PIs will become essential (i.e., some columns will have a single
+'x'. Go back to step 1.
+
+Introduction To Logic Design, by Sajjan G. Shiva page 129.
 
 =cut
 
@@ -727,13 +656,23 @@ sub recurse_solve
 
 		##### recurse_solve() @prefix now: "[" . join(", ", sort @prefix) . "]"
 
-		$self->row_dom(\%primes);
-		$self->col_dom(\%primes);
+		#
+		# Now eliminate dominated rows and columns.
+		#
+		#my @rows = row_dom(\%primes);
+		#delete ${$primes}{$_} for (@rows);
+
+		my %cols = columns \%primes, $self->minmax_bit_terms();
+		#### col_dom primes (rotated): "\n" . tableform(\%cols, $self->width)
+		my @cols = col_dom(\%cols);
+		#### col_dom returns for removal: "[" . join(", ", @cols) . "]"
+		remels($_, $self->dc, \%primes) for (@cols);
+
 		%ess = find_essentials(\%primes, $self->minmax_bit_terms());
 
 		##### recurse_solve() essentials after purge/dom: %ess
 
-	} while (!is_LequivalentR([
+	} until (is_LequivalentR([
 			[ @essentials_keys ] => [ keys %ess ]
 			]));
 
@@ -758,10 +697,12 @@ sub recurse_solve
 	#
 	##### Resulting table is: hasharray(\%ic)
 	#
-	my $term = (sort { @{ $ic{$a} } <=> @{ $ic{$b} } } keys %ic)[0];
+	my $term = (reverse (sort { @{ $ic{$a} } <=> @{ $ic{$b} } } keys %ic))[0];
 
 	# Rows of %primes that contain $term
-	my @ta = grep { countels($term, $primes{$_}) } keys %primes;
+	# REMOVE LATER: yet another sort op added for debugging.
+
+	my @ta = sort grep { countels($term, $primes{$_}) } keys %primes;
 	my %r = map {
 		$_ => [ grep { $_ ne $term } @{ $primes{$_} } ]
 	} keys %primes;

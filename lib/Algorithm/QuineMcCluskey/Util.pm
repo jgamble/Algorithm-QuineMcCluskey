@@ -13,14 +13,15 @@ use warnings;
 use Data::Dumper;
 use List::MoreUtils qw(pairwise indexes firstidx);
 use List::Util qw(any sum);
+use List::Compare::Functional qw(is_LequivalentR is_LsubsetR);
 
 use base qw(Exporter);
 our @EXPORT = qw(
-	columns countels diffpos diffposes find_essentials hdist maskmatcher
+	columns col_dom row_dom countels diffpos diffposes find_essentials hdist maskmatcher
 	purge_elements remels matchcount stl uniqels
 );
 our @EXPORT_OK = qw(
-	columns countels diffpos diffposes find_essentials hdist maskmatcher
+	columns col_dom row_dom countels diffpos diffposes find_essentials hdist maskmatcher
 	purge_elements remels matchcount stl uniqels
 );
 
@@ -129,6 +130,80 @@ sub find_essentials
 
 	return %essentials;
 }
+
+
+=item row_dom
+
+Row-dominance
+
+=cut
+
+sub row_dom
+{
+	my $primes = shift;
+	my @kp = keys %$primes;
+	my @rows;
+
+	for my $row1 (@kp)
+	{
+		for my $row2 (@kp)
+		{
+			next if $row1 eq $row2;
+
+			#
+			# If row1 is a non-empty proper subset of row2,
+			# remove row2
+			#
+			if (@{ $primes->{$row1} }
+				and is_LsubsetR([ $primes->{$row1} => $primes->{$row2} ])
+				and !is_LequivalentR([ $primes->{$row1} => $primes->{$row2} ]))
+			{
+				# delete ${$primes}{$row2};
+				push @rows, $row2;
+			}
+		}
+	}
+
+	return @rows;
+}
+
+=item col_dom
+
+Column-dominance
+
+=cut
+
+sub col_dom
+{
+	my $primes = shift;
+	my @cp = keys %{$primes};
+	my @cols;
+
+	return () if (scalar @cp == 0);
+
+	for my $col1 (@cp)
+	{
+		for my $col2 (@cp)
+		{
+			next if $col1 eq $col2;
+
+			#
+			# If col1 is a non-empty proper subset of col2,
+			# remove col2
+			#
+			if (@{ ${$primes}{$col1} }
+				and is_LsubsetR([ ${$primes}{$col1} => ${$primes}{$col2} ])
+				and !is_LequivalentR([ ${$primes}{$col1} => ${$primes}{$col2} ]))
+			{
+				#remels($col2, $self->dc, $primes);
+				push @cols, $col2;
+			}
+		}
+	}
+
+	return @cols;
+}
+
 
 
 =item purge_elements
