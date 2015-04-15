@@ -1,5 +1,14 @@
 Revision history for Algorithm-QuineMcCluskey
 
+     2015-4-15
+	- Replace row_dom() and col_dom() with row_dominance()
+	  in Util.pm. When they were changed to returning keys
+	  instead of deleting from the hash immediately, they
+	  became essentially the same function, just called
+	  with different parameters.
+	- Replaced "use base" with "use parent" in Util.pm.
+	- Changed calls of row_dom() and col_dom() in
+	  QuineMcCluskey.pm
      2015-3-27
 	- Changed row_dom() and col_dom() to return the rows/cols
 	  to remove, instead of removing them inside.
