@@ -15,13 +15,9 @@ use List::MoreUtils qw(pairwise indexes firstidx);
 use List::Util qw(any sum);
 use List::Compare::Functional qw(is_LequivalentR is_LsubsetR);
 
-use base qw(Exporter);
-our @EXPORT = qw(
-	columns col_dom row_dom countels diffpos diffposes find_essentials hdist maskmatcher
-	purge_elements remels matchcount stl uniqels
-);
+use parent qw(Exporter);
 our @EXPORT_OK = qw(
-	columns col_dom row_dom countels diffpos diffposes find_essentials hdist maskmatcher
+	columns row_dominance countels diffpos diffposes find_essentials hdist maskmatcher
 	purge_elements remels matchcount stl uniqels
 );
 
@@ -131,14 +127,19 @@ sub find_essentials
 	return %essentials;
 }
 
+=item row_dominance
 
-=item row_dom
+Row or column dominance checking.
 
-Row-dominance
+"A row (column) <I>i</I> of a PI chart dominates row (column) <I>j</I>
+if row (column) <I>i</I> contains an x in each column (row) dominated by it."
+
+Return those rows (columns are handled by rotatining the primes hash before
+calling this function).
 
 =cut
 
-sub row_dom
+sub row_dominance
 {
 	my $primes = shift;
 	my @kp = keys %$primes;
@@ -167,45 +168,6 @@ sub row_dom
 	return @rows;
 }
 
-=item col_dom
-
-Column-dominance
-
-=cut
-
-sub col_dom
-{
-	my $primes = shift;
-	my @cp = keys %{$primes};
-	my @cols;
-
-	return () if (scalar @cp == 0);
-
-	for my $col1 (@cp)
-	{
-		for my $col2 (@cp)
-		{
-			next if $col1 eq $col2;
-
-			#
-			# If col1 is a non-empty proper subset of col2,
-			# remove col2
-			#
-			if (@{ ${$primes}{$col1} }
-				and is_LsubsetR([ ${$primes}{$col1} => ${$primes}{$col2} ])
-				and !is_LequivalentR([ ${$primes}{$col1} => ${$primes}{$col2} ]))
-			{
-				#remels($col2, $self->dc, $primes);
-				push @cols, $col2;
-			}
-		}
-	}
-
-	return @cols;
-}
-
-
-
 =item purge_elements
 
 Given a table (hash form) of prime implicants, delete the list of elements
@@ -233,6 +195,9 @@ sub purge_elements
 		$count += remels($el, $dc, $primes);
 	}
 
+	if ($count != 0)
+	{
+	}
 	return $count;
 }
 
