@@ -23,7 +23,7 @@ use Tie::Cycle;
 
 #
 # Vaguely consistent Smart-Comment rules:
-# 3 pound signs for the code in BUILD() and find_primes().
+# 3 pound signs for the code in BUILD() and generate_primes().
 #
 # 4 pound signs for code that manipulates prime/essentials/covers hashes:
 #      row_dominance().
@@ -129,7 +129,9 @@ has 'primes'	=> (
 	reader => 'get_primes',
 	writer => '_set_primes',
 	predicate => 'has_primes',
-	clearer => 'clear_primes'
+	clearer => 'clear_primes',
+	lazy => 1,
+	builder => 'generate_primes'
 );
 has 'covers'	=> (
 	isa => 'ArrayRef[Str]', is => 'ro', required => 0,
@@ -401,13 +403,7 @@ sub minmax_bit_terms
 	return @terms;
 }
 
-=item find_primes
-
-Finding prime implicants
-
-=cut
-
-sub find_primes
+sub generate_primes
 {
 	my $self = shift;
 	my @bits;
@@ -422,7 +418,7 @@ sub find_primes
 	}
 
 	#
-	### find_primes() group the bit terms
+	### generate_primes() group the bit terms
 	### by bit count: @bits
 	#
 
@@ -500,7 +496,7 @@ sub find_primes
 	}
 
 	#
-	### find_primes() implicant hash (we use the unmarked entries
+	### generate_primes() implicant hash (we use the unmarked entries
 	### [i.e., prime => 0] ) : %implicant
 	#
 
@@ -513,11 +509,10 @@ sub find_primes
 		grep { !$implicant{$_} } keys %implicant;
 
 	#
-	### find_primes() -- attributes primes: hasharray(\%p)
+	### generate_primes() -- attributes primes: hasharray(\%p)
 	#
 
-	$self->_set_primes( \%p );
-	return $self;
+	return \%p;
 }
 
 =item to_boolean
@@ -588,8 +583,6 @@ sub solve
 
 	unless ($self->has_covers)
 	{
-		$self->find_primes unless ($self->has_primes);
-
 		my $p = $self->get_primes;
 
 		$self->_set_covers($self->recurse_solve($p));
