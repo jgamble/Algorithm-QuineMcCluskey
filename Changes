@@ -1,5 +1,9 @@
 Revision history for Algorithm-QuineMcCluskey
 
+     2015-4-18
+	- Made the primes attribute "lazy", so that one can look
+	  up prime implicants without going through the solving
+	  process.
      2015-4-15
 	- Replace row_dom() and col_dom() with row_dominance()
 	  in Util.pm. When they were changed to returning keys
