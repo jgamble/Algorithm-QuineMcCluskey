@@ -23,7 +23,6 @@ my %expected_primes = (
 );
 
 
-$q->find_primes;
 my $primes = $q->get_primes;
 is_deeply($primes, \%expected_primes, $q->title);
 
@@ -44,7 +43,6 @@ $q = Algorithm::QuineMcCluskey->new(
 
 
 
-$q->find_primes;
 $primes = $q->get_primes;
 is_deeply($primes, \%expected_primes, $q->title);
 
