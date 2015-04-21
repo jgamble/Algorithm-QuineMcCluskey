@@ -1,5 +1,7 @@
 Revision history for Algorithm-QuineMcCluskey
 
+     2015-4-20
+	- Fix test file 02-simple.t now that primes attribute is "lazy".
      2015-4-18
 	- Made the primes attribute "lazy", so that one can look
 	  up prime implicants without going through the solving
