@@ -11,14 +11,14 @@ use strict;
 use warnings;
 
 use Data::Dumper;
-use List::MoreUtils qw(pairwise indexes firstidx);
+use List::MoreUtils qw(pairwise indexes uniq firstidx);
 use List::Util qw(any sum);
 use List::Compare::Functional qw(is_LequivalentR is_LsubsetR);
 
 use parent qw(Exporter);
 our @EXPORT_OK = qw(
 	columns row_dominance countels diffpos diffposes find_essentials hdist maskmatcher
-	purge_elements remels matchcount stl uniqels
+	least_covered purge_elements remels matchcount stl uniqels
 );
 
 =head1 VERSION
@@ -103,8 +103,7 @@ Find the essential prime implicants.
 
 sub find_essentials
 {
-	my $primes = shift;
-	my(@terms) = @_;
+	my($primes, @terms) = @_;
 
 	my @kp = keys %$primes;
 	my %essentials;
@@ -129,43 +128,71 @@ sub find_essentials
 
 =item row_dominance
 
-Row or column dominance checking.
+Row dominance checking.
+
+@dominated_rows = row_dominance(\%primes, 0);
+@dominant_rows = row_dominance(\%primes, 1);
 
 "A row (column) <I>i</I> of a PI chart dominates row (column) <I>j</I>
 if row (column) <I>i</I> contains an x in each column (row) dominated by it."
 
-Return those rows (columns are handled by rotatining the primes hash before
+Return those rows (columns are handled by rotating the primes hash before
 calling this function).
 
 =cut
 
 sub row_dominance
 {
-	my $primes = shift;
+	my($primes, $dominant_rows) = @_;
 	my @kp = keys %$primes;
 	my @rows;
+
+	$dominant_rows //= 0;
 
 	for my $row1 (@kp)
 	{
 		for my $row2 (@kp)
 		{
-			next if $row1 eq $row2;
+			next if ($row1 eq $row2 or
+				scalar @{ $primes->{$row1} } == 0 or
+				is_LequivalentR([ $primes->{$row1} => $primes->{$row2} ]));
 
 			#
-			# If row1 is a non-empty proper subset of row2,
-			# remove row2
+			# If row1's list is a subset of row2, then it is dominated
+			# by row2.
 			#
-			if (@{ $primes->{$row1} }
-				and is_LsubsetR([ $primes->{$row1} => $primes->{$row2} ])
-				and !is_LequivalentR([ $primes->{$row1} => $primes->{$row2} ]))
+			if (is_LsubsetR([ $primes->{$row1} => $primes->{$row2} ]))
 			{
-				# delete ${$primes}{$row2};
-				push @rows, $row2;
+				push @rows, ($dominant_rows)? $row2: $row1;
 			}
 		}
 	}
 
-	return @rows;
+	return uniq(@rows);
+}
+
+#
+# Find the term with the fewest implicant covers.
+#
+sub least_covered
+{
+	my($primes, @bit_terms) = @_;
+
+	my @t = grep {
+		my $o = $_;
+		any { countels( $o, $_ ) } values %{$primes}
+	} @bit_terms;
+
+	#
+	# Flip the table so that terms become keys, limited
+	# to those found in @t.
+	#
+	my %ic = columns($primes, @t);
+
+	#
+	# Sort by count of the array items.
+	#
+	return (sort { @{ $ic{$a} } <=> @{ $ic{$b} } } keys %ic)[0];
 }
 
 =item purge_elements

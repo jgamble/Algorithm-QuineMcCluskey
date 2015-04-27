@@ -16,9 +16,9 @@ use namespace::autoclean;
 use Carp qw(croak);
 
 use Algorithm::QuineMcCluskey::Util qw(row_dominance columns countels diffpos find_essentials
-	hdist maskmatcher purge_elements remels matchcount stl uniqels);
+	hdist maskmatcher least_covered purge_elements remels matchcount stl uniqels);
 use List::Compare::Functional qw(get_intersection is_LequivalentR is_LsubsetR);
-use List::Util qw(sum any);
+use List::Util qw(any);
 use Tie::Cycle;
 
 #
@@ -30,8 +30,8 @@ use Tie::Cycle;
 #
 # 5 pound signs for the solve() and recurse_solve() code, and the remels() calls.
 #
-use Smart::Comments ('###', '####', '#####');
-use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray tableform); # Only needed for Smart Comments.
+#use Smart::Comments ('###', '####', '#####');
+#use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray tableform); # Only needed for Smart Comments.
 
 #
 # Required attributes to create the object.
@@ -115,13 +115,15 @@ has 'max_bits'	=> (
 	init_arg => undef,
 	predicate => 'has_max_bits'
 );
-has 'ess'	=> (
+has 'essentials'	=> (
 	isa => 'HashRef', is => 'ro', required => 0,
 	init_arg => undef,
 	reader => 'get_essentials',
 	writer => '_set_essentials',
 	predicate => 'has_essentials',
-	clearer => 'clear_essentials'
+	clearer => 'clear_essentials',
+	lazy => 1,
+	builder => 'generate_essentials'
 );
 has 'primes'	=> (
 	isa => 'HashRef', is => 'ro', required => 0,
@@ -515,6 +517,15 @@ sub generate_primes
 	return \%p;
 }
 
+sub generate_essentials
+{
+	my $self = shift;
+
+	my $p = $self->get_primes;
+	my %e = find_essentials($p, $self->minmax_bit_terms());
+	return \%e;
+}
+
 =item to_boolean
 
 Generating Boolean expressions
@@ -615,11 +626,13 @@ sub recurse_solve
 {
 	my $self = shift;
 	my %primes = %{ $_[0] };
+	my $level = $_[1];
 	my @prefix;
 	my @covers;
 	my @essentials_keys;
 
 	#
+	##### recurse_solve() level: $level
 	##### recurse_solve() called with: "\n" . tableform(\%primes, $self->width)
 	#
 	
@@ -652,14 +665,17 @@ sub recurse_solve
 		#
 		# Now eliminate dominated rows and columns.
 		#
+		# Rule 1: A row dominated by another row can be eliminated.
+		# Rule 2: A column that dominated another column can be eliminated.
+		#
 		#### row_dominance called with primes: "\n" . tableform(\%primes, $self->width)
-		my @rows = row_dominance(\%primes);
+		my @rows = row_dominance(\%primes, 1);
 		#### row_dominance returns for removal: "[" . join(", ", @rows) . "]"
 		delete $primes{$_} for (@rows);
 
 		my %cols = columns \%primes, $self->minmax_bit_terms();
 		#### row_dominance called with primes (rotated): "\n" . tableform(\%cols, $self->width)
-		my @cols = row_dominance(\%cols);
+		my @cols = row_dominance(\%cols, 0);
 		#### row_dominance returns for removal: "[" . join(", ", @cols) . "]"
 		remels($_, $self->dc, \%primes) for (@cols);
 
@@ -676,23 +692,8 @@ sub recurse_solve
 	#
 	##### recurse_solve() Primes after loop: "\n" . tableform(\%primes, $self->width)
 	#
-	# Find the term with the fewest implicant covers.
-	# Columns actually in %primes
-	#
-	my @t = grep {
-		my $o = $_;
-		any { countels( $o, $_ ) } values %primes
-	} ($self->minmax_bit_terms());
 
-	#
-	##### Flipping table so terms are keys using: "[" . join(", ", @t) . "]"
-	#
-	my %ic = columns \%primes, @t;
-
-	#
-	##### Resulting table is: hasharray(\%ic)
-	#
-	my $term = (reverse (sort { @{ $ic{$a} } <=> @{ $ic{$b} } } keys %ic))[0];
+	my $term = least_covered(\%primes, $self->minmax_bit_terms());
 
 	# Rows of %primes that contain $term
 
@@ -726,10 +727,11 @@ sub recurse_solve
 			$_ => $reduced{$_} } grep { @{ $reduced{$_} }
 		} keys %reduced;
 
-		if (keys %reduced and scalar(@c = $self->recurse_solve(\%reduced)))
+		if (keys %reduced and scalar(@c = $self->recurse_solve(\%reduced, $level + 1)))
 		{
 			#
-			##### recurse_solve() returns (to recurse_solve()): arrayarray(\@c)
+			##### recurse_solve() at level: $level
+			##### returned (in loop): arrayarray(\@c)
 			#
 			@results = map { [ reverse sort (@prefix, $ta, @$_) ] } @c;
 		}
@@ -737,12 +739,16 @@ sub recurse_solve
 		{
 			@results = [ reverse sort (@prefix, $ta) ]
 		}
+
 		push @covers, @results;
+
+		#
+		##### Covers now at: arrayarray(\@covers)
+		#
 	}
 
 	#
-	##### Covers is: arrayarray(\@covers)
-	##### before weeding out expensive solutions.
+	##### Weed out the expensive solutions.
 	#
 	if ($self->minonly)
 	{
