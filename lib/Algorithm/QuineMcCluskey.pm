@@ -30,8 +30,8 @@ use Tie::Cycle;
 #
 # 5 pound signs for the solve() and recurse_solve() code, and the remels() calls.
 #
-#use Smart::Comments ('###', '####', '#####');
-#use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray tableform); # Only needed for Smart Comments.
+use Smart::Comments ('###', '####', '#####');
+use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray tableform); # Only needed for Smart Comments.
 
 #
 # Required attributes to create the object.
@@ -694,17 +694,19 @@ sub recurse_solve
 	#
 
 	my $term = least_covered(\%primes, $self->minmax_bit_terms());
-
-	# Rows of %primes that contain $term
-
 	my @ta = grep { countels($term, $primes{$_}) } keys %primes;
+
+	#
+	# Make a copy of the section of the prime implicants
+	# table that don't cover that term.
+	#
 	my %r = map {
 		$_ => [ grep { $_ ne $term } @{ $primes{$_} } ]
 	} keys %primes;
 
 	#
-	##### Term used to filter primes list is: $term
-	##### keys are: "[" . join(", ", @ta) . "]"
+	##### Least-covered term returned is: $term
+	##### Prime implicants that cover term are: "[" . join(", ", @ta) . "]"
 	#
 	# For each such cover, recursively solve the table with that column
 	# removed and add the result(s) to the covers table after adding
