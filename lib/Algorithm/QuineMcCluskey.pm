@@ -596,7 +596,7 @@ sub solve
 	{
 		my $p = $self->get_primes;
 
-		$self->_set_covers($self->recurse_solve($p));
+		$self->_set_covers($self->recurse_solve($p, 0));
 	}
 
 	#### solve() covers are: $self->get_covers()
@@ -693,9 +693,18 @@ sub recurse_solve
 	##### recurse_solve() Primes after loop: "\n" . tableform(\%primes, $self->width)
 	#
 
+	#
+	# Find the term that has the least number of prime implicants
+	# covering it. Then having found it, make a list of those
+	# prime implicants, and use that list to figure out the best
+	# set to cover the rest of the terms.
+	#
 	my $term = least_covered(\%primes, $self->minmax_bit_terms());
 	my @ta = grep { countels($term, $primes{$_}) } keys %primes;
 
+	#
+	##### Least-covered term returned is: $term
+	##### Prime implicants that cover term are: "[" . join(", ", @ta) . "]"
 	#
 	# Make a copy of the section of the prime implicants
 	# table that don't cover that term.
@@ -704,9 +713,6 @@ sub recurse_solve
 		$_ => [ grep { $_ ne $term } @{ $primes{$_} } ]
 	} keys %primes;
 
-	#
-	##### Least-covered term returned is: $term
-	##### Prime implicants that cover term are: "[" . join(", ", @ta) . "]"
 	#
 	# For each such cover, recursively solve the table with that column
 	# removed and add the result(s) to the covers table after adding
