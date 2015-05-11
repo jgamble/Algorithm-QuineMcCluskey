@@ -16,7 +16,7 @@ use namespace::autoclean;
 use Carp qw(croak);
 
 use Algorithm::QuineMcCluskey::Util qw(row_dominance columns countels diffpos find_essentials
-	hdist maskmatcher least_covered purge_elements remels matchcount stl uniqels);
+	hdist maskmatcher least_covered purge_elements remels matchcount uniqels);
 use List::Compare::Functional qw(get_intersection is_LequivalentR is_LsubsetR);
 use List::Util qw(any);
 use Tie::Cycle;
@@ -330,7 +330,7 @@ sub to_columnstring
 sub break_columnstring
 {
 	my $self = shift;
-	my @bitlist = stl $self->columnstring;
+	my @bitlist = split(//, $self->columnstring);
 	my $x = 0;
 
 	my(@maxterms, @minterms, @dontcares);
@@ -511,9 +511,8 @@ sub generate_primes
 		grep { !$implicant{$_} } keys %implicant;
 
 	#
-	### generate_primes() -- attributes primes: hasharray(\%p)
+	### generate_primes() -- prime implicants: hasharray(\%p)
 	#
-
 	return \%p;
 }
 
@@ -577,7 +576,7 @@ sub to_boolean_term
 	my $varstring = join $ej, map {
 			my $var = $var;	# Activate cycle even if not used
 			$_ eq $self->dc ? () : $var . ($_ == $cond ? '' : "'")
-		} stl $term;
+		} split(//, $term);
 
 	return $varstring;
 }
@@ -673,7 +672,7 @@ sub recurse_solve
 		#### row_dominance returns for removal: "[" . join(", ", @rows) . "]"
 		delete $primes{$_} for (@rows);
 
-		my %cols = columns \%primes, $self->minmax_bit_terms();
+		my %cols = columns(\%primes, $self->minmax_bit_terms());
 		#### row_dominance called with primes (rotated): "\n" . tableform(\%cols, $self->width)
 		my @cols = row_dominance(\%cols, 0);
 		#### row_dominance returns for removal: "[" . join(", ", @cols) . "]"

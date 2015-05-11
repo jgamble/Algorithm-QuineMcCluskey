@@ -17,8 +17,8 @@ use List::Compare::Functional qw(is_LequivalentR is_LsubsetR);
 
 use parent qw(Exporter);
 our @EXPORT_OK = qw(
-	columns row_dominance countels diffpos diffposes find_essentials hdist maskmatcher
-	least_covered purge_elements remels matchcount stl uniqels
+	columns row_dominance countels diffpos find_essentials hdist maskmatcher
+	least_covered purge_elements remels matchcount uniqels
 );
 
 =head1 VERSION
@@ -163,7 +163,7 @@ sub row_dominance
 			#
 			if (is_LsubsetR([ $primes->{$row1} => $primes->{$row2} ]))
 			{
-				push @rows, ($dominant_rows)? $row2: $row1;
+				push @rows, (($dominant_rows)? $row2: $row1);
 			}
 		}
 	}
@@ -285,12 +285,16 @@ Rotates 90 degrees a hashtable of the type used for %primes
 sub columns
 {
 	my ($r, @c) = @_;
-	map {
-		my $o = $_;
-		$o => [ grep {
+	my %r90;
+	for my $o (@c)
+	{
+		my @t = grep {
 			any { $_ eq $o } @{ $r->{$_} }
-		} keys %$r ]
-	} @c
+		} keys %$r;
+
+		$r90{$o} = [@t] if (scalar @t);
+	}
+	return %r90;
 }
 
 =item diffpos
@@ -315,15 +319,13 @@ Return pairwise the 'un-sameness' of two strings
 
 =cut
 
-sub diffposes { pairwise { $a ne $b } @{[ stl(shift)]}, @{[ stl(shift)]} }
+sub diffposes
+{
+	return pairwise { $a ne $b }
+			@{[ split(//, shift)]},
+			@{[ split(//, shift)]};
+}
 
-=item stl
-
-Splits a string into a list of its chars
-
-=cut
-
-sub stl { split //, shift }
 
 =back
 
