@@ -17,8 +17,8 @@ use List::Compare::Functional qw(is_LequivalentR is_LsubsetR);
 
 use parent qw(Exporter);
 our @EXPORT_OK = qw(
-	columns row_dominance countels diffpos find_essentials hdist maskmatcher
-	least_covered purge_elements remels matchcount uniqels
+	columns row_dominance countels diffpos find_essentials hdist
+	maskmatcher least_covered purge_elements remels matchcount uniqels
 );
 
 =head1 VERSION
@@ -325,7 +325,6 @@ sub diffposes
 			@{[ split(//, shift)]},
 			@{[ split(//, shift)]};
 }
-
 
 =back
 

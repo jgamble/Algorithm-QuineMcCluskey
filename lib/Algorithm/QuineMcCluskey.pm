@@ -141,7 +141,9 @@ has 'covers'	=> (
 	reader => 'get_covers',
 	writer => '_set_covers',
 	predicate => 'has_covers',
-	clearer => 'clear_covers'
+	clearer => 'clear_covers',
+	lazy => 1,
+	builder => 'generate_covers'
 );
 
 =head1 VERSION
@@ -421,7 +423,7 @@ sub generate_primes
 
 	#
 	### generate_primes() group the bit terms
-	### by bit count: @bits
+	### by bit count: $bits[0]
 	#
 
 	#
@@ -516,6 +518,22 @@ sub generate_primes
 	return \%p;
 }
 
+sub generate_covers
+{
+	my $self = shift;
+	my @c = $self->recurse_solve($self->get_primes);
+
+	#### generate_covers() -- recurse_solve() returned: @c
+
+	#
+	# recurse_solve() returns an array of arrayrefs,
+	# but since there is (or should be) only one element
+	# in the array, just return the first (and only)
+	# element of the covers.
+	#
+	return $c[0];
+}
+
 sub generate_essentials
 {
 	my $self = shift;
@@ -538,7 +556,7 @@ sub to_boolean
 	my @boolean;
 
 	#
-	### to_boolean() called with:  arrayarray(\@terms)
+	### to_boolean() called with: arrayarray(\@terms)
 	#
 	# Group separators (grouping character pairs)
 	#

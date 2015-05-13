@@ -14,8 +14,10 @@ t/03-rowdominance.t
 t/04-maskmatch.t
 t/11-solvesimple.t
 t/13-solvesimple.t
+t/14-solvesimple.t
 t/17-solvesimple.t
 t/21-solve.t
 t/22-solve.t
+t/23-solve.t
 t/pod-coverage.t
 t/pod.t
