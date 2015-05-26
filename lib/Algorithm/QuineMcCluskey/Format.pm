@@ -11,6 +11,7 @@ use strict;
 use warnings;
 use Exporter;
 use vars qw(@ISA @EXPORT_OK);
+use Algorithm::QuineMcCluskey::Util qw(matchcount);
 use List::MoreUtils qw(uniq firstidx);
 
 @ISA = qw(Exporter);
@@ -64,7 +65,7 @@ sub hasharray
 	my ($hr) = @_;
 	my @output;
 
-	for my $r (sort keys %$hr)
+	for my $r (sort bit_cmp keys %$hr)
 	{
 		push @output, "$r: [" . join(", ", @{ $hr->{$r} }) . "]";
 	}
@@ -77,7 +78,7 @@ sub tableform
 	my ($hr, $width) = @_;
 	my $fmt = "%" . ($width+2) . "s";
 	my @output;
-	my @rows = sort keys %$hr;
+	my @rows = sort bit_cmp keys %$hr;
 
 	my @columns = sort(uniq(map{ @{ $hr->{$_} } } @rows));
 	push @output, join("", map{sprintf($fmt, $_)} ' ', @columns);
@@ -96,6 +97,12 @@ sub tableform
 	}
 
 	return join("\n", @output);
+}
+
+sub bit_cmp
+{
+	my $result = matchcount($a, '1') <=> matchcount($b, '1');
+	return ($result? $result: ($a cmp $b));
 }
 
 =back
