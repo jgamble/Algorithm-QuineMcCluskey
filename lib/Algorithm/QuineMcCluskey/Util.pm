@@ -163,7 +163,7 @@ sub row_dominance
 			#
 			if (is_LsubsetR([ $primes->{$row1} => $primes->{$row2} ]))
 			{
-				push @rows, (($dominant_rows)? $row2: $row1);
+				push @rows, (($dominant_rows)? $row1: $row2);
 			}
 		}
 	}
