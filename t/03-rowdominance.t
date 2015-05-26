@@ -26,7 +26,7 @@ my %primes = (
 
 @expected_rows = qw();	# I.e., no rows dominate others.
 @rows = row_dominance(\%primes, 0);
-is_deeply(\@rows, \@expected_rows, "Dominated rows 1");
+is_deeply(\@rows, \@expected_rows, "Dominant rows 1");
 
 
 #
@@ -43,11 +43,11 @@ is_deeply(\@rows, \@expected_rows, "Dominated rows 1");
 );
 
 @expected_rows = sort qw(11xx0 0x101);
-@rows = sort(row_dominance(\%primes, 0));
+@rows = sort(row_dominance(\%primes, 1));
 is_deeply(\@rows, \@expected_rows, "Dominated rows 2");
 
 @expected_rows = sort qw(1x0x0 00x01);
-@rows = sort(row_dominance(\%primes, 1));
+@rows = sort(row_dominance(\%primes, 0));
 is_deeply(\@rows, \@expected_rows, "Dominant rows 2a");
 
 #
@@ -62,7 +62,7 @@ is_deeply(\@rows, \@expected_rows, "Dominant rows 2a");
 );
 
 @expected_rows = sort qw(x00x);
-@rows = sort(row_dominance(\%primes, 1));
+@rows = sort(row_dominance(\%primes, 0));
 is_deeply(\@rows, \@expected_rows, "Dominant rows 3");
 
 %primes = (
@@ -74,6 +74,6 @@ is_deeply(\@rows, \@expected_rows, "Dominant rows 3");
 );
 
 @expected_rows = sort qw(01x11 1x0xx);
-@rows = sort(row_dominance(\%primes, 1));
+@rows = sort(row_dominance(\%primes, 0));
 is_deeply(\@rows, \@expected_rows, "Dominant rows 4");
 
