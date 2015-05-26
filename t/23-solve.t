@@ -17,8 +17,12 @@ $q = Algorithm::QuineMcCluskey->new(
 	dontcares => [7, 11 .. 15],
 );
 
+#
+#    (AD) + (A'D') + (B) + (CD')
+# or  (AC) + (AD) + (A'D') + (B)
+#
 @expected = (
-	q/(A'D') + (B) + (AD) + (CD')/		# or (A'D') + (B) + (AD) + (AC)
+	q/(AD) + (A'D') + (B) + (CD')/
 );
 
 @eqn = $q->solve;
