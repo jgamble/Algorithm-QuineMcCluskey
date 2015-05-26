@@ -19,5 +19,6 @@ t/17-solvesimple.t
 t/21-solve.t
 t/22-solve.t
 t/23-solve.t
+t/24-solve.t
 t/pod-coverage.t
 t/pod.t
