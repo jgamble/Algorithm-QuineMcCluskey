@@ -9,6 +9,8 @@ package Algorithm::QuineMcCluskey::Format;
 
 use strict;
 use warnings;
+use 5.010001;
+
 use Exporter;
 use vars qw(@ISA @EXPORT_OK);
 use Algorithm::QuineMcCluskey::Util qw(matchcount);

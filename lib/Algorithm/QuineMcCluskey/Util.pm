@@ -9,6 +9,7 @@ package Algorithm::QuineMcCluskey::Util;
 
 use strict;
 use warnings;
+use 5.010001;
 
 use Data::Dumper;
 use List::MoreUtils qw(pairwise indexes uniq firstidx);
