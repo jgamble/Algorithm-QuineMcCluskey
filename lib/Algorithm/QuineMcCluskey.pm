@@ -521,7 +521,7 @@ sub generate_primes
 sub generate_covers
 {
 	my $self = shift;
-	my @c = $self->recurse_solve($self->get_primes);
+	my @c = $self->recurse_solve($self->get_primes, 0);
 
 	#### generate_covers() -- recurse_solve() returned: @c
 
@@ -601,22 +601,13 @@ sub to_boolean_term
 
 =item solve
 
-Main solution sub (wraps recurse_solve())
+Main solution sub 
 
 =cut
 
 sub solve
 {
 	my $self = shift;
-
-	unless ($self->has_covers)
-	{
-		my $p = $self->get_primes;
-
-		$self->_set_covers($self->recurse_solve($p, 0));
-	}
-
-	#### solve() covers are: $self->get_covers()
 
 	return $self->to_boolean($self->get_covers);
 }
@@ -685,14 +676,14 @@ sub recurse_solve
 		# Rule 1: A row dominated by another row can be eliminated.
 		# Rule 2: A column that dominated another column can be eliminated.
 		#
-		#### row_dominance called with primes: "\n" . tableform(\%primes, $self->width)
 		my @rows = row_dominance(\%primes, 1);
+		#### row_dominance called with primes: "\n" . tableform(\%primes, $self->width)
 		#### row_dominance returns for removal: "[" . join(", ", @rows) . "]"
 		delete $primes{$_} for (@rows);
 
 		my %cols = columns(\%primes, $self->minmax_bit_terms());
-		#### row_dominance called with primes (rotated): "\n" . tableform(\%cols, $self->width)
 		my @cols = row_dominance(\%cols, 0);
+		#### row_dominance called with primes (rotated): "\n" . tableform(\%cols, $self->width)
 		#### row_dominance returns for removal: "[" . join(", ", @cols) . "]"
 		remels($_, $self->dc, \%primes) for (@cols);
 
