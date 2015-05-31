@@ -31,7 +31,7 @@ my $build = Module::Build->new(
 	license => 'perl',
 	create_license => 1,
 	create_readme => 0,
-	#create_makefile_pl => 'traditional',
+	create_makefile_pl => 'traditional',
 	dynamic_config => 0,
 
 	meta_merge => {
