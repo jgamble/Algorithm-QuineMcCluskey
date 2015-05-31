@@ -17,7 +17,7 @@ use Carp qw(croak);
 
 use Algorithm::QuineMcCluskey::Util qw(row_dominance columns countels diffpos find_essentials
 	hdist maskmatcher least_covered purge_elements remels matchcount uniqels);
-use List::Compare::Functional qw(get_intersection is_LequivalentR is_LsubsetR);
+use List::Compare::Functional qw(get_intersection is_LequivalentR);
 use List::Util qw(any);
 use Tie::Cycle;
 
@@ -746,11 +746,6 @@ sub recurse_solve
 		##### Purging reduced hash of: $ta
 		#
 		purge_elements(\%reduced, $self->dc, $ta);
-
-		# Remove empty rows (necessary?)
-		%reduced = map {
-			$_ => $reduced{$_} } grep { @{ $reduced{$_} }
-		} keys %reduced;
 
 		if (keys %reduced and scalar(@c = $self->recurse_solve(\%reduced, $level + 1)))
 		{

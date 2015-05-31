@@ -28,7 +28,7 @@ This document describes version 0.01 released 24 June 2006.
 
 =cut
 
-our $VERSION = 0.01;
+our $VERSION = 0.02;
 
 =head1 DESCRIPTION
 
@@ -235,6 +235,9 @@ sub purge_elements
 Given a value and a reference to a hash of arrayrefs, remove the value
 from the individual arrayrefs if the value matches the masks.
 
+Deletes the entire arrayref from the hash if the last element of the
+array is removed.
+
 Returns the number of removals made.
 
 =cut
@@ -243,14 +246,24 @@ sub remels
 {
 	my ($el, $dc, $href) = @_;
 	my $rems = 0;
+	my @kp = keys %$href;
 
-	for my $k (keys %$href)
+	for my $k (@kp)
 	{
 		my @pos = indexes { maskmatcher($el, $dc, $_) } @{$href->{$k}};
 		for my $pos (reverse @pos)
 		{
-			splice(@{$href->{$k}}, $pos, 1);
-			$rems++;
+			if (scalar @{$href->{$k}} == 1)
+			{
+				delete $href->{$k};
+				$rems++;
+				last;
+			}
+			else
+			{
+				splice(@{$href->{$k}}, $pos, 1);
+				$rems++;
+			}
 		}
 	}
 
