@@ -30,8 +30,11 @@ use Tie::Cycle;
 #
 # 5 pound signs for the solve() and recurse_solve() code, and the remels() calls.
 #
+# The ::Format package is only needed for Smart Comments -- comment or uncomment
+# in concert with Smart::Comments as needed.
+#
+use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray tableform);
 use Smart::Comments ('###', '####', '#####');
-use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray tableform); # Only needed for Smart Comments.
 
 #
 # Required attributes to create the object.
@@ -115,16 +118,10 @@ has 'max_bits'	=> (
 	init_arg => undef,
 	predicate => 'has_max_bits'
 );
-has 'essentials'	=> (
-	isa => 'HashRef', is => 'ro', required => 0,
-	init_arg => undef,
-	reader => 'get_essentials',
-	writer => '_set_essentials',
-	predicate => 'has_essentials',
-	clearer => 'clear_essentials',
-	lazy => 1,
-	builder => 'generate_essentials'
-);
+
+#
+# The calculated prime implicants.
+#
 has 'primes'	=> (
 	isa => 'HashRef', is => 'ro', required => 0,
 	init_arg => undef,
@@ -135,8 +132,23 @@ has 'primes'	=> (
 	lazy => 1,
 	builder => 'generate_primes'
 );
+has 'essentials'	=> (
+	isa => 'HashRef', is => 'ro', required => 0,
+	init_arg => undef,
+	reader => 'get_essentials',
+	writer => '_set_essentials',
+	predicate => 'has_essentials',
+	clearer => 'clear_essentials',
+	lazy => 1,
+	builder => 'generate_essentials'
+);
+
+#
+# The terms that cover the primes needed to solve the
+# truth table.
+#
 has 'covers'	=> (
-	isa => 'ArrayRef[Str]', is => 'ro', required => 0,
+	isa => 'ArrayRef[ArrayRef[Str]]', is => 'ro', required => 0,
 	init_arg => undef,
 	reader => 'get_covers',
 	writer => '_set_covers',
@@ -523,7 +535,7 @@ sub generate_covers
 	my $self = shift;
 	my @c = $self->recurse_solve($self->get_primes, 0);
 
-	#### generate_covers() -- recurse_solve() returned: @c
+	#### generate_covers() -- recurse_solve() returned: arrayarray(\@c)
 
 	#
 	# recurse_solve() returns an array of arrayrefs,
@@ -531,7 +543,7 @@ sub generate_covers
 	# in the array, just return the first (and only)
 	# element of the covers.
 	#
-	return $c[0];
+	return \@c;
 }
 
 sub generate_essentials
@@ -553,7 +565,6 @@ sub to_boolean
 {
 	my $self = shift;
 	my @terms = @_;
-	my @boolean;
 
 	#
 	### to_boolean() called with: arrayarray(\@terms)
@@ -567,14 +578,10 @@ sub to_boolean
 	#
 	my $gj = $self->has_min_bits ? ' + ': '';
 
-	push @boolean,
+	return
 		join $gj,
 			map { $gs[0] . $self->to_boolean_term($_) . $gs[1] } @$_
 		for (@terms);
-
-	### to_boolean() returns: "[" . join(", ", @boolean) . "]"
-
-	return @boolean;
 }
 
 #
@@ -608,8 +615,9 @@ Main solution sub
 sub solve
 {
 	my $self = shift;
+	my $c = $self->get_covers();
 
-	return $self->to_boolean($self->get_covers);
+	return $self->to_boolean($c->[0]);
 }
 
 =item recurse_solve
