@@ -15,15 +15,13 @@ use namespace::autoclean;
 
 use Carp qw(croak);
 
-use Algorithm::QuineMcCluskey::Util qw(row_dominance columns countels diffpos find_essentials
-	hdist maskmatcher least_covered purge_elements remels matchcount uniqels);
+use Algorithm::QuineMcCluskey::Util qw(:all);
 use List::Compare::Functional qw(get_intersection is_LequivalentR);
-use List::Util qw(any);
 use Tie::Cycle;
 
 #
 # Vaguely consistent Smart-Comment rules:
-# 3 pound signs for the code in BUILD() and generate_primes().
+# 3 pound signs for the code in BUILD() and generate_*() functions.
 #
 # 4 pound signs for code that manipulates prime/essentials/covers hashes:
 #      row_dominance().
@@ -535,14 +533,8 @@ sub generate_covers
 	my $self = shift;
 	my @c = $self->recurse_solve($self->get_primes, 0);
 
-	#### generate_covers() -- recurse_solve() returned: arrayarray(\@c)
+	### generate_covers() -- recurse_solve() returned: arrayarray(\@c)
 
-	#
-	# recurse_solve() returns an array of arrayrefs,
-	# but since there is (or should be) only one element
-	# in the array, just return the first (and only)
-	# element of the covers.
-	#
 	return \@c;
 }
 
@@ -552,6 +544,9 @@ sub generate_essentials
 
 	my $p = $self->get_primes;
 	my %e = find_essentials($p, $self->minmax_bit_terms());
+
+	### generate_essentials() -- essentials: hasharray(\%e)
+
 	return \%e;
 }
 

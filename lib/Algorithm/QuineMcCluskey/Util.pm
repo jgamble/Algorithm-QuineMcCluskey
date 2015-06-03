@@ -16,10 +16,30 @@ use List::MoreUtils qw(pairwise indexes uniq firstidx);
 use List::Util qw(any sum);
 use List::Compare::Functional qw(is_LequivalentR is_LsubsetR);
 
-use parent qw(Exporter);
-our @EXPORT_OK = qw(
-	columns row_dominance countels diffpos find_essentials hdist
-	maskmatcher least_covered purge_elements remels matchcount uniqels
+use Exporter;
+our (@ISA, @EXPORT_OK, %EXPORT_TAGS);
+
+@ISA = qw(Exporter);
+
+%EXPORT_TAGS = (
+	all => [ qw(
+		columns
+		countels
+		diffpos
+		find_essentials
+		hdist
+		least_covered
+		maskmatcher
+		matchcount
+		purge_elements
+		remels
+		row_dominance
+		uniqels
+		) ],
+);
+
+@EXPORT_OK = (
+	@{ $EXPORT_TAGS{all} }
 );
 
 =head1 VERSION
