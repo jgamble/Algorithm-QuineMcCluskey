@@ -11,7 +11,7 @@ my $build = Module::Build->new(
 	dist_name => 'Algorithm-QuineMcCluskey',
 
 	requires => {
-		perl => '5.8.3',
+		perl => '5.10.1',
 		Moose => 0,
 		Carp => 0,
 		'Data::Dumper' => 0,
@@ -31,7 +31,7 @@ my $build = Module::Build->new(
 	license => 'perl',
 	create_license => 1,
 	create_readme => 0,
-	#create_makefile_pl => 'traditional',
+	create_makefile_pl => 'traditional',
 	dynamic_config => 0,
 
 	meta_merge => {

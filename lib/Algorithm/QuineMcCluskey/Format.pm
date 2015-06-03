@@ -9,8 +9,11 @@ package Algorithm::QuineMcCluskey::Format;
 
 use strict;
 use warnings;
+use 5.010001;
+
 use Exporter;
 use vars qw(@ISA @EXPORT_OK);
+use Algorithm::QuineMcCluskey::Util qw(matchcount);
 use List::MoreUtils qw(uniq firstidx);
 
 @ISA = qw(Exporter);
@@ -23,7 +26,7 @@ This document describes version 0.01 released 24 June 2006.
 
 =cut
 
-our $VERSION = 0.01;
+our $VERSION = 0.02;
 
 =head1 DESCRIPTION
 
@@ -64,12 +67,12 @@ sub hasharray
 	my ($hr) = @_;
 	my @output;
 
-	for my $r (sort keys %$hr)
+	for my $r (sort bit_cmp keys %$hr)
 	{
 		push @output, "$r: [" . join(", ", @{ $hr->{$r} }) . "]";
 	}
 
-	return join("\n", @output);
+	return "\n" . join("\n", @output);
 }
 
 sub tableform
@@ -77,7 +80,7 @@ sub tableform
 	my ($hr, $width) = @_;
 	my $fmt = "%" . ($width+2) . "s";
 	my @output;
-	my @rows = sort keys %$hr;
+	my @rows = sort bit_cmp keys %$hr;
 
 	my @columns = sort(uniq(map{ @{ $hr->{$_} } } @rows));
 	push @output, join("", map{sprintf($fmt, $_)} ' ', @columns);
@@ -96,6 +99,12 @@ sub tableform
 	}
 
 	return join("\n", @output);
+}
+
+sub bit_cmp
+{
+	my $result = matchcount($a, '1') <=> matchcount($b, '1');
+	return ($result? $result: ($a cmp $b));
 }
 
 =back

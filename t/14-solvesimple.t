@@ -11,14 +11,14 @@ use Test::More tests => 1;
 my($q, $eqn, @expected);
 
 $q = Algorithm::QuineMcCluskey->new(
-	title	=> "Five-bit, 12-minterm Boolean expression test with don't-cares",
-	width => 5,
-	minterms => [ 0, 5, 7, 8, 10, 11, 15, 17, 18, 23, 26, 27 ],
-	dontcares => [ 2, 16, 19, 21, 24, 25 ]
+	title	=> "Example 3.17 from Introduction to Logic Design, by Sajjan G. Shiva, page 130.",
+	width => 3,
+	minterms => [ 0, 1, 3, 4, 6, 7 ],
 );
 
 @expected = (
-	q/(AC') + (A'BDE) + (B'CE) + (C'E')/
+	q/(AC') + (A'B') + (BC)/,
+	q/(AB) + (A'C) + (B'C')/
 );
 
 $eqn = $q->solve;

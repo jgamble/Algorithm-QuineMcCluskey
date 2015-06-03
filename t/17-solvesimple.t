@@ -26,6 +26,6 @@ my @expected = (
 	q/(a6a5a4a3'a2a1a0) + (a6a5a4'a3'a2a1a0') + (a6a5'a4a3'a2a1'a0) + (a6a5'a4'a3'a2a1'a0') + (a6'a5a4a3'a2'a1a0) + (a6'a5a4'a3'a2'a1a0') + (a6'a5'a4a3'a2'a1'a0)/
 );
 
-my @eqn = $q->solve;
-is_deeply(\@eqn, \@expected, $q->title);
+my $eqn = $q->solve;
+ok(scalar (grep($eqn eq $_, @expected)) == 1, $q->title);
 

@@ -8,30 +8,31 @@ package Algorithm::QuineMcCluskey;
 
 use strict;
 use warnings;
-use 5.008003;
+use 5.010001;
 
 use Moose;
 use namespace::autoclean;
 
 use Carp qw(croak);
 
-use Algorithm::QuineMcCluskey::Util qw(columns countels diffpos hdist
-	maskmatcher purge_elements remels matchcount stl uniqels);
-use List::Compare::Functional qw(get_intersection is_LequivalentR is_LsubsetR);
-use List::Util qw(sum any);
+use Algorithm::QuineMcCluskey::Util qw(:all);
+use List::Compare::Functional qw(get_intersection is_LequivalentR);
 use Tie::Cycle;
 
 #
 # Vaguely consistent Smart-Comment rules:
-# 3 pound signs for the code in BUILD(), find_primes() and find_essentials().
+# 3 pound signs for the code in BUILD() and generate_*() functions.
 #
 # 4 pound signs for code that manipulates prime/essentials/covers hashes:
-#      col_dom(), row_dom().
+#      row_dominance().
 #
 # 5 pound signs for the solve() and recurse_solve() code, and the remels() calls.
 #
-#use Smart::Comments ('####', '#####');
-#use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray tableform); # Only needed for Smart Comments.
+# The ::Format package is only needed for Smart Comments -- comment or uncomment
+# in concert with Smart::Comments as needed.
+#
+use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray tableform);
+use Smart::Comments ('###', '####', '#####');
 
 #
 # Required attributes to create the object.
@@ -115,29 +116,44 @@ has 'max_bits'	=> (
 	init_arg => undef,
 	predicate => 'has_max_bits'
 );
-has 'ess'	=> (
-	isa => 'HashRef', is => 'ro', required => 0,
-	init_arg => undef,
-	reader => 'get_essentials',
-	writer => '_set_essentials',
-	predicate => 'has_essentials',
-	clearer => 'clear_essentials'
-);
+
+#
+# The calculated prime implicants.
+#
 has 'primes'	=> (
 	isa => 'HashRef', is => 'ro', required => 0,
 	init_arg => undef,
 	reader => 'get_primes',
 	writer => '_set_primes',
 	predicate => 'has_primes',
-	clearer => 'clear_primes'
+	clearer => 'clear_primes',
+	lazy => 1,
+	builder => 'generate_primes'
 );
+has 'essentials'	=> (
+	isa => 'HashRef', is => 'ro', required => 0,
+	init_arg => undef,
+	reader => 'get_essentials',
+	writer => '_set_essentials',
+	predicate => 'has_essentials',
+	clearer => 'clear_essentials',
+	lazy => 1,
+	builder => 'generate_essentials'
+);
+
+#
+# The terms that cover the primes needed to solve the
+# truth table.
+#
 has 'covers'	=> (
-	isa => 'ArrayRef[Str]', is => 'ro', required => 0,
+	isa => 'ArrayRef[ArrayRef[Str]]', is => 'ro', required => 0,
 	init_arg => undef,
 	reader => 'get_covers',
 	writer => '_set_covers',
 	predicate => 'has_covers',
-	clearer => 'clear_covers'
+	clearer => 'clear_covers',
+	lazy => 1,
+	builder => 'generate_covers'
 );
 
 =head1 VERSION
@@ -326,7 +342,7 @@ sub to_columnstring
 sub break_columnstring
 {
 	my $self = shift;
-	my @bitlist = stl $self->columnstring;
+	my @bitlist = split(//, $self->columnstring);
 	my $x = 0;
 
 	my(@maxterms, @minterms, @dontcares);
@@ -401,13 +417,7 @@ sub minmax_bit_terms
 	return @terms;
 }
 
-=item find_primes
-
-Finding prime essentials
-
-=cut
-
-sub find_primes
+sub generate_primes
 {
 	my $self = shift;
 	my @bits;
@@ -418,11 +428,12 @@ sub find_primes
 	#
 	for ($self->all_bit_terms())
 	{
-		push  @{$bits[0][ matchcount($_, '1') ]}, $_;
+		push @{$bits[0][ matchcount($_, '1') ]}, $_;
 	}
 
 	#
-	### find_primes() group the bit terms by bit count: @bits
+	### generate_primes() group the bit terms
+	### by bit count: $bits[0]
 	#
 
 	#
@@ -499,7 +510,8 @@ sub find_primes
 	}
 
 	#
-	### find_primes() implicant hash (we use the unmarked [i.e., 0] ones: hasharray(\%implicant)
+	### generate_primes() implicant hash (we use the unmarked entries
+	### [i.e., prime => 0] ) : %implicant
 	#
 
 	#
@@ -511,128 +523,31 @@ sub find_primes
 		grep { !$implicant{$_} } keys %implicant;
 
 	#
-	### find_primes() -- attributes primes: hasharray(\%p)
+	### generate_primes() -- prime implicants: hasharray(\%p)
 	#
-
-	$self->_set_primes( \%p );
-	return $self;
+	return \%p;
 }
 
-=item row_dom
-
-Row-dominance
-
-=cut
-
-sub row_dom
+sub generate_covers
 {
 	my $self = shift;
-	my $primes = shift;
+	my @c = $self->recurse_solve($self->get_primes, 0);
 
-	return $primes if (scalar keys %$primes == 0);
+	### generate_covers() -- recurse_solve() returned: arrayarray(\@c)
 
-	#### row_dom() primes hash before processing: $primes
-
-	%$primes = ( map {
-		my $o = $_;
-		(sum map {
-			is_LsubsetR([ $primes->{$o} => $primes->{$_} ])
-				&& !is_LequivalentR([ $primes->{$o} => $primes->{$_} ])
-			} grep { $_ ne $o } keys %$primes)
-		? () : ( $_ => $primes->{$_} )
-	} keys %$primes );
-
-	#### row_dom() primes hash after processing: $primes
-
-	return $self;
+	return \@c;
 }
 
-=item col_dom
-
-Column-dominance
-
-=cut
-
-sub col_dom
-{
-	my $self = shift;
-	my $primes = shift;
-
-	#### col_dom primes: "\n" . tableform($primes, $self->width)
-
-	return $self if (scalar keys %$primes == 0);
-
-	my %cols = columns $primes, $self->minmax_bit_terms();
-
-	for my $col1 (keys %cols)
-	{
-		for my $col2 (keys %cols)
-		{
-			next if $col1 eq $col2;
-
-			#
-			# If col1 is a non-empty proper subset of col2,
-			# remove col2
-			#
-			if (@{ $cols{$col1} }
-				and is_LsubsetR([ $cols{$col1} => $cols{$col2} ])
-				and !is_LequivalentR([ $cols{$col1} => $cols{$col2} ]))
-			{
-				#### col_dom primes before: "\n" . tableform($primes, $self->width)
-				#### col_dom() removing column: $col2
-				remels($col2, $self->dc, $primes);
-				#### col_dom primes after: "\n" . tableform($primes, $self->width)
-			}
-		}
-	}
-
-	return $self;
-}
-
-=item find_essentials
-
-Find the essential prime implicants.
-
-Called from the solve(), but may also be called by itself for testing
-purposes.
-
-=cut
-
-sub find_essentials
+sub generate_essentials
 {
 	my $self = shift;
 
-	my $primes = shift;
-	my @terms = $self->minmax_bit_terms();
+	my $p = $self->get_primes;
+	my %e = find_essentials($p, $self->minmax_bit_terms());
 
-	my @kp = keys %$primes;
-	my %essentials;
+	### generate_essentials() -- essentials: hasharray(\%e)
 
-	$self->clear_essentials;
-
-	for my $term (@terms)
-	{
-		my @tp = grep {
-				grep { $_ eq $term } @{ $primes->{$_} }
-			} @kp;
-
-		#
-		### Examining term: $term
-		### Prime list for term is: "[" . join(", ", @tp) . "]"
-		#
-
-		# TODO: It would be nice to track the terms that make
-		# this essential
-		if (scalar @tp == 1)
-		{
-			$essentials{$tp[0]}++;
-		}
-	}
-
-	### find_essentials() found: hasharray(\%essentials)
-
-	$self->_set_essentials(\%essentials);
-	return $self;
+	return \%e;
 }
 
 =item to_boolean
@@ -645,10 +560,9 @@ sub to_boolean
 {
 	my $self = shift;
 	my @terms = @_;
-	my @boolean;
 
 	#
-	### to_boolean() called with: "[" . join(", ", @terms) . "]"
+	### to_boolean() called with: arrayarray(\@terms)
 	#
 	# Group separators (grouping character pairs)
 	#
@@ -659,14 +573,10 @@ sub to_boolean
 	#
 	my $gj = $self->has_min_bits ? ' + ': '';
 
-	push @boolean,
+	return
 		join $gj,
 			map { $gs[0] . $self->to_boolean_term($_) . $gs[1] } @$_
 		for (@terms);
-
-	### to_boolean() returns: "[" . join(", ", @boolean) . "]"
-
-	return @boolean;
 }
 
 #
@@ -686,32 +596,40 @@ sub to_boolean_term
 	my $varstring = join $ej, map {
 			my $var = $var;	# Activate cycle even if not used
 			$_ eq $self->dc ? () : $var . ($_ == $cond ? '' : "'")
-		} stl $term;
+		} split(//, $term);
 
 	return $varstring;
 }
 
 =item solve
 
-Main solution sub (wraps recurse_solve())
+Main solution sub 
 
 =cut
 
 sub solve
 {
 	my $self = shift;
-	$self->find_primes unless ($self->has_primes);
+	my $c = $self->get_covers();
 
-	my $p = $self->get_primes;
-
-	$self->_set_covers($self->recurse_solve($p));
-
-	return $self->to_boolean($self->get_covers);
+	return $self->to_boolean($c->[0]);
 }
 
 =item recurse_solve
 
 Recursive divide-and-conquer solver
+
+"To reduce the complexity of the prime implicant chart:
+
+1. Select all the essential prime impliciants. If these PIs cover all
+minterms, stop; otherwise go the second step.
+
+2. Apply Rules 1 and 2 to eliminate redundant rows and columns from
+the PI chart of non-essential PIs.  When the chart is thus reduced,
+some PIs will become essential (i.e., some columns will have a single
+'x'. Go back to step 1."
+
+Introduction To Logic Design, by Sajjan G. Shiva page 129.
 
 =cut
 
@@ -719,15 +637,17 @@ sub recurse_solve
 {
 	my $self = shift;
 	my %primes = %{ $_[0] };
+	my $level = $_[1];
 	my @prefix;
 	my @covers;
 	my @essentials_keys;
 
 	#
+	##### recurse_solve() level: $level
 	##### recurse_solve() called with: "\n" . tableform(\%primes, $self->width)
 	#
-	$self->find_essentials(\%primes);
-	my %ess = %{ $self->get_essentials() };
+	
+	my %ess = find_essentials(\%primes, $self->minmax_bit_terms());
 
 	#
 	##### Begin prefix/essentials loop.
@@ -736,7 +656,11 @@ sub recurse_solve
 	{
 		##### recurse_solve() essentials: %ess
 
-		@essentials_keys = keys %ess;
+		#
+		# REMOVE LATER: the sort op isn't necessary
+		# to the algorithm, but it makes debugging easier.
+		#
+		@essentials_keys = sort keys %ess;
 
 		#
 		# Remove the essential prime implicants from
@@ -747,14 +671,30 @@ sub recurse_solve
 		purge_elements(\%primes, $self->dc, @essentials_keys);
 		push @prefix, grep { $ess{$_} > 0} @essentials_keys;
 
-		##### recurse_solve() @prefix now: "[" . join(", ", @prefix) . "]"
+		##### recurse_solve() @prefix now: "[" . join(", ", sort @prefix) . "]"
 
-		#$self->row_dom(\%primes);
-		$self->col_dom(\%primes);
-		$self->find_essentials(\%primes);
-		%ess = %{ $self->get_essentials() };
+		#
+		# Now eliminate dominated rows and columns.
+		#
+		# Rule 1: A row dominated by another row can be eliminated.
+		# Rule 2: A column that dominated another column can be eliminated.
+		#
+		my @rows = row_dominance(\%primes, 1);
+		#### row_dominance called with primes: "\n" . tableform(\%primes, $self->width)
+		#### row_dominance returns for removal: "[" . join(", ", @rows) . "]"
+		delete $primes{$_} for (@rows);
 
-	} while (!is_LequivalentR([
+		my %cols = columns(\%primes, $self->minmax_bit_terms());
+		my @cols = row_dominance(\%cols, 0);
+		#### row_dominance called with primes (rotated): "\n" . tableform(\%cols, $self->width)
+		#### row_dominance returns for removal: "[" . join(", ", @cols) . "]"
+		remels($_, $self->dc, \%primes) for (@cols);
+
+		%ess = find_essentials(\%primes, $self->minmax_bit_terms());
+
+		##### recurse_solve() essentials after purge/dom: %ess
+
+	} until (is_LequivalentR([
 			[ @essentials_keys ] => [ keys %ess ]
 			]));
 
@@ -763,33 +703,27 @@ sub recurse_solve
 	#
 	##### recurse_solve() Primes after loop: "\n" . tableform(\%primes, $self->width)
 	#
-	# Find the term with the fewest implicant covers.
-	# Columns actually in %primes
-	#
-	my @t = grep {
-		my $o = $_;
-		any { countels( $o, $_ ) } values %primes
-	} ($self->minmax_bit_terms());
 
 	#
-	##### Flipping table so terms are keys using: "[" . join(", ", @t) . "]"
+	# Find the term that has the least number of prime implicants
+	# covering it. Then having found it, make a list of those
+	# prime implicants, and use that list to figure out the best
+	# set to cover the rest of the terms.
 	#
-	my %ic = columns \%primes, @t;
-
-	#
-	##### Resulting table is: hasharray(\%ic)
-	#
-	my $term = (sort { @{ $ic{$a} } <=> @{ $ic{$b} } } keys %ic)[0];
-
-	# Rows of %primes that contain $term
+	my $term = least_covered(\%primes, $self->minmax_bit_terms());
 	my @ta = grep { countels($term, $primes{$_}) } keys %primes;
+
+	#
+	##### Least-covered term returned is: $term
+	##### Prime implicants that cover term are: "[" . join(", ", @ta) . "]"
+	#
+	# Make a copy of the section of the prime implicants
+	# table that don't cover that term.
+	#
 	my %r = map {
 		$_ => [ grep { $_ ne $term } @{ $primes{$_} } ]
 	} keys %primes;
 
-	#
-	##### Term used to filter primes list is: $term
-	##### keys are: "[" . join(", ", @ta) . "]"
 	#
 	# For each such cover, recursively solve the table with that column
 	# removed and add the result(s) to the covers table after adding
@@ -807,15 +741,11 @@ sub recurse_solve
 		#
 		purge_elements(\%reduced, $self->dc, $ta);
 
-		# Remove empty rows (necessary?)
-		%reduced = map {
-			$_ => $reduced{$_} } grep { @{ $reduced{$_} }
-		} keys %reduced;
-
-		if (keys %reduced and scalar(@c = $self->recurse_solve(\%reduced)))
+		if (keys %reduced and scalar(@c = $self->recurse_solve(\%reduced, $level + 1)))
 		{
 			#
-			##### recurse_solve() returns (to recurse_solve()): arrayarray(\@c)
+			##### recurse_solve() at level: $level
+			##### returned (in loop): arrayarray(\@c)
 			#
 			@results = map { [ reverse sort (@prefix, $ta, @$_) ] } @c;
 		}
@@ -823,12 +753,16 @@ sub recurse_solve
 		{
 			@results = [ reverse sort (@prefix, $ta) ]
 		}
+
 		push @covers, @results;
+
+		#
+		##### Covers now at: arrayarray(\@covers)
+		#
 	}
 
 	#
-	##### Covers is: arrayarray(\@covers)
-	##### before weeding out expensive solutions.
+	##### Weed out the expensive solutions.
 	#
 	if ($self->minonly)
 	{

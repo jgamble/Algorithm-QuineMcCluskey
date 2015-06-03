@@ -11,15 +11,19 @@ use Test::More tests => 1;
 my($q, $eqn, @expected);
 
 $q = Algorithm::QuineMcCluskey->new(
-	title	=> "First column of a four bit binary to 2-4-2-1 converter",
+	title	=> "Example 3.15 from Introduction to Logic Design, by Sajjan G. Shiva, page 123.",
 	width => 4,
-	minterms => [ 5 .. 9 ],
-	dontcares => [ 10 .. 15 ],
-	vars => ['w' .. 'z'],
+	minterms => [ 0, 2, 4 .. 6, 9, 10 ],
+	dontcares => [7, 11 .. 15],
 );
 
+#
+#    (AD) + (A'D') + (B) + (CD')
+# or  (AC) + (AD) + (A'D') + (B)
+#
 @expected = (
-	q/(w) + (xy) + (xz)/
+	q/(AD) + (A'D') + (B) + (CD')/,
+	q/(AC) + (AD) + (A'D') + (B)/
 );
 
 $eqn = $q->solve;

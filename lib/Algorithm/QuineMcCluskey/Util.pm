@@ -9,19 +9,37 @@ package Algorithm::QuineMcCluskey::Util;
 
 use strict;
 use warnings;
+use 5.010001;
 
 use Data::Dumper;
-use List::MoreUtils qw(pairwise indexes firstidx);
+use List::MoreUtils qw(pairwise indexes uniq firstidx);
 use List::Util qw(any sum);
+use List::Compare::Functional qw(is_LequivalentR is_LsubsetR);
 
-use base qw(Exporter);
-our @EXPORT = qw(
-	columns countels diffpos diffposes hdist maskmatcher purge_elements remels
-	matchcount stl uniqels
+use Exporter;
+our (@ISA, @EXPORT_OK, %EXPORT_TAGS);
+
+@ISA = qw(Exporter);
+
+%EXPORT_TAGS = (
+	all => [ qw(
+		columns
+		countels
+		diffpos
+		find_essentials
+		hdist
+		least_covered
+		maskmatcher
+		matchcount
+		purge_elements
+		remels
+		row_dominance
+		uniqels
+		) ],
 );
-our @EXPORT_OK = qw(
-	columns countels diffpos diffposes hdist maskmatcher purge_elements remels
-	matchcount stl uniqels
+
+@EXPORT_OK = (
+	@{ $EXPORT_TAGS{all} }
 );
 
 =head1 VERSION
@@ -30,7 +48,7 @@ This document describes version 0.01 released 24 June 2006.
 
 =cut
 
-our $VERSION = 0.01;
+our $VERSION = 0.02;
 
 =head1 DESCRIPTION
 
@@ -38,20 +56,6 @@ This module provides various utilities designed for (but not limited to) use in
 Algorithm::QuineMcCluskey.
 
 =cut
-
-################################################################################
-# Sub declarations
-################################################################################
-sub columns ($@);
-sub countels($$);
-sub diffpos ($$);
-sub diffposes;
-sub maskmatcher ($$@);
-sub matchcount ($$);
-sub purge_elements($$@);
-sub remels ($$$);
-sub stl ($);
-sub uniqels (@);
 
 =head1 FUNCTIONS
 
@@ -75,7 +79,7 @@ interfering, enclose the search string between '\Q' and '\E'. E.g.:
 
 =cut
 
-sub matchcount($$)
+sub matchcount
 {
 	my($x, $y) = @_;
 
@@ -88,7 +92,7 @@ Returns the terms that match a mask.
 
 =cut
 
-sub maskmatcher ($$@)
+sub maskmatcher
 {
 	my($m, $dc, @terms) = @_;
 	my @t;
@@ -112,6 +116,106 @@ sub maskmatcher ($$@)
 	return @t;
 }
 
+=item find_essentials
+
+Find the essential prime implicants.
+
+=cut
+
+sub find_essentials
+{
+	my($primes, @terms) = @_;
+
+	my @kp = keys %$primes;
+	my %essentials;
+
+	for my $term (@terms)
+	{
+		my @tp = grep {
+				grep { $_ eq $term } @{ $primes->{$_} }
+			} @kp;
+
+		#
+		# TODO: It would be nice to track the terms that make
+		# this essential
+		if (scalar @tp == 1)
+		{
+			$essentials{$tp[0]}++;
+		}
+	}
+
+	return %essentials;
+}
+
+=item row_dominance
+
+Row dominance checking.
+
+@dominated_rows = row_dominance(\%primes, 0);
+@dominant_rows = row_dominance(\%primes, 1);
+
+"A row (column) <I>i</I> of a PI chart dominates row (column) <I>j</I>
+if row (column) <I>i</I> contains an x in each column (row) dominated by it."
+
+Return those rows (columns are handled by rotating the primes hash before
+calling this function).
+
+=cut
+
+sub row_dominance
+{
+	my($primes, $dominant_rows) = @_;
+	my @kp = keys %$primes;
+	my @rows;
+
+	$dominant_rows //= 0;
+
+	for my $row1 (@kp)
+	{
+		for my $row2 (@kp)
+		{
+			next if ($row1 eq $row2 or
+				scalar @{ $primes->{$row1} } == 0 or
+				is_LequivalentR([ $primes->{$row1} => $primes->{$row2} ]));
+
+			#
+			# If row1's list is a subset of row2, then it is dominated
+			# by row2.
+			#
+			if (is_LsubsetR([ $primes->{$row1} => $primes->{$row2} ]))
+			{
+				push @rows, (($dominant_rows)? $row1: $row2);
+			}
+		}
+	}
+
+	return uniq(@rows);
+}
+
+#
+# Find the term with the fewest implicant covers.
+#
+sub least_covered
+{
+	my($primes, @bit_terms) = @_;
+
+	my @t = grep {
+		my $o = $_;
+		any { countels( $o, $_ ) } values %{$primes}
+	} @bit_terms;
+
+	#
+	# Flip the table so that terms become keys, limited
+	# to those found in @t.
+	#
+	my %ic = columns($primes, @t);
+
+	#
+	# Sort by count of the array items.
+	#
+	return (sort { @{ $ic{$a} } <=> @{ $ic{$b} } } keys %ic)[0];
+}
+
 =item purge_elements
 
 Given a table (hash form) of prime implicants, delete the list of elements
@@ -121,7 +225,7 @@ the boolean function.
 
 =cut
 
-sub purge_elements($$@)
+sub purge_elements
 {
 	my($primes, $dc, @ess) = @_;
 	my $count = 0;
@@ -139,6 +243,9 @@ sub purge_elements($$@)
 		$count += remels($el, $dc, $primes);
 	}
 
+	if ($count != 0)
+	{
+	}
 	return $count;
 }
 
@@ -148,29 +255,42 @@ sub purge_elements($$@)
 Given a value and a reference to a hash of arrayrefs, remove the value
 from the individual arrayrefs if the value matches the masks.
 
+Deletes the entire arrayref from the hash if the last element of the
+array is removed.
+
 Returns the number of removals made.
 
 =cut
 
-sub remels ($$$)
+sub remels
 {
 	my ($el, $dc, $href) = @_;
 	my $rems = 0;
+	my @kp = keys %$href;
 
-	for my $k (keys %$href)
+	for my $k (@kp)
 	{
 		my @pos = indexes { maskmatcher($el, $dc, $_) } @{$href->{$k}};
 		for my $pos (reverse @pos)
 		{
-			splice(@{$href->{$k}}, $pos, 1);
-			$rems++;
+			if (scalar @{$href->{$k}} == 1)
+			{
+				delete $href->{$k};
+				$rems++;
+				last;
+			}
+			else
+			{
+				splice(@{$href->{$k}}, $pos, 1);
+				$rems++;
+			}
 		}
 	}
 
 	return $rems;
 }
 
-sub countels($$)
+sub countels
 {
 	my($el, $aref) = @_;
 
@@ -184,7 +304,8 @@ Returns unique elements of an arrayref; usable for deep structures
 
 =cut
 
-sub uniqels (@) {
+sub uniqels
+{
     my %h;
     map { $h{Dumper($_)}++ == 0 ? $_ : () } @_;
 }
@@ -195,15 +316,19 @@ Rotates 90 degrees a hashtable of the type used for %primes
 
 =cut
 
-sub columns ($@)
+sub columns
 {
 	my ($r, @c) = @_;
-	map {
-		my $o = $_;
-		$o => [ grep {
+	my %r90;
+	for my $o (@c)
+	{
+		my @t = grep {
 			any { $_ eq $o } @{ $r->{$_} }
-		} keys %$r ]
-	} @c
+		} keys %$r;
+
+		$r90{$o} = [@t] if (scalar @t);
+	}
+	return %r90;
 }
 
 =item diffpos
@@ -212,7 +337,7 @@ Find the location of the first difference between two strings
 
 =cut
 
-sub diffpos ($$) { firstidx { $_ } diffposes @_ }
+sub diffpos { firstidx { $_ } diffposes(@_)}
 
 =item hdist
 
@@ -220,7 +345,7 @@ Hamming distance
 
 =cut
 
-sub hdist { sum diffposes @_ }
+sub hdist { sum diffposes(@_)}
 
 =item diffposes
 
@@ -228,15 +353,12 @@ Return pairwise the 'un-sameness' of two strings
 
 =cut
 
-sub diffposes { pairwise { $a ne $b } @{[ stl shift ]}, @{[ stl shift ]} }
-
-=item stl
-
-Splits a string into a list of its chars
-
-=cut
-
-sub stl ($) { split //, shift }
+sub diffposes
+{
+	return pairwise { $a ne $b }
+			@{[ split(//, shift)]},
+			@{[ split(//, shift)]};
+}
 
 =back
 
