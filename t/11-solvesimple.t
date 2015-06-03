@@ -8,7 +8,7 @@ use Algorithm::QuineMcCluskey;
 
 use Test::More tests => 2;
 
-my($q, @eqn, @expected);
+my($q, $eqn, @expected);
 
 $q = Algorithm::QuineMcCluskey->new(
 	title	=> 'Four-bit, 8-minterm Boolean expression test',
@@ -20,8 +20,8 @@ $q = Algorithm::QuineMcCluskey->new(
 	q/(AB) + (A'B'D) + (CD)/
 );
 
-@eqn = $q->solve;
-is_deeply(\@eqn, \@expected, $q->title);
+$eqn = $q->solve;
+ok(scalar (grep($eqn eq $_, @expected)) == 1, $q->title);
 
 $q = Algorithm::QuineMcCluskey->new(
 	title	=> 'a xor c xor d test',
@@ -33,6 +33,6 @@ $q = Algorithm::QuineMcCluskey->new(
 	q/(ACD) + (AC'D') + (A'CD') + (A'C'D)/
 );
 
-@eqn = $q->solve;
-is_deeply(\@eqn, \@expected, $q->title);
+$eqn = $q->solve;
+ok(scalar (grep($eqn eq $_, @expected)) == 1, $q->title);
 

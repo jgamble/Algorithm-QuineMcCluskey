@@ -8,7 +8,7 @@ use Algorithm::QuineMcCluskey;
 
 use Test::More tests => 1;
 
-my($q, @eqn, @expected);
+my($q, $eqn, @expected);
 
 $q = Algorithm::QuineMcCluskey->new(
 	title	=> "Example 3.17 from Introduction to Logic Design, by Sajjan G. Shiva, page 130.",
@@ -17,9 +17,10 @@ $q = Algorithm::QuineMcCluskey->new(
 );
 
 @expected = (
-	q/(A'B') + (AC') + (BC)/
+	q/(AC') + (A'B') + (BC)/,
+	q/(AB) + (A'C) + (B'C')/
 );
 
-@eqn = $q->solve;
-is_deeply(\@eqn, \@expected, $q->title);
+$eqn = $q->solve;
+ok(scalar (grep($eqn eq $_, @expected)) == 1, $q->title);
 

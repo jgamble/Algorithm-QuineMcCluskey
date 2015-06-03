@@ -8,7 +8,7 @@ use Algorithm::QuineMcCluskey;
 
 use Test::More tests => 1;
 
-my($q, @eqn, @expected);
+my($q, $eqn, @expected);
 
 $q = Algorithm::QuineMcCluskey->new(
 	title	=> "First column of a four bit binary to 2-4-2-1 converter",
@@ -22,6 +22,6 @@ $q = Algorithm::QuineMcCluskey->new(
 	q/(w) + (xy) + (xz)/
 );
 
-@eqn = $q->solve;
-is_deeply(\@eqn, \@expected, $q->title);
+$eqn = $q->solve;
+ok(scalar (grep($eqn eq $_, @expected)) == 1, $q->title);
 

@@ -8,7 +8,7 @@ use Algorithm::QuineMcCluskey;
 
 use Test::More tests => 1;
 
-my($q, @eqn, @expected);
+my($q, $eqn, @expected);
 
 $q = Algorithm::QuineMcCluskey->new(
 	title	=> "Five-bit, 12-minterm Boolean expression test with don't-cares",
@@ -21,6 +21,6 @@ $q = Algorithm::QuineMcCluskey->new(
 	q/(AC') + (A'BDE) + (B'CE) + (C'E')/
 );
 
-@eqn = $q->solve;
-is_deeply(\@eqn, \@expected, $q->title);
+$eqn = $q->solve;
+ok(scalar (grep($eqn eq $_, @expected)) == 1, $q->title);
 
