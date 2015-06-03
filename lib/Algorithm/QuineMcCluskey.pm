@@ -31,8 +31,8 @@ use Tie::Cycle;
 # The ::Format package is only needed for Smart Comments -- comment or uncomment
 # in concert with Smart::Comments as needed.
 #
-use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray tableform);
-use Smart::Comments ('###', '####', '#####');
+#use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray tableform);
+#use Smart::Comments ('###', '####', '#####');
 
 #
 # Required attributes to create the object.
