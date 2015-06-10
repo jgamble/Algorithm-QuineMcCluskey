@@ -1,0 +1,67 @@
+{
+   "abstract" : "Solve objects of Boolean terms with the Quine-McCluskey algorithm",
+   "author" : [
+      "Darren Kulp <darren@kulp.ch>",
+      "John M. Gamble <jgamble@cpan.org>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Module::Build version 0.4203",
+   "keywords" : [
+      "quine-mccluskey"
+   ],
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "Algorithm-QuineMcCluskey",
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "Test::More" : "0"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "Module::Build" : "0"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Carp" : "0",
+            "Data::Dumper" : "0",
+            "List::Compare::Functional" : "0",
+            "List::Util" : "0",
+            "Moose" : "0",
+            "Tie::Cycle" : "0",
+            "perl" : "v5.10.1"
+         }
+      }
+   },
+   "provides" : {
+      "Algorithm::QuineMcCluskey" : {
+         "file" : "lib/Algorithm/QuineMcCluskey.pm",
+         "version" : "0.02"
+      },
+      "Algorithm::QuineMcCluskey::Format" : {
+         "file" : "lib/Algorithm/QuineMcCluskey/Format.pm",
+         "version" : "0.02"
+      },
+      "Algorithm::QuineMcCluskey::Util" : {
+         "file" : "lib/Algorithm/QuineMcCluskey/Util.pm",
+         "version" : "0.02"
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "license" : [
+         "http://dev.perl.org/licenses/"
+      ],
+      "repository" : {
+         "url" : "git://github.com/jgamble/Algorithm-QuineMcCluskey"
+      }
+   },
+   "version" : "0.02"
+}
