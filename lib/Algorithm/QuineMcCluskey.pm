@@ -156,47 +156,38 @@ has 'covers'	=> (
 	builder => 'generate_covers'
 );
 
-=head1 VERSION
-
-This document describes version 0.01 released 24 June 2006.
-
-=cut
-
 our $VERSION = 0.02;
 
 =head1 SYNOPSIS
 
-	use Algorithm::QuineMcCluskey;
+    use Algorithm::QuineMcCluskey;
 
-	# Five-bit, 12-minterm Boolean expression test with don't-cares
-	my $q = new Algorithm::QuineMcCluskey(
-		width => 5,
-		minterms => [ 0, 5, 7, 8, 10, 11, 15, 17, 18, 23, 26, 27 ],
-		dontcares => [ 2, 16, 19, 21, 24, 25 ]
-	);
-	my @result = $q->solve;
-	# @result is (
-	# 	"(B'CE) + (C'E') + (AC') + (A'BDE)"
-	# );
+    #
+    # Five-bit, 12-minterm Boolean expression test with don't-cares
+    #
+    my $q = Algorithm::QuineMcCluskey->new(
+        width => 5,
+        minterms => [ 0, 5, 7, 8, 10, 11, 15, 17, 18, 23, 26, 27 ],
+        dontcares => [ 2, 16, 19, 21, 24, 25 ]
+    );
+
+    my $result = $q->solve();
+
+or
+
+    my $q = Algorithm::QuineMcCluskey->new(
+	width => 5,
+        columnstring => '10-0010110110001-11-0-01--110000'
+    );
+
+In either case $result will be C<"(AC') + (A'BDE) + (B'CE) + (C'E')">.
 
 =head1 DESCRIPTION
 
-NOTE: This module's API is NOT STABLE; the next version should support
-multiple-output problems and will add more object-oriented features, but in
-doing so will change the API. Upgrade at your own risk.
+This module minimizes
+L<Boolean expressions|https://en.wikipedia.org/wiki/Boolean_algebra> using the
+L<Quine-McCluskey algorithm|https://en.wikipedia.org/wiki/Quine%E2%80%93McCluskey_algorithm>.
 
-This module feebly stabs at providing solutions to Quine-McCluskey set-cover
-problems, which are used in electrical engineering/computer science to find
-minimal hardware implementations for a given input-output mapping. Since this
-problem is NP-complete, and since this implementation uses no heuristics, it is
-not expected to be useful for real-world problems.
-
-The module is used in an object-oriented fashion; all necessary arguments can
-be (and currently must be) provided to the constructor. Unless only a certain
-step of is required, the whole algorithm is set off by calling solve() on an
-Algorithm::QuineMcCluskey object; this method returns a list of boolean
-expressions (as strings) representing valid solutions for the given inputs (see
-the C<SYNOPSIS>).
 
 =cut
 
@@ -204,13 +195,103 @@ the C<SYNOPSIS>).
 # Sub and method definitions.
 #
 
-=head1 METHODS
+=head2 Object Methods
+
+=head3 new([<attribute> => value, ...])
+
+Creates the QuineMcCluskey object. The attributes are:
 
 =over 4
 
-=item new
+=item 'width'
 
-Default constructor
+The number of variables (columns) in the Boolean expression.
+
+This is a required attribute.
+
+=item 'minterms'
+
+An array reference of terms representing the 1-values of the
+Boolean expression.
+
+=item 'maxterms'
+
+An array reference of terms representing the 0-values of the
+Boolean expression. This will also indicate that you want the
+expression in product-of-sum form, instead of the default
+sum-of-product form.
+
+=item 'dontcares'
+
+An array reference of terms representing the don't-care-values of the
+Boolean expression. These represent inputs that simply shouldn't happen
+(e.g., numbers 11 through 15 in a base 10 system), and therefore don't
+matter to the result.
+
+=item 'columnstring'
+
+Present the entire list of values of the boolean expression as a single
+string. The values are ordered from left to right in the string. For example,
+a simple two-variable AND equation would have a string "0001".
+
+=item 'dc'
+
+I<Default value: '-'>
+
+Change the representation of the don't-care character. The don't-care character
+is used both in the columnstring, and internally as a place holder for
+eliminated variables in the equation. Some of those internals
+may be examined via other methods.
+
+=item 'title'
+
+A title for the problem you are solving.
+
+=item 'vars'
+
+I<Default value: ['A' .. 'Z']>
+
+The variable names used to form the equation. The names will be taken from
+the leftmost first:
+
+    my $f1 = Algorithm::QuineMcCluskey->new(
+        width => 4,
+        maxterms => [1 .. 11, 13, 15],
+	vars => ['w' .. 'z']
+    );
+
+The names do not have to be single characters, e.g.:
+
+	vars => ['a0', 'a1', 'b0', 'b1']
+
+=back
+
+=head3 solve()
+
+Returns a string of the Boolean equation.
+
+=head3 complement()
+
+Returns a new object that's the complement of the existing object:
+
+    my $qc = $q->complement();
+    print $qc->solve(), "\n";
+
+Prints C<"(ABC) + (A'B'D'E) + (BD'E) + (CE')">.
+
+=head3 dual()
+
+Returns a new object that's the dual of the existing object:
+
+    my $qd = $q->dual();
+    print $qd->solve(), "\n";
+
+Prints C<"(ABCE') + (A'B'C') + (B'DE') + (C'E)">.
+
+=head3 to_columnstring()
+
+Return a string made up of the function column. Position 0 in the string is
+the 0th row of the column, and so on.
 
 =cut
 
@@ -550,7 +631,7 @@ sub generate_essentials
 	return \%e;
 }
 
-=item to_boolean
+=head3 to_boolean()
 
 Generating Boolean expressions
 
@@ -601,12 +682,6 @@ sub to_boolean_term
 	return $varstring;
 }
 
-=item solve
-
-Main solution sub 
-
-=cut
-
 sub solve
 {
 	my $self = shift;
@@ -615,24 +690,23 @@ sub solve
 	return $self->to_boolean($c->[0]);
 }
 
-=item recurse_solve
-
-Recursive divide-and-conquer solver
-
-"To reduce the complexity of the prime implicant chart:
-
-1. Select all the essential prime impliciants. If these PIs cover all
-minterms, stop; otherwise go the second step.
-
-2. Apply Rules 1 and 2 to eliminate redundant rows and columns from
-the PI chart of non-essential PIs.  When the chart is thus reduced,
-some PIs will become essential (i.e., some columns will have a single
-'x'. Go back to step 1."
-
-Introduction To Logic Design, by Sajjan G. Shiva page 129.
-
-=cut
-
+#
+# recurse_solve
+#
+# Recursive divide-and-conquer solver
+#
+# "To reduce the complexity of the prime implicant chart:
+#
+# 1. Select all the essential prime impliciants. If these PIs cover all
+# minterms, stop; otherwise go the second step.
+#
+# 2. Apply Rules 1 and 2 to eliminate redundant rows and columns from
+# the PI chart of non-essential PIs.  When the chart is thus reduced,
+# some PIs will become essential (i.e., some columns will have a single
+# 'x'. Go back to step 1."
+#
+# Introduction To Logic Design, by Sajjan G. Shiva page 129.
+#
 sub recurse_solve
 {
 	my $self = shift;
@@ -797,52 +871,6 @@ sub recurse_solve
 
 1;
 __END__
-
-=back
-
-=head1 BUGS
-
-Probably. The tests aren't complete enough, and the documentation is far from
-complete. Features missing include multiple-output support, which is
-in-progress but will require at least some rewriting to keep the code minimally
-ugly.
-
-Please report any bugs or feature requests to C<bug-algorithm-quinemccluskey at
-rt.cpan.org>, or through the web interface at
-L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Algorithm-QuineMcCluskey>.  I
-will be notified, and then you'll automatically be notified of progress on your
-bug as I make changes.
-
-=head1 SUPPORT
-
-Feel free to contact me at the email address below if you have any questions,
-comments, suggestions, or complaints with regard to this module.
-
-You can find documentation for this module with the perldoc command.
-
-    perldoc Algorithm::QuineMcCluskey
-
-You can also look for information at:
-
-=over 4
-
-=item * AnnoCPAN: Annotated CPAN documentation
-
-L<http://annocpan.org/dist/Algorithm-QuineMcCluskey>
-
-=item * CPAN Ratings
-
-L<http://cpanratings.perl.org/d/Algorithm-QuineMcCluskey>
-
-=item * RT: CPAN's request tracker
-
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Algorithm-QuineMcCluskey>
-
-=item * Search CPAN
-
-L<http://search.cpan.org/dist/Algorithm-QuineMcCluskey>
-
-=back
 
 
 =head1 AUTHOR

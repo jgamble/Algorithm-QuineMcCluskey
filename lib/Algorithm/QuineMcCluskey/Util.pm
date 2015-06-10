@@ -35,18 +35,12 @@ our (@ISA, @EXPORT_OK, %EXPORT_TAGS);
 		remels
 		row_dominance
 		uniqels
-		) ],
+	) ],
 );
 
 @EXPORT_OK = (
 	@{ $EXPORT_TAGS{all} }
 );
-
-=head1 VERSION
-
-This document describes version 0.01 released 24 June 2006.
-
-=cut
 
 our $VERSION = 0.02;
 
@@ -55,13 +49,15 @@ our $VERSION = 0.02;
 This module provides various utilities designed for (but not limited to) use in
 Algorithm::QuineMcCluskey.
 
+The prime implicant and essentials "tables" are in the form of a hash of
+array refs, and are manipulated with the functions columns(), find_essentials(),
+least_covered(), purge_elements(), remels(), row_dominance(), and uniqels().
+
 =cut
 
-=head1 FUNCTIONS
+=head2 FUNCTIONS
 
-=over 4
-
-=item matchcount
+=head3 matchcount()
 
 Returns the count of a search string Y found in the source string X.
 
@@ -73,8 +69,9 @@ E.g.:
 To search for only the string without a regular expression accidentally
 interfering, enclose the search string between '\Q' and '\E'. E.g.:
 
+      #
       # We don't know what's in $looking, so de-magic it.
-      my $str = "d10d11d1d"; 
+      #
       matchcount($str, '\E' . $looking . '\Q]);
 
 =cut
@@ -86,9 +83,12 @@ sub matchcount
 	return scalar(() = $x=~ m/$y/g);
 }
 
-=item maskmatcher
+=head3 maskmatcher()
 
-Returns the terms that match a mask.
+Returns the terms that match a mask made up of zeros, ones, and don't-care
+characters.
+
+      my @rterms = maskmacher("010-0", '-', @terms);
 
 =cut
 
@@ -116,9 +116,12 @@ sub maskmatcher
 	return @t;
 }
 
-=item find_essentials
+=head3 find_essentials()
 
-Find the essential prime implicants.
+Find the essential prime implicants in a primes table, filtered
+by a list of terms.
+
+      my $ess = find_essentials(\%primes, @terms);
 
 =cut
 
@@ -147,15 +150,15 @@ sub find_essentials
 	return %essentials;
 }
 
-=item row_dominance
+=head3 row_dominance()
 
 Row dominance checking.
 
 @dominated_rows = row_dominance(\%primes, 0);
 @dominant_rows = row_dominance(\%primes, 1);
 
-"A row (column) <I>i</I> of a PI chart dominates row (column) <I>j</I>
-if row (column) <I>i</I> contains an x in each column (row) dominated by it."
+A row (column) I<i> of a PI chart dominates row (column) I<j>
+if row (column) I<i> contains an x in each column (row) dominated by it.
 
 Return those rows (columns are handled by rotating the primes hash before
 calling this function).
@@ -192,9 +195,14 @@ sub row_dominance
 	return uniq(@rows);
 }
 
-#
-# Find the term with the fewest implicant covers.
-#
+=head3 least_covered()
+
+Find the term with the fewest implicant covers.
+
+      my $t = least_covered(\%primes, @terms);
+
+=cut
+
 sub least_covered
 {
 	my($primes, @bit_terms) = @_;
@@ -216,12 +224,12 @@ sub least_covered
 	return (sort { @{ $ic{$a} } <=> @{ $ic{$b} } } keys %ic)[0];
 }
 
-=item purge_elements
+=head3 purge_elements()
 
-Given a table (hash form) of prime implicants, delete the list of elements
-(usually essential prime implicants) from the table (row-wise and column-wise),
-leaving behind implicants that must be chosen for the remaining elements of
-the boolean function.
+      purge_elements(\%prime_implicants, $dc, @essentials);
+
+Given a table of prime implicants, delete the list of elements (usually
+the essential prime implicants) from the table, both row-wise and column-wise.
 
 =cut
 
@@ -249,14 +257,15 @@ sub purge_elements
 	return $count;
 }
 
-
-=item remels
+=head3 remels()
 
 Given a value and a reference to a hash of arrayrefs, remove the value
 from the individual arrayrefs if the value matches the masks.
 
 Deletes the entire arrayref from the hash if the last element of the
 array is removed.
+
+      remels($element, $dc, \%primes);
 
 Returns the number of removals made.
 
@@ -290,6 +299,14 @@ sub remels
 	return $rems;
 }
 
+=head3 countels()
+
+Returns a count of all elements in the array ref that are equal to $el.
+
+      my $c = countels($el, \@array);
+
+=cut
+
 sub countels
 {
 	my($el, $aref) = @_;
@@ -298,9 +315,11 @@ sub countels
 	return sum map { $_ eq $el } @$aref;
 }
 
-=item uniqels
+=head3 uniqels(%hashofarrayrefs)
 
-Returns unique elements of an arrayref; usable for deep structures
+Returns the uniq elements of an array of complex structures.
+
+      my @uels = uniqels(@els);
 
 =cut
 
@@ -310,9 +329,12 @@ sub uniqels
     map { $h{Dumper($_)}++ == 0 ? $_ : () } @_;
 }
 
-=item columns
+=head3 columns()
 
-Rotates 90 degrees a hashtable of the type used for %primes
+Rotates 90 degrees a hashtable of the type used for %primes, using
+only @columms.
+
+      my %table90 = columns(\%table, @columns)
 
 =cut
 
@@ -331,25 +353,29 @@ sub columns
 	return %r90;
 }
 
-=item diffpos
+=head3 diffpos()
 
 Find the location of the first difference between two strings
+
+      my $p = diffpos($str1, $str2);
 
 =cut
 
 sub diffpos { firstidx { $_ } diffposes(@_)}
 
-=item hdist
+=head3 hdist()
 
-Hamming distance
+Return the Hamming distance between two strings.
+
+      $d = hdist($str1, $str2);
 
 =cut
 
 sub hdist { sum diffposes(@_)}
 
-=item diffposes
+=head3 diffposes()
 
-Return pairwise the 'un-sameness' of two strings
+Return pairwise the 'un-sameness' of two strings.
 
 =cut
 
@@ -360,12 +386,6 @@ sub diffposes
 			@{[ split(//, shift)]};
 }
 
-=back
-
-=head1 TODO
-
-Documentation. Most of the subs are very simple, but they still could use a bit
-more explanation.
 
 =head1 SEE ALSO
 
