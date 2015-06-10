@@ -21,3 +21,5 @@ t/22-solve.t
 t/23-solve.t
 t/24-solve.t
 t/pod.t
+LICENSE
+META.json

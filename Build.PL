@@ -1,14 +1,15 @@
-use Module::Build;
+use 5.010;
 use strict;
-use warnings;
+use warnings FATAL =>'all';
+use Module::Build;
 
-my $build = Module::Build->new(
+my $builder = Module::Build->new(
 	module_name => 'Algorithm::QuineMcCluskey',
 
-	dist_abstract => '',
-	dist_author => 'Darren Kulp <darren@kulp.ch>',
+	dist_abstract => 'Solve objects of Boolean terms with the Quine-McCluskey algorithm',
+	dist_author => [q{Darren Kulp <darren@kulp.ch>},
+			q{John M. Gamble <jgamble@cpan.org>}],
 	dist_version => '0.02',
-	dist_name => 'Algorithm-QuineMcCluskey',
 
 	requires => {
 		perl => '5.10.1',
@@ -21,7 +22,7 @@ my $build = Module::Build->new(
 	},
 
 	configure_requires => {
-		'Module::Build' => '0.3624',
+		'Module::Build' => '0',
 	},
 
 	build_requires => {
@@ -48,4 +49,4 @@ my $build = Module::Build->new(
 	},
 );
 
-$build->create_build_script;
+$builder->create_build_script;

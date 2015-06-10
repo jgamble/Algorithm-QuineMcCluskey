@@ -1,18 +1,40 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         Algorithm-QuineMcCluskey
-version:      0.01
-version_from: lib/Algorithm/QuineMcCluskey.pm
-installdirs:  site
+---
+abstract: 'Solve objects of Boolean terms with the Quine-McCluskey algorithm'
+author:
+  - 'Darren Kulp <darren@kulp.ch>'
+  - 'John M. Gamble <jgamble@cpan.org>'
+build_requires:
+  Test::More: '0'
+configure_requires:
+  Module::Build: '0'
+dynamic_config: 0
+generated_by: 'Module::Build version 0.4203, CPAN::Meta::Converter version 2.133380'
+keywords:
+  - quine-mccluskey
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: '1.4'
+name: Algorithm-QuineMcCluskey
+provides:
+  Algorithm::QuineMcCluskey:
+    file: lib/Algorithm/QuineMcCluskey.pm
+    version: '0.02'
+  Algorithm::QuineMcCluskey::Format:
+    file: lib/Algorithm/QuineMcCluskey/Format.pm
+    version: '0.02'
+  Algorithm::QuineMcCluskey::Util:
+    file: lib/Algorithm/QuineMcCluskey/Util.pm
+    version: '0.02'
 requires:
-    Alias:                         0
-    Carp:                          0
-    Data::Dumper:                  0
-    List::Compare::Functional:     0
-    List::MoreUtils:               0
-    List::Util:                    0
-    Test::More:                    0
-    Tie::Cycle:                    0
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.17
+  Carp: '0'
+  Data::Dumper: '0'
+  List::Compare::Functional: '0'
+  List::Util: '0'
+  Moose: '0'
+  Tie::Cycle: '0'
+  perl: v5.10.1
+resources:
+  license: http://dev.perl.org/licenses/
+  repository: git://github.com/jgamble/Algorithm-QuineMcCluskey
+version: '0.02'
