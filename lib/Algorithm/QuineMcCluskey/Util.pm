@@ -62,6 +62,7 @@ least_covered(), purge_elements(), remels(), row_dominance(), and uniqels().
 Returns the count of a search string Y found in the source string X.
 
 E.g.:
+
       my $str = "d10d11d1d"; 
       matchcount($str, "d");     # returns 4
       matchcount($str, "d1");    # returns 3
@@ -394,14 +395,6 @@ L<Algorithm::QuineMcCluskey>
 =head1 AUTHOR
 
 Darren M. Kulp C<< <darren@kulp.ch> >>
-
-=head1 COPYRIGHT AND LICENSE
-
-Copyright (C) 2006 by Darren Kulp
-
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself, either Perl version 5.8.7 or,
-at your option, any later version of Perl 5 you may have available.
 
 =cut
 

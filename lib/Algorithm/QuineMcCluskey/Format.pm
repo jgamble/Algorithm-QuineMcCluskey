@@ -37,12 +37,9 @@ Algorithm::QuineMcCluskey.
 
 =head1 FUNCTIONS
 
-=over 4
+=head3 arrayarray()
 
-
-=item elem_hash
-
-Returns string form of primes structure.
+Returns a more compact string form of the covers structure.
 
 =cut
 
@@ -62,6 +59,12 @@ sub arrayarray
 	return "\n" . join("\n", @output);
 }
 
+=head3 hasharray()
+
+Returns a more compact string form of primes structure.
+
+=cut
+
 sub hasharray
 {
 	my ($hr) = @_;
@@ -74,6 +77,14 @@ sub hasharray
 
 	return "\n" . join("\n", @output);
 }
+
+=head3 tableform
+
+Return a string that puts the "table" of the primes's hash-of-array structure
+into a column and row chart usable for visual searching of essential prime
+implicants.
+
+=cut
 
 sub tableform
 {
@@ -101,13 +112,18 @@ sub tableform
 	return join("\n", @output);
 }
 
+=head3 bit_cmp()
+
+Comparison function for sort() that orders the rows in the tableform() function.
+
+=cut
+
 sub bit_cmp
 {
 	my $result = matchcount($a, '1') <=> matchcount($b, '1');
 	return ($result? $result: ($a cmp $b));
 }
 
-=back
 
 =head1 SEE ALSO
 
@@ -115,15 +131,7 @@ L<Algorithm::QuineMcCluskey>
 
 =head1 AUTHOR
 
-Darren M. Kulp C<< <darren@kulp.ch> >>
-
-=head1 COPYRIGHT AND LICENSE
-
-Copyright (C) 2006 by Darren Kulp
-
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself, either Perl version 5.8.7 or,
-at your option, any later version of Perl 5 you may have available.
+John M. Gamble B<jgamble@cpan.org>
 
 =cut
 
