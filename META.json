@@ -1,11 +1,11 @@
 {
-   "abstract" : "Solve objects of Boolean terms with the Quine-McCluskey algorithm",
+   "abstract" : "Solve sets of Boolean terms with the Quine-McCluskey algorithm",
    "author" : [
       "Darren Kulp <darren@kulp.ch>",
       "John M. Gamble <jgamble@cpan.org>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Module::Build version 0.4203",
+   "generated_by" : "Module::Build version 0.4211",
    "keywords" : [
       "quine-mccluskey"
    ],

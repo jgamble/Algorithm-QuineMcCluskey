@@ -6,7 +6,7 @@ use Module::Build;
 my $builder = Module::Build->new(
 	module_name => 'Algorithm::QuineMcCluskey',
 
-	dist_abstract => 'Solve objects of Boolean terms with the Quine-McCluskey algorithm',
+	dist_abstract => 'Solve sets of Boolean terms with the Quine-McCluskey algorithm',
 	dist_author => [q{Darren Kulp <darren@kulp.ch>},
 			q{John M. Gamble <jgamble@cpan.org>}],
 	dist_version => '0.02',

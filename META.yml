@@ -1,5 +1,5 @@
 ---
-abstract: 'Solve objects of Boolean terms with the Quine-McCluskey algorithm'
+abstract: 'Solve sets of Boolean terms with the Quine-McCluskey algorithm'
 author:
   - 'Darren Kulp <darren@kulp.ch>'
   - 'John M. Gamble <jgamble@cpan.org>'
@@ -8,7 +8,7 @@ build_requires:
 configure_requires:
   Module::Build: '0'
 dynamic_config: 0
-generated_by: 'Module::Build version 0.4203, CPAN::Meta::Converter version 2.133380'
+generated_by: 'Module::Build version 0.4211, CPAN::Meta::Converter version 2.150001'
 keywords:
   - quine-mccluskey
 license: perl
