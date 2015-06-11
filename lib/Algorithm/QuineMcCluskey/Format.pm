@@ -20,12 +20,6 @@ use List::MoreUtils qw(uniq firstidx);
 
 our @EXPORT_OK = qw(arrayarray hasharray tableform);
 
-=head1 VERSION
-
-This document describes version 0.01 released 24 June 2006.
-
-=cut
-
 our $VERSION = 0.02;
 
 =head1 DESCRIPTION
@@ -114,7 +108,8 @@ sub tableform
 
 =head3 bit_cmp()
 
-Comparison function for sort() that orders the rows in the tableform() function.
+Comparison function for sort() that orders the rows in the tableform() 
+and hasharray() functions.
 
 =cut
 
