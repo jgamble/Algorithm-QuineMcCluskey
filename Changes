@@ -1,7 +1,15 @@
 Revision history for Algorithm-QuineMcCluskey
 
+     2015-6-11
+	- Realized that the maskmatcher regex could be changed to
+	  not require the don't-care character, which means it doesn't
+	  need to be in the parameter list of maskmatcher(),
+	  purge_elements(), or remels().
+	- Renamed maskmatcher() maskedmatch(), because the grammar
+	  was bugging me.
+	- With that, Version 0.02 is ready for CPAN.
      2015-6-3
-	- Util.pm now has an EXPORT_TAG.
+	- Util.pm now has an %EXPORT_TAGS.
 	- Change the covers attribute to contain all of the minimal
 	  covers, not just the one that happens to be in the zeroth
 	  position in the covers array.
