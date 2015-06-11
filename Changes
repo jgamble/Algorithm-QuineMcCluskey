@@ -1,7 +1,17 @@
 Revision history for Algorithm-QuineMcCluskey
 
-     2015-4-20
-	- Fix test file 02-simple.t now that primes attribute is "lazy".
+     2015-6-3
+	- Util.pm now has an EXPORT_TAG.
+	- Change the covers attribute to contain all of the minimal
+	  covers, not just the one that happens to be in the zeroth
+	  position in the covers array.
+	- Change solve() to return a scalar.
+	- With solve() now returning a scalar, change tests to look
+	  for an answer in a set of possible answers (some terms sets
+	  can be covered by more than one equation.)
+     2015-5-30
+	- Make remels() remove the hash key if the array ref is empty.
+	- Change columns() to not auto-create empty keys.
      2015-4-18
 	- Made the primes attribute "lazy", so that one can look
 	  up prime implicants without going through the solving
@@ -12,39 +22,17 @@ Revision history for Algorithm-QuineMcCluskey
 	  instead of deleting from the hash immediately, they
 	  became essentially the same function, just called
 	  with different parameters.
-	- Replaced "use base" with "use parent" in Util.pm.
-	- Changed calls of row_dom() and col_dom() in
-	  QuineMcCluskey.pm
      2015-3-27
 	- Changed row_dom() and col_dom() to return the rows/cols
 	  to remove, instead of removing them inside.
 	- Changed row_dom() and col_dom() from methods to functions,
 	  and moved the code to Util.pm
      2015-3-6
-	- Replaced old row_dom() code with code that actually
-	  affects the data. Un-commented out the calls to $self->row_dom().
-	  No idea yet if this actually works.
 	- Method find_essentials() is essentially a single-term search
 	  through the hash of arrays. Changed it from a method to a
 	  function and moved it to Util.pm.
-	- This means I backtracked a little in the return value of
-	  find_essentials() -- it now returns a hash again.
-	- Removed test of find_essentials() in 02-simple.t
-	- Got rid of the subroutine declarations in Util.pm. It's an
-	  obsolete mechanism.
-     2015-3-2
-	- Added formatting functions for Smart Comments lines, which
-	  makes the visualization process easier and will probably be
-	  useful for users as well.
 	- Found an error in remels(), which was only removing one
 	  matched array element instead of all matched elements.
-     2015-2-18
-	- Added test 17-solvesimple.t.
-     2015-1-28
-	- Extended tests -- grouped the "solve" test with name
-	  change, and added a simpler test-with-don't-cares.
-	- Moved purge_elements() to Util.pm, after changing
-	  it to a function from a method.
      2015-1-26
 	- Changed argument list to purge_essentials(). Had been
 	  taking an esssentials hash, but since it was only using the
@@ -71,20 +59,11 @@ Revision history for Algorithm-QuineMcCluskey
 	  and help in debugging too.
 	- New module to contain tableforms() (and future functions),
 	  named it Algorithm::QuineMcCluskey::Format.
-	- MANIFEST updated with new module name.
 	- Do-while using is_LequivalentR() was supposed to be comparing
 	  hash keys, but a 'keys' had been left off on one side.
 	  Fixing that saves at least one loop.
 	- Avoid calling recurse_solve() if the reduced primes hash is
 	  empty.
-     2015-1-9
-	- There's a block marked as "do not touch". Finally got
-	  around to modifying it. Checking it over it's apparent
-	  that the lead-in statements to the while loop are the
-	  same as the loop's block. Changed it to a do-while.
-	- Working this out allowed me to finally change
-	  find_essentials() to return $self instead of the essentials
-	  hash.
      2015-1-6
 	- Added new object-creating methods dual() and complement().
 	- Added tests for the new methods.
@@ -92,24 +71,9 @@ Revision history for Algorithm-QuineMcCluskey
 	- No default parameters for find_essentials(). The primes
 	  hash must be passed in, while the binary-formatted terms
 	  are collectd from the object.
-	- Tweaked Util.pm. Only maskmatcher() was using bin() (it was
-	  just 'return oct "0b" . $_;'), so just put those lines in 
-	  maskmatcher() and removed bin().
 	- Found spots in QM.pm and Util.pm where a "sum map {}"
 	  construct can be replaced with "any {}", which has the
 	  advantage of early break out of the loop on a match.
-     2014-12-11
-	- Method row_dom() was not actually affecting anything,
-	  as it was creating its own hash ref without affecting
-	  the contents of the hash ref passed in. Fixed that, but...
-	- ... that left some empty arrays in the hash-of-arrays,
-	  which were causing undef warnings in a "sum map" construct.
-	  Created a new function countels() in Util.pm that does the
-	  counting with a guard against empty array refs.
-	  But unfortunately...
-	- ... tests failed as no covers were being generated --
-	  everything gets removed from the primes hash. So in the end,
-	  commented out the calls to row_dom().
      2014-12-3
 	- The weight count in find_primes() and the cost count in
 	  recursive_solve() were using sum of a map block using
@@ -120,14 +84,10 @@ Revision history for Algorithm-QuineMcCluskey
 	  substitution code in case someone chose a substitution
 	  metacharacter as their don't-care character.
      2014-11-26
-	- Changed maskmatcher() and remel() back from methods to
-	  plain functions by passing in the dc field as a parameter.
 	- Was looping around remel() for each arrayref in the hash.
 	  Now just pass the hash in directly (this necessitated
-	  changing one of the outer loops in purge_essentials).
-	- And now that they're functions again, moved maskmatcher()
-	  and remel() back to Util.pm, although remel() is now
-	  called remels().
+	  changing one of the outer loops in purge_essentials,
+	  and remel() becomes remels()).
      2014-11-13
 	- The test with don't-care terms randomly fails two thirds
 	  of the time. Separate it into its own file, and add
@@ -154,10 +114,6 @@ Revision history for Algorithm-QuineMcCluskey
      2014-09-28
 	- The 'covers' attribute gets changed from ArrayRef[Int] to
 	  ArrayRef[Str].
-	- Changed back find_essentials() to return the essentials hash
-	  instead of $self, as there is code in recursive_solve() that
-	  needs the hash in an inline fashion, and I'm not ready to touch
-	  that part of the code yet.
      2014-09-21
 	- Added namespace::autoclean as recommended in the Moose Best
 	  Practices manual.
@@ -165,15 +121,13 @@ Revision history for Algorithm-QuineMcCluskey
      2014-09-19
 	- For internal clarity, renamed allterms() to all_bit_terms(),
 	  and minmax_terms() to minmax_bit_terms().
-	- Fixed a couple of bugs in BUILD() where the minterms were
-	  used where maxterms was the correct usage.
 	- Methods maskmatch() and maskmatches() now combined into a single
 	  method (one called the other, but there was no reason for the
 	  separate internal function, and it saved re-creating
 	  utility variables over and over).
 	- Check if there's an overlap between the don't-care list and
 	  the min or max term list, and call it an error if there is.
-	- Attributes actually check the type now (thanks Moose) so
+	- Attributes actually check their type now (thanks Moose) so
 	  the qw operators around the term lists are now removed in
 	  the documentation and in the test files.
      2014-08-20
@@ -181,43 +135,11 @@ Revision history for Algorithm-QuineMcCluskey
 	  for row_dom(), col_dom(), and purge_essentials(). Always
 	  pass in the argument -- it's less confusing that way.
 	- Trim Util.pm of tobits() -- it's embedded in BUILD now.
-	- Those parentheses around remel()'s arguments aren't optional
-	  when we're pushing the limits of the parser. Added them.
      2014-08-19
 	- More work in find_primes(). An array slice in a hash isn't
 	  working as originally coded (I seem to recall the rules
 	  changing some time ago). Changed it to two statements for
 	  now.
-	- Also comment changes in find_primes(), hopefully explaining
-	  the prime implicant search more completely, and maybe better.
-     2014-08-13
-	- Many changes to attributes -- altered the internal
-	  ones to have "init_arg=>undef" and read-only options,
-	  and added accessor methods.
-	- Moved the "keys %$primes" out of the loop in find_essentials().
-	  I think this was done to keep the local variable count to a
-	  minimum, but the downside is the repeated operation for each
-	  loop.
-	- In the same line, separated the map function from
-	  the map-grep-grep chain. Again, the reason seems to be
-	  to avoid storing a list in a variable, but the end result is
-	  a baroque technique involving dereferencing anonymous references,
-	  all to see if it's a one-element list or not.
-	- Also in find_essentials(), set the essentials attribute in
-	  one go with local hash set up in the loop, rather than setting
-	  each key individually per loop in the attribute.
-	- find_essentials() and purge_essentials no longer return
-	  the ->ess hash (the only thing using this feature was
-	  the test files). Use the accessor method get_essentials()
-	  if you really want to see the internals.
-     2014-08-01
-	- Move maskmatch(), maskmatches(), and remel() from Util.pm
-	  to QuineMcCluskey.pm and made them object methods. Function
-	  maskmatch() uses what is now an attribute of the object,
-	  and maskmatches() and remel() are up the method calling chain.
-     2014-07-28
-	- 'width' is now a required field.
-	- The BUILD method now sets the title if it isn't provided.
      2014-07-07
 	- After looking over the labeling in the run.t file, added
 	  a new attribute, "title". We can now say what the A::QMcC
@@ -234,6 +156,7 @@ Revision history for Algorithm-QuineMcCluskey
 	  So, set up three new fields that represent the three fields
 	  in their bitstring form: min_bits, max_bits, and dc_bits.
      2014-04-30
+	- Moosified ("has" declarations) the attributes.
 	- Achieved a compile-error-free version using Moose instead
 	  of Alias. Now to make it runtime-error-free.
 	- As part of the compilation process, moved from a Makefile.PL
@@ -248,13 +171,6 @@ Revision history for Algorithm-QuineMcCluskey
 	  coding.
 	- List::MoreUtils isn't actually being used in A::QMcC (it is
 	  used in A::QMcC::Util though).
-
-     2013-10-25
-	- Moosify ("has" declarations) the attributes. This is part
-	  of the process to eliminate using Alias.pm.
-	- Removed default value check in new(), which Moose has.
-	- Removed prep_mopi() call, which doesn't seem to exist anywhere.
-	- De-attr'd the attributes in find_perms.
 
 0.01	2006-06-24T21:32-0500
 		First version, released on an unsuspecting world. Supports
