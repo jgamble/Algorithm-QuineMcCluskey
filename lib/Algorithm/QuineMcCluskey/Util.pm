@@ -29,7 +29,7 @@ our (@ISA, @EXPORT_OK, %EXPORT_TAGS);
 		find_essentials
 		hdist
 		least_covered
-		maskmatcher
+		maskedmatch
 		matchcount
 		purge_elements
 		remels
@@ -84,34 +84,34 @@ sub matchcount
 	return scalar(() = $x=~ m/$y/g);
 }
 
-=head3 maskmatcher()
+=head3 maskedmatch()
 
 Returns the terms that match a mask made up of zeros, ones, and don't-care
 characters.
 
-      my @rterms = maskmacher("010-0", '-', @terms);
+      my @rterms = maskedmatch("010-0", @terms);
 
 =cut
 
-sub maskmatcher
+sub maskedmatch
 {
-	my($m, $dc, @terms) = @_;
+	my($mask, @terms) = @_;
 	my @t;
 
 	#
 	# Make two patterns based on the don't-care characters
-	# in the mask ("quoted" in case the don't-care character
-	# happens to be a metacharacter).
+	# in the mask (assumed to be the character that's not
+	# a zero or a one, an assumption enforced in BUILD.)
 	#
-	(my $mask0 = $m) =~ s/\Q$dc\E/0/g;
-	(my $mask1 = $m) =~ s/\Q$dc\E/1/g;
-	$mask0 = oct "0b" . $mask0;
-	$mask1 = oct "0b" . $mask1;
+	(my $m0 = $mask) =~ s/[^01]/0/g;
+	(my $m1 = $mask) =~ s/[^01]/1/g;
+	$m0 = oct "0b" . $m0;
+	$m1 = oct "0b" . $m1;
 
 	for my $x (@terms)
 	{
 		my $b = oct "0b" . $x;
-		push @t, $x if ((($mask0 & $b) == $mask0) && (($mask1 & $b) == $b));
+		push @t, $x if ((($m0 & $b) == $m0) && (($m1 & $b) == $b));
 	}
 
 	return @t;
@@ -227,7 +227,7 @@ sub least_covered
 
 =head3 purge_elements()
 
-      purge_elements(\%prime_implicants, $dc, @essentials);
+      purge_elements(\%prime_implicants, @essentials);
 
 Given a table of prime implicants, delete the list of elements (usually
 the essential prime implicants) from the table, both row-wise and column-wise.
@@ -236,7 +236,7 @@ the essential prime implicants) from the table, both row-wise and column-wise.
 
 sub purge_elements
 {
-	my($primes, $dc, @ess) = @_;
+	my($primes, @ess) = @_;
 	my $count = 0;
 
 	return $count if (scalar @ess == 0 or scalar keys %$primes == 0);
@@ -249,7 +249,7 @@ sub purge_elements
 
 	for my $el (@ess)
 	{
-		$count += remels($el, $dc, $primes);
+		$count += remels($el, $primes);
 	}
 
 	if ($count != 0)
@@ -266,7 +266,7 @@ from the individual arrayrefs if the value matches the masks.
 Deletes the entire arrayref from the hash if the last element of the
 array is removed.
 
-      remels($element, $dc, \%primes);
+      remels($element, \%primes);
 
 Returns the number of removals made.
 
@@ -274,13 +274,13 @@ Returns the number of removals made.
 
 sub remels
 {
-	my ($el, $dc, $href) = @_;
+	my ($el, $href) = @_;
 	my $rems = 0;
 	my @kp = keys %$href;
 
 	for my $k (@kp)
 	{
-		my @pos = indexes { maskmatcher($el, $dc, $_) } @{$href->{$k}};
+		my @pos = indexes { maskedmatch($el, $_) } @{$href->{$k}};
 		for my $pos (reverse @pos)
 		{
 			if (scalar @{$href->{$k}} == 1)

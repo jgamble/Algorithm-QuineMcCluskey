@@ -600,7 +600,7 @@ sub generate_primes
 	# minterms (or maxterms). The resulting hash of arrays is our
 	# set of prime implicants.
 	#
-	my %p = map { $_ => [ maskmatcher($_, $self->dc, $self->minmax_bit_terms()) ] }
+	my %p = map { $_ => [ maskedmatch($_, $self->minmax_bit_terms()) ] }
 		grep { !$implicant{$_} } keys %implicant;
 
 	#
@@ -742,7 +742,7 @@ sub recurse_solve
 		#
 		##### Purging prime hash of: "[" . join(", ", @essentials_keys) . "]"
 		#
-		purge_elements(\%primes, $self->dc, @essentials_keys);
+		purge_elements(\%primes, @essentials_keys);
 		push @prefix, grep { $ess{$_} > 0} @essentials_keys;
 
 		##### recurse_solve() @prefix now: "[" . join(", ", sort @prefix) . "]"
@@ -762,7 +762,7 @@ sub recurse_solve
 		my @cols = row_dominance(\%cols, 0);
 		#### row_dominance called with primes (rotated): "\n" . tableform(\%cols, $self->width)
 		#### row_dominance returns for removal: "[" . join(", ", @cols) . "]"
-		remels($_, $self->dc, \%primes) for (@cols);
+		remels($_, \%primes) for (@cols);
 
 		%ess = find_essentials(\%primes, $self->minmax_bit_terms());
 
@@ -813,7 +813,7 @@ sub recurse_solve
 		#
 		##### Purging reduced hash of: $ta
 		#
-		purge_elements(\%reduced, $self->dc, $ta);
+		purge_elements(\%reduced, $ta);
 
 		if (keys %reduced and scalar(@c = $self->recurse_solve(\%reduced, $level + 1)))
 		{
