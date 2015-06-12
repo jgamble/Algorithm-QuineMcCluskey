@@ -1,5 +1,11 @@
 Revision history for Algorithm-QuineMcCluskey
 
+     2015-6-12
+	- The minimum perl required was 5.10.1, but the module
+	  was using the /r modifier on the tr// operator, which
+	  doesn't appear until 5.14. Oops. Changed the string
+	  assignment order in dual() and complement().
+	- Version goes to 0.03, and up to CPAN.
      2015-6-11
 	- Realized that the maskmatcher regex could be changed to
 	  not require the don't-care character, which means it doesn't
