@@ -448,7 +448,7 @@ sub complement
 	my $self = shift;
 	my $cstring = $self->columnstring();
 
-	my $comp = $cstring =~ tr/01/10/r;
+	(my $comp = $cstring) =~ tr/01/10/;
 	my $title = "Complement of '" . $self->title() . "'";
 
 	return Algorithm::QuineMcCluskey->new(columnstring => $comp,
@@ -467,7 +467,7 @@ sub dual
 	my $self = shift;
 	my $cstring = $self->columnstring();
 
-	my $dual = reverse $cstring =~ tr/01/10/r;
+	(my $dual = reverse $cstring) =~ tr/01/10/;
 	my $title = "Dual of '" . $self->title() . "'";
 
 	return Algorithm::QuineMcCluskey->new(columnstring => $dual,
