@@ -43,15 +43,15 @@
    "provides" : {
       "Algorithm::QuineMcCluskey" : {
          "file" : "lib/Algorithm/QuineMcCluskey.pm",
-         "version" : "0.02"
+         "version" : "0.03"
       },
       "Algorithm::QuineMcCluskey::Format" : {
          "file" : "lib/Algorithm/QuineMcCluskey/Format.pm",
-         "version" : "0.02"
+         "version" : "0.03"
       },
       "Algorithm::QuineMcCluskey::Util" : {
          "file" : "lib/Algorithm/QuineMcCluskey/Util.pm",
-         "version" : "0.02"
+         "version" : "0.03"
       }
    },
    "release_status" : "stable",
@@ -63,5 +63,5 @@
          "url" : "git://github.com/jgamble/Algorithm-QuineMcCluskey"
       }
    },
-   "version" : "0.02"
+   "version" : "0.03"
 }
