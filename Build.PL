@@ -17,8 +17,9 @@ my $builder = Module::Build->new(
 		Carp => 0,
 		'Data::Dumper' => 0,
 		'List::Compare::Functional' => 0,
-		'List::Util' => 0,
+		'List::Util' => '1.35',
 		'Tie::Cycle' => 0,
+		'namespace-autoclean' => '0.16',
 	},
 
 	configure_requires => {
