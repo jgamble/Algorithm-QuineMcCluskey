@@ -1,5 +1,11 @@
 Revision history for Algorithm-QuineMcCluskey
 
+     2015-6-13
+	- The build-and-break-a-columnstring mechanism for making
+	  complements and duals of the object was clear but involved
+	  using extra memory, potentially a lot. Removed that and
+	  use the get_complement() function of List::Compare::Functional
+	  instead.
      2015-6-12
 	- The minimum perl required was 5.10.1, but the module
 	  was using the /r modifier on the tr// operator, which
