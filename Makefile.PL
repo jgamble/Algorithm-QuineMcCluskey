@@ -9,10 +9,11 @@ WriteMakefile
   'EXE_FILES' => [],
   'VERSION_FROM' => 'lib/Algorithm/QuineMcCluskey.pm',
   'PREREQ_PM' => {
+                   'namespace::autoclean' => '0.16',
                    'Data::Dumper' => 0,
                    'Carp' => 0,
                    'Test::More' => 0,
-                   'List::Util' => 0,
+                   'List::Util' => '1.35',
                    'List::Compare::Functional' => 0,
                    'Tie::Cycle' => 0,
                    'Moose' => 0

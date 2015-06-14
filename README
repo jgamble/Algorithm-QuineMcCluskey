@@ -1,4 +1,4 @@
-Algorithm-QuineMcCluskey, version 0.02
+Algorithm-QuineMcCluskey, version 0.04
 
 NOTE: This module's API is NOT STABLE. Although object creation and solving
 will probably remain unchanged, options for variant forms and output will

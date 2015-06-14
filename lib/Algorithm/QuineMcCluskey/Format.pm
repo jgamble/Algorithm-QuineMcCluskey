@@ -20,7 +20,7 @@ use List::MoreUtils qw(uniq firstidx);
 
 our @EXPORT_OK = qw(arrayarray hasharray tableform);
 
-our $VERSION = 0.03;
+our $VERSION = 0.04;
 
 =head1 DESCRIPTION
 

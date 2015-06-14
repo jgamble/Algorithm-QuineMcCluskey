@@ -33,9 +33,10 @@
             "Carp" : "0",
             "Data::Dumper" : "0",
             "List::Compare::Functional" : "0",
-            "List::Util" : "0",
+            "List::Util" : "1.35",
             "Moose" : "0",
             "Tie::Cycle" : "0",
+            "namespace::autoclean" : "0.16",
             "perl" : "v5.10.1"
          }
       }
@@ -43,15 +44,15 @@
    "provides" : {
       "Algorithm::QuineMcCluskey" : {
          "file" : "lib/Algorithm/QuineMcCluskey.pm",
-         "version" : "0.03"
+         "version" : "0.04"
       },
       "Algorithm::QuineMcCluskey::Format" : {
          "file" : "lib/Algorithm/QuineMcCluskey/Format.pm",
-         "version" : "0.03"
+         "version" : "0.04"
       },
       "Algorithm::QuineMcCluskey::Util" : {
          "file" : "lib/Algorithm/QuineMcCluskey/Util.pm",
-         "version" : "0.03"
+         "version" : "0.04"
       }
    },
    "release_status" : "stable",
@@ -63,5 +64,5 @@
          "url" : "git://github.com/jgamble/Algorithm-QuineMcCluskey"
       }
    },
-   "version" : "0.03"
+   "version" : "0.04"
 }
