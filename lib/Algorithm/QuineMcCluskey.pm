@@ -16,7 +16,7 @@ use namespace::autoclean;
 use Carp qw(croak);
 
 use Algorithm::QuineMcCluskey::Util qw(:all);
-use List::Compare::Functional qw(get_intersection is_LequivalentR);
+use List::Compare::Functional qw(get_complement get_intersection is_LequivalentR);
 use Tie::Cycle;
 
 #
@@ -439,6 +439,26 @@ sub break_columnstring
 	return (\@minterms, \@maxterms, \@dontcares);
 }
 
+sub complement_terms
+{
+	my $self = shift;
+	my @bitlist = (0 .. (1 << $self->width) - 1);
+	my @termlist;
+
+	@termlist = @{$self->dontcares} if ($self->has_dontcares);
+
+	if ($self->has_minterms)
+	{
+		push @termlist, @{ $self->minterms };
+	}
+	else
+	{
+		push @termlist, @{ $self->maxterms };
+	}
+
+	return get_complement([\@termlist, \@bitlist]);
+}
+
 #
 # Build another Quine-McCluskey object that's the complement
 # of the existing object.
@@ -446,16 +466,29 @@ sub break_columnstring
 sub complement
 {
 	my $self = shift;
-	my $cstring = $self->columnstring();
+	my %term;
 
-	(my $comp = $cstring) =~ tr/01/10/;
+
+	$term{dontcares} = [@{$self->dontcares}] if ($self->has_dontcares);
+
+	if ($self->has_minterms)
+	{
+		$term{minterms} = [$self->complement_terms()];
+	}
+	else
+	{
+		$term{maxterms} = [$self->complement_terms()];
+	}
+
 	my $title = "Complement of '" . $self->title() . "'";
 
-	return Algorithm::QuineMcCluskey->new(columnstring => $comp,
+	return Algorithm::QuineMcCluskey->new(
+		title => $title,
 		width => $self->width,
 		dc => $self->dc,
 		vars => $self->vars,
-		title => $title);
+		%term
+	);
 }
 
 #
@@ -465,16 +498,31 @@ sub complement
 sub dual
 {
 	my $self = shift;
-	my $cstring = $self->columnstring();
+	my $last = (1 << $self->width) - 1;
+	my %term;
 
-	(my $dual = reverse $cstring) =~ tr/01/10/;
+	$term{dontcares} = [@{$self->dontcares}] if ($self->has_dontcares);
+
+	my @dualterms = sort map {$last - $_} $self->complement_terms();
+
+	if ($self->has_minterms)
+	{
+		$term{minterms} = [@dualterms];
+	}
+	else
+	{
+		$term{maxterms} = [@dualterms];
+	}
+
 	my $title = "Dual of '" . $self->title() . "'";
 
-	return Algorithm::QuineMcCluskey->new(columnstring => $dual,
+	return Algorithm::QuineMcCluskey->new(
+		title => $title,
 		width => $self->width,
 		dc => $self->dc,
 		vars => $self->vars,
-		title => $title);
+		%term
+	);
 }
 
 sub all_bit_terms
