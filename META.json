@@ -5,7 +5,7 @@
       "John M. Gamble <jgamble@cpan.org>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Module::Build version 0.4211",
+   "generated_by" : "Module::Build version 0.4203",
    "keywords" : [
       "quine-mccluskey"
    ],
@@ -44,15 +44,15 @@
    "provides" : {
       "Algorithm::QuineMcCluskey" : {
          "file" : "lib/Algorithm/QuineMcCluskey.pm",
-         "version" : "0.04"
+         "version" : "0.05"
       },
       "Algorithm::QuineMcCluskey::Format" : {
          "file" : "lib/Algorithm/QuineMcCluskey/Format.pm",
-         "version" : "0.04"
+         "version" : "0.05"
       },
       "Algorithm::QuineMcCluskey::Util" : {
          "file" : "lib/Algorithm/QuineMcCluskey/Util.pm",
-         "version" : "0.04"
+         "version" : "0.05"
       }
    },
    "release_status" : "stable",
@@ -64,5 +64,5 @@
          "url" : "git://github.com/jgamble/Algorithm-QuineMcCluskey"
       }
    },
-   "version" : "0.04"
+   "version" : "0.05"
 }
