@@ -2,17 +2,19 @@
 use strict;
 use Carp;
 use Algorithm::QuineMcCluskey;
-use Algorithm::QuineMcCluskey::Format qw(tableform);
+use Algorithm::QuineMcCluskey::Format qw(chart hasharray);
 use Getopt::Long;
 
 my ($width, @mterms);
-my ($which_m, $prime_imp);
+my ($which_m, $prime_imp, $ess, $covers);
 my (@dontcares);
 
 GetOptions(
 	"width=i" => \$width,
 	"m" => \$which_m,
 	"pi" => \$prime_imp,
+	"ess" => \$ess,
+	"co" => \$covers,
 	"dc=i{1,}" => \@dontcares
 );
 
@@ -28,7 +30,21 @@ my $q = Algorithm::QuineMcCluskey->new(
 
 if (defined $prime_imp)
 {
-	print tableform($q->get_primes, $q->width), "\n";
+	my $p = $q->get_primes;
+	print chart($p, $q->width), "\n";
+}
+elsif (defined $ess)
+{
+	my $e = $q->get_essentials;
+	print join(", ", @{$e}), "\n";
+}
+elsif (defined $covers)
+{
+	my $c = $q->get_covers();
+	for my $idx (0 .. $#{$c})
+	{
+		print "'", join("', '",  sort @{$c->[$idx]}), "'\n";
+	}
 }
 else
 {
