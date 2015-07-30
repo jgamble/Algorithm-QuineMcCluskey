@@ -1,5 +1,13 @@
 Revision history for Algorithm-QuineMcCluskey
 
+     2015-7-29
+	- Documented methods get_primes(), get_essentials(), and
+	  get_covers().
+	- Changed attribute essentials from HashRef to ArrayRef.
+	  It makes get_essentials() a bit more useful.
+	- Renamed tableform() function to chart().
+	- Updated README to current status of the API.
+	- Version 0.05 now, and up to CPAN.
      2015-6-13
 	- The build-and-break-a-columnstring mechanism for making
 	  complements and duals of the object was clear but involved
