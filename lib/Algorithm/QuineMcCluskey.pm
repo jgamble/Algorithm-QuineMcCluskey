@@ -1,9 +1,3 @@
-=head1 NAME
-
-Algorithm::QuineMcCluskey - solve Quine-McCluskey set-cover problems
-
-=cut
-
 package Algorithm::QuineMcCluskey;
 
 use strict;
@@ -31,7 +25,7 @@ use Tie::Cycle;
 # The ::Format package is only needed for Smart Comments -- comment or uncomment
 # in concert with Smart::Comments as needed.
 #
-#use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray tableform);
+#use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray chart);
 #use Smart::Comments ('###', '####', '#####');
 
 #
@@ -130,8 +124,15 @@ has 'primes'	=> (
 	lazy => 1,
 	builder => 'generate_primes'
 );
+
+#
+# The essential prime implicants (not actually
+# used in the algorithm, we keep track of what's
+# essential in a list local to the recursive
+# solving function).
+#
 has 'essentials'	=> (
-	isa => 'HashRef', is => 'ro', required => 0,
+	isa => 'ArrayRef', is => 'ro', required => 0,
 	init_arg => undef,
 	reader => 'get_essentials',
 	writer => '_set_essentials',
@@ -156,144 +157,7 @@ has 'covers'	=> (
 	builder => 'generate_covers'
 );
 
-our $VERSION = 0.04;
-
-=head1 SYNOPSIS
-
-    use Algorithm::QuineMcCluskey;
-
-    #
-    # Five-bit, 12-minterm Boolean expression test with don't-cares
-    #
-    my $q = Algorithm::QuineMcCluskey->new(
-        width => 5,
-        minterms => [ 0, 5, 7, 8, 10, 11, 15, 17, 18, 23, 26, 27 ],
-        dontcares => [ 2, 16, 19, 21, 24, 25 ]
-    );
-
-    my $result = $q->solve();
-
-or
-
-    my $q = Algorithm::QuineMcCluskey->new(
-	width => 5,
-        columnstring => '10-0010110110001-11-0-01--110000'
-    );
-
-In either case $result will be C<"(AC') + (A'BDE) + (B'CE) + (C'E')">.
-
-=head1 DESCRIPTION
-
-This module minimizes
-L<Boolean expressions|https://en.wikipedia.org/wiki/Boolean_algebra> using the
-L<Quine-McCluskey algorithm|https://en.wikipedia.org/wiki/Quine%E2%80%93McCluskey_algorithm>.
-
-
-=cut
-
-#
-# Sub and method definitions.
-#
-
-=head2 Object Methods
-
-=head3 new([<attribute> => value, ...])
-
-Creates the QuineMcCluskey object. The attributes are:
-
-=over 4
-
-=item 'width'
-
-The number of variables (columns) in the Boolean expression.
-
-This is a required attribute.
-
-=item 'minterms'
-
-An array reference of terms representing the 1-values of the
-Boolean expression.
-
-=item 'maxterms'
-
-An array reference of terms representing the 0-values of the
-Boolean expression. This will also indicate that you want the
-expression in product-of-sum form, instead of the default
-sum-of-product form.
-
-=item 'dontcares'
-
-An array reference of terms representing the don't-care-values of the
-Boolean expression. These represent inputs that simply shouldn't happen
-(e.g., numbers 11 through 15 in a base 10 system), and therefore don't
-matter to the result.
-
-=item 'columnstring'
-
-Present the entire list of values of the boolean expression as a single
-string. The values are ordered from left to right in the string. For example,
-a simple two-variable AND equation would have a string "0001".
-
-=item 'dc'
-
-I<Default value: '-'>
-
-Change the representation of the don't-care character. The don't-care character
-is used both in the columnstring, and internally as a place holder for
-eliminated variables in the equation. Some of those internals
-may be examined via other methods.
-
-=item 'title'
-
-A title for the problem you are solving.
-
-=item 'vars'
-
-I<Default value: ['A' .. 'Z']>
-
-The variable names used to form the equation. The names will be taken from
-the leftmost first:
-
-    my $f1 = Algorithm::QuineMcCluskey->new(
-        width => 4,
-        maxterms => [1 .. 11, 13, 15],
-	vars => ['w' .. 'z']
-    );
-
-The names do not have to be single characters, e.g.:
-
-	vars => ['a0', 'a1', 'b0', 'b1']
-
-=back
-
-=head3 solve()
-
-Returns a string of the Boolean equation.
-
-=head3 complement()
-
-Returns a new object that's the complement of the existing object:
-
-    my $qc = $q->complement();
-    print $qc->solve(), "\n";
-
-Prints C<"(ABC) + (A'B'D'E) + (BD'E) + (CE')">.
-
-=head3 dual()
-
-Returns a new object that's the dual of the existing object:
-
-    my $qd = $q->dual();
-    print $qd->solve(), "\n";
-
-Prints C<"(ABCE') + (A'B'C') + (B'DE') + (C'E)">.
-
-=head3 to_columnstring()
-
-Return a string made up of the function column. Position 0 in the string is
-the 0th row of the column, and so on.
-
-=cut
+our $VERSION = 0.05;
 
 sub BUILD
 {
@@ -675,15 +539,10 @@ sub generate_essentials
 	my %e = find_essentials($p, $self->minmax_bit_terms());
 
 	### generate_essentials() -- essentials: hasharray(\%e)
+	my @essential_keys = sort keys %e;
 
-	return \%e;
+	return \@essential_keys;
 }
-
-=head3 to_boolean()
-
-Generating Boolean expressions
-
-=cut
 
 sub to_boolean
 {
@@ -766,7 +625,7 @@ sub recurse_solve
 
 	#
 	##### recurse_solve() level: $level
-	##### recurse_solve() called with: "\n" . tableform(\%primes, $self->width)
+	##### recurse_solve() called with: "\n" . chart(\%primes, $self->width)
 	#
 	
 	my %ess = find_essentials(\%primes, $self->minmax_bit_terms());
@@ -802,13 +661,13 @@ sub recurse_solve
 		# Rule 2: A column that dominated another column can be eliminated.
 		#
 		my @rows = row_dominance(\%primes, 1);
-		#### row_dominance called with primes: "\n" . tableform(\%primes, $self->width)
+		#### row_dominance called with primes: "\n" . chart(\%primes, $self->width)
 		#### row_dominance returns for removal: "[" . join(", ", @rows) . "]"
 		delete $primes{$_} for (@rows);
 
 		my %cols = columns(\%primes, $self->minmax_bit_terms());
 		my @cols = row_dominance(\%cols, 0);
-		#### row_dominance called with primes (rotated): "\n" . tableform(\%cols, $self->width)
+		#### row_dominance called with primes (rotated): "\n" . chart(\%cols, $self->width)
 		#### row_dominance returns for removal: "[" . join(", ", @cols) . "]"
 		remels($_, \%primes) for (@cols);
 
@@ -823,7 +682,7 @@ sub recurse_solve
 	return [ reverse sort @prefix ] unless (keys %primes);
 
 	#
-	##### recurse_solve() Primes after loop: "\n" . tableform(\%primes, $self->width)
+	##### recurse_solve() Primes after loop: "\n" . chart(\%primes, $self->width)
 	#
 
 	#
@@ -920,11 +779,242 @@ sub recurse_solve
 1;
 __END__
 
+=head1 NAME
+
+Algorithm::QuineMcCluskey - solve Quine-McCluskey set-cover problems
+
+=head1 SYNOPSIS
+
+    use Algorithm::QuineMcCluskey;
+
+    #
+    # Five-bit, 12-minterm Boolean expression test with don't-cares
+    #
+    my $q = Algorithm::QuineMcCluskey->new(
+        width => 5,
+        minterms => [ 0, 5, 7, 8, 10, 11, 15, 17, 18, 23, 26, 27 ],
+        dontcares => [ 2, 16, 19, 21, 24, 25 ]
+    );
+
+    my $result = $q->solve();
+
+or
+
+    my $q = Algorithm::QuineMcCluskey->new(
+	width => 5,
+        columnstring => '10-0010110110001-11-0-01--110000'
+    );
+
+In either case C<$result> will be C<"(AC') + (A'BDE) + (B'CE) + (C'E')">.
+
+=head1 DESCRIPTION
+
+This module minimizes
+L<Boolean expressions|https://en.wikipedia.org/wiki/Boolean_algebra> using the
+L<Quine-McCluskey algorithm|https://en.wikipedia.org/wiki/Quine%E2%80%93McCluskey_algorithm>.
+
+=head2 Object Methods
+
+=head3 new([<attribute> => value, ...])
+
+Creates the QuineMcCluskey object. The attributes are:
+
+=over 4
+
+=item 'width'
+
+The number of variables (columns) in the Boolean expression.
+
+This is a required attribute.
+
+=item 'minterms'
+
+An array reference of terms representing the 1-values of the
+Boolean expression.
+
+=item 'maxterms'
+
+An array reference of terms representing the 0-values of the
+Boolean expression. This will also indicate that you want the
+expression in product-of-sum form, instead of the default
+sum-of-product form.
+
+=item 'dontcares'
+
+An array reference of terms representing the don't-care-values of the
+Boolean expression. These represent inputs that simply shouldn't happen
+(e.g., numbers 11 through 15 in a base 10 system), and therefore don't
+matter to the result.
+
+=item 'columnstring'
+
+Present the entire list of values of the boolean expression as a single
+string. The values are ordered from left to right in the string. For example,
+a simple two-variable AND equation would have a string "0001".
+
+=item 'dc'
+
+I<Default value: '-'>
+
+Change the representation of the don't-care character. The don't-care character
+is used both in the columnstring, and internally as a place holder for
+eliminated variables in the equation. Some of those internals
+may be examined via other methods.
+
+=item 'title'
+
+A title for the problem you are solving.
+
+=item 'vars'
+
+I<Default value: ['A' .. 'Z']>
+
+The variable names used to form the equation. The names will be taken from
+the leftmost first:
+
+    my $f1 = Algorithm::QuineMcCluskey->new(
+        width => 4,
+        maxterms => [1 .. 11, 13, 15],
+	vars => ['w' .. 'z']
+    );
+
+The names do not have to be single characters, e.g.:
+
+        vars => ['a1', 'a0', 'b1', 'b0']
+
+=back
+
+=head3 solve()
+
+Returns a string of the Boolean equation.
+
+For now, the form of the equation is set by the choice of terms used
+to create the object. If you use the minterms attribute, the equation
+will be returned in sum-of-product form. If you use the maxterms
+attribute, the equation will be returned in product-of-sum form.
+
+Using the columnstring attribute is the same as using the minterm
+attribute as far as solve() is concerned.
+
+It is possible for solve() to return two different (but equally valid)
+equations on separate runs. You can have the full list of possible
+equations by using L</get_covers()>, described below.
+
+=head3 complement()
+
+Returns a new object that's the complement of the existing object:
+
+    my $qc = $q->complement();
+    print $qc->solve(), "\n";
+
+Prints
+
+    (ABC) + (A'B'D'E) + (BD'E) + (CE')
+
+=head3 dual()
+
+Returns a new object that's the dual of the existing object:
+
+    my $qd = $q->dual();
+    print $qd->solve(), "\n";
+
+Prints
+
+    (ABCE') + (A'B'C') + (B'DE') + (C'E)
+
+=head3 get_primes()
+
+Returns the prime implicants of the boolean expression, as a hash
+reference. The keys of the hash are the prime implicants, while
+the values of the hash are arrays of the terms each implicant covers.
+
+    use Algorithm::QuineMcCluskey;
+
+    my $q = Algorithm::QuineMcCluskey->new(
+        width => 4,
+        minterms => [0, 2, 3, 4, 5, 10, 12, 13, 14, 15]
+        );
+
+    #
+    # Remember, get_primes() returns a hash reference.
+    #
+    my $prime_ref = $q->get_primes();
+    print join(", ", sort keys %{$prime_ref}), "\n";
+
+prints
+
+    -010, -10-, 0-00, 00-0, 001-, 1-10, 11--
+
+See the chart() function in Algorithm::QuineMcCluskey::Format
+for an example of the prime implicant/term chart.
+
+=head3 get_essentials()
+
+Returns the essential prime implicants of the boolean expression, as an array
+reference. The array elements are the prime implicants that are essential,
+that is, the only ones that happen to cover certain terms in the expression.
+
+    use Algorithm::QuineMcCluskey;
+
+    my $q = Algorithm::QuineMcCluskey->new(
+        width => 4,
+        minterms => [0, 2, 3, 4, 5, 10, 12, 13, 14, 15]
+        );
+
+    my $ess_ref = $q->get_essentials();
+    print join(", ", @{$ess_ref}), "\n";
+
+prints
+
+    -10-, 001-, 11--
+
+=head3 get_covers()
+
+Returns all of the reduced implicant combinations that cover the booelan
+expression.
+
+It is possible to have more than one possible equation solve a boolean
+expression. The solve() method returns a minimum set, but other sets
+are often generated too as part of the solving process. To see the other
+solutions, return them via get_covers().
+
+    use Algorithm::QuineMcCluskey;
+
+    my $q = Algorithm::QuineMcCluskey->new(
+        width => 4,
+        minterms => [0, 2, 3, 4, 5, 10, 12, 13, 14, 15]
+        );
+
+    #
+    # get_covers() returns an array ref of arrays.
+    #
+    my $covers = $q->get_covers();
+
+    for my $idx (0 .. $#{$covers})
+    {
+        print "'", join("', '", sort @{$covers->[$idx]}), "'\n";
+    }
+
+prints
+
+    '-010', '-10-', '0-00', '001-', '11--'
+    '-010', '-10-', '00-0', '001-', '11--'
+    '-10-', '0-00', '001-', '1-10', '11--'
+    '-10-', '00-0', '001-', '1-10', '11--'
+
+=head3 to_columnstring()
+
+Return a string made up of the function's column's values. Position 0 in
+the string is the 0th row of the column, and so on. The string will consist
+of zeros, ones, and the don't-care character (which by default is '-').
+
+    my $column = $self->to_columnstring();
 
 =head1 AUTHOR
 
-Darren M. Kulp C<< <darren@kulp.ch> >>
+Darren M. Kulp B<darren@kulp.ch>
 
+John M. Gamble B<jgamble@cpan.org> (current maintainer)
 
 =cut
 
