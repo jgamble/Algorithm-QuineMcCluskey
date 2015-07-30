@@ -18,9 +18,9 @@ use List::MoreUtils qw(uniq firstidx);
 
 @ISA = qw(Exporter);
 
-our @EXPORT_OK = qw(arrayarray hasharray tableform);
+our @EXPORT_OK = qw(arrayarray hasharray chart);
 
-our $VERSION = 0.04;
+our $VERSION = 0.05;
 
 =head1 DESCRIPTION
 
@@ -66,21 +66,21 @@ sub hasharray
 
 	for my $r (sort bit_cmp keys %$hr)
 	{
-		push @output, "$r: [" . join(", ", @{ $hr->{$r} }) . "]";
+		push @output, "'$r' => [" . join(", ", @{ $hr->{$r} }) . "]";
 	}
 
 	return "\n" . join("\n", @output);
 }
 
-=head3 tableform
+=head3 chart
 
-Return a string that puts the "table" of the primes's hash-of-array structure
+Return a string that interprets the primes' hash-of-array structure
 into a column and row chart usable for visual searching of essential prime
 implicants.
 
 =cut
 
-sub tableform
+sub chart
 {
 	my ($hr, $width) = @_;
 	my $fmt = "%" . ($width+2) . "s";
@@ -108,7 +108,7 @@ sub tableform
 
 =head3 bit_cmp()
 
-Comparison function for sort() that orders the rows in the tableform() 
+Comparison function for sort() that orders the rows in the chart() 
 and hasharray() functions.
 
 =cut
