@@ -7,7 +7,6 @@ WriteMakefile
   'VERSION_FROM' => 'lib/Algorithm/QuineMcCluskey.pm',
   'PREREQ_PM' => {
                    'Carp' => 0,
-                   'Data::Dumper' => 0,
                    'List::Compare::Functional' => 0,
                    'List::Util' => '1.35',
                    'Moose' => 0,
