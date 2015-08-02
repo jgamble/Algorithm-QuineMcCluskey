@@ -20,7 +20,7 @@ use List::MoreUtils qw(uniq firstidx);
 
 our @EXPORT_OK = qw(arrayarray hasharray chart);
 
-our $VERSION = 0.05;
+our $VERSION = 0.06;
 
 =head1 DESCRIPTION
 
