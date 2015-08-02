@@ -157,7 +157,7 @@ has 'covers'	=> (
 	builder => 'generate_covers'
 );
 
-our $VERSION = 0.05;
+our $VERSION = 0.06;
 
 sub BUILD
 {
