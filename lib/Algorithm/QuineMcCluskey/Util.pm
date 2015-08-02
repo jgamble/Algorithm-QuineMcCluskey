@@ -11,7 +11,6 @@ use strict;
 use warnings;
 use 5.010001;
 
-use Data::Dumper;
 use List::MoreUtils qw(pairwise indexes uniq firstidx);
 use List::Util qw(any sum);
 use List::Compare::Functional qw(is_LequivalentR is_LsubsetR);
@@ -42,7 +41,7 @@ our (@ISA, @EXPORT_OK, %EXPORT_TAGS);
 	@{ $EXPORT_TAGS{all} }
 );
 
-our $VERSION = 0.05;
+our $VERSION = 0.06;
 
 =head1 DESCRIPTION
 
@@ -178,18 +177,18 @@ sub row_dominance
 	{
 		for my $row2 (@kp)
 		{
+			#
+			# Skip if
+			# 1) the same row, or
+			# 2) the the rows have identical content, or
+			# 3) row1's list isn't a subset of row2 (which means
+			#    it isn't dominated by row2).
+			#
 			next if ($row1 eq $row2 or
-				scalar @{ $primes->{$row1} } == 0 or
-				is_LequivalentR([ $primes->{$row1} => $primes->{$row2} ]));
+				is_LequivalentR([ $primes->{$row1} => $primes->{$row2} ]) or
+				!is_LsubsetR([ $primes->{$row1} => $primes->{$row2} ]));
 
-			#
-			# If row1's list is a subset of row2, then it is dominated
-			# by row2.
-			#
-			if (is_LsubsetR([ $primes->{$row1} => $primes->{$row2} ]))
-			{
-				push @rows, (($dominant_rows)? $row1: $row2);
-			}
+			push @rows, (($dominant_rows)? $row1: $row2);
 		}
 	}
 
@@ -316,9 +315,9 @@ sub countels
 	return sum map { $_ eq $el } @$aref;
 }
 
-=head3 uniqels(%hashofarrayrefs)
+=head3 uniqels()
 
-Returns the uniq elements of an array of complex structures.
+Returns the unique arrays from an array of arrays.
 
       my @uels = uniqels(@els);
 
@@ -326,8 +325,8 @@ Returns the uniq elements of an array of complex structures.
 
 sub uniqels
 {
-    my %h;
-    map { $h{Dumper($_)}++ == 0 ? $_ : () } @_;
+	my %h;
+	return map { $h{ join(",", @{$_}) }++ == 0 ? $_ : () } @_;
 }
 
 =head3 columns()
