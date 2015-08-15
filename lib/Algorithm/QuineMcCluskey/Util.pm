@@ -16,11 +16,9 @@ use List::Util qw(any sum);
 use List::Compare::Functional qw(is_LequivalentR is_LsubsetR);
 
 use Exporter;
-our (@ISA, @EXPORT_OK, %EXPORT_TAGS);
+our @ISA = qw(Exporter);
 
-@ISA = qw(Exporter);
-
-%EXPORT_TAGS = (
+our %EXPORT_TAGS = (
 	all => [ qw(
 		columns
 		countels
@@ -37,11 +35,11 @@ our (@ISA, @EXPORT_OK, %EXPORT_TAGS);
 	) ],
 );
 
-@EXPORT_OK = (
+our @EXPORT_OK = (
 	@{ $EXPORT_TAGS{all} }
 );
 
-our $VERSION = 0.06;
+our $VERSION = 0.07;
 
 =head1 DESCRIPTION
 
