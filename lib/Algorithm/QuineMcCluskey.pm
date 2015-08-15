@@ -89,11 +89,8 @@ has ['minonly'] => (
 );
 
 #
-# Internal attributes. No using them at object creation.
-#
-
-#
-# The terms' bitstring fields.
+# The '_bits' fields are the terms' bitstring fields, and are
+# internal attributes. No setting them at object creation.
 #
 has 'dc_bits'	=> (
 	isa => 'ArrayRef[Str]', is => 'rw', required => 0,
@@ -110,6 +107,12 @@ has 'max_bits'	=> (
 	init_arg => undef,
 	predicate => 'has_max_bits'
 );
+
+#
+# Prime implicants, essentials, and covers (the building blocks
+# to and final form of the solution to the equation) are all "lazy"
+# attributes and calculated when asked for in code or by the user.
+#
 
 #
 # The calculated prime implicants.
@@ -157,7 +160,7 @@ has 'covers'	=> (
 	builder => 'generate_covers'
 );
 
-our $VERSION = 0.06;
+our $VERSION = 0.07;
 
 sub BUILD
 {
@@ -548,6 +551,7 @@ sub to_boolean
 {
 	my $self = shift;
 	my @terms = @_;
+	my $is_sop = $self->has_min_bits;
 
 	#
 	### to_boolean() called with: arrayarray(\@terms)
@@ -557,13 +561,14 @@ sub to_boolean
 	my @gs = ('(', ')');
 
 	#
-	# Group joiner string.
+	# Group joiner string, depending on whether this
+	# is a sum-of-products or product-of-sums.
 	#
-	my $gj = $self->has_min_bits ? ' + ': '';
+	my $gj = $is_sop ? ' + ': '';
 
 	return
 		join $gj,
-			map { $gs[0] . $self->to_boolean_term($_) . $gs[1] } @$_
+			map { $gs[0] . $self->to_boolean_term($_, $is_sop) . $gs[1] } @$_
 		for (@terms);
 }
 
@@ -573,12 +578,12 @@ sub to_boolean
 sub to_boolean_term
 {
 	my $self = shift;
-	my $term = $_[0];
+	my($term, $is_sop) = @_;
 
 	#
 	# Element joiner and match condition
 	#
-	my ($ej, $cond) = $self->has_min_bits ? ('', 1) : (' + ', 0);
+	my ($ej, $cond) = $is_sop ? ('', 1) : (' + ', 0);
 	tie my $var, 'Tie::Cycle', [ @{$self->vars}[0 .. $self->width - 1] ];
 
 	my $varstring = join $ej, map {
@@ -992,15 +997,29 @@ solutions, return them via get_covers().
 
     for my $idx (0 .. $#{$covers})
     {
-        print "'", join("', '", sort @{$covers->[$idx]}), "'\n";
+        my @cvs = @{$covers->[$idx]};
+
+        #
+        # The raw ones, zeroes, and dont-care characters.
+        #
+        print "'", join("', '",  sort @cvs), "' => ";
+
+        #
+        # And the resulting boolean equation.
+        #
+        print $q->to_boolean(\@cvs), "\n";
     }
 
 prints
 
-    '-010', '-10-', '0-00', '001-', '11--'
-    '-010', '-10-', '00-0', '001-', '11--'
-    '-10-', '0-00', '001-', '1-10', '11--'
-    '-10-', '00-0', '001-', '1-10', '11--'
+    '-010', '-10-', '00-0', '001-', '11--' => (AB) + (A'B'C) + (A'B'D') + (BC') + (B'CD')
+    '-10-', '00-0', '001-', '1-10', '11--' => (AB) + (ACD') + (A'B'C) + (A'B'D') + (BC')
+    '-010', '-10-', '0-00', '001-', '11--' => (AB) + (A'B'C) + (A'C'D') + (BC') + (B'CD')
+    '-10-', '0-00', '001-', '1-10', '11--' => (AB) + (ACD') + (A'B'C) + (A'C'D') + (BC')
+
+
+Note the use of the method to_boolean() in the loop. This is the method solve() uses
+to create its equation, by passing it the first of the list of covers.
 
 =head3 to_columnstring()
 
