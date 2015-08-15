@@ -1,5 +1,11 @@
 Revision history for Algorithm-QuineMcCluskey
 
+     2015-8-14
+	- List::MoreUtils wasn't in the list of required modules
+	  in Build.PL. Added it.
+	- The description of get_covers() in the documentation
+	  wasn't enough. Extended the example.
+	- Bump the version to 0.07.
      2015-8-1
 	- The changes of 2015-5-30 mean that the check for an empty
 	  array in row_dominance() isn't needed anymore.
