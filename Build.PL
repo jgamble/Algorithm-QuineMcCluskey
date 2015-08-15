@@ -9,7 +9,7 @@ my $builder = Module::Build->new(
 	dist_abstract => 'Solve sets of Boolean terms with the Quine-McCluskey algorithm',
 	dist_author => [q{Darren Kulp <darren@kulp.ch>},
 			q{John M. Gamble <jgamble@cpan.org>}],
-	dist_version => '0.06',
+	dist_version => '0.07',
 
 	requires => {
 		perl => '5.10.1',
@@ -17,6 +17,7 @@ my $builder = Module::Build->new(
 		Carp => 0,
 		'List::Compare::Functional' => 0,
 		'List::Util' => '1.35',
+		'List::MoreUtils' => '0.33',
 		'Tie::Cycle' => 0,
 		'namespace::autoclean' => '0.16',
 	},
