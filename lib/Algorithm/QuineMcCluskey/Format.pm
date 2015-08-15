@@ -20,7 +20,7 @@ use List::MoreUtils qw(uniq firstidx);
 
 our @EXPORT_OK = qw(arrayarray hasharray chart);
 
-our $VERSION = 0.06;
+our $VERSION = 0.07;
 
 =head1 DESCRIPTION
 
@@ -72,7 +72,7 @@ sub hasharray
 	return "\n" . join("\n", @output);
 }
 
-=head3 chart
+=head3 chart()
 
 Return a string that interprets the primes' hash-of-array structure
 into a column and row chart usable for visual searching of essential prime
