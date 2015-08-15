@@ -8,6 +8,7 @@ WriteMakefile
   'PREREQ_PM' => {
                    'Carp' => 0,
                    'List::Compare::Functional' => 0,
+                   'List::MoreUtils' => '0.33',
                    'List::Util' => '1.35',
                    'Moose' => 0,
                    'Test::More' => 0,
