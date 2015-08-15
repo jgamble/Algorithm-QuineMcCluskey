@@ -43,7 +43,9 @@ elsif (defined $covers)
 	my $c = $q->get_covers();
 	for my $idx (0 .. $#{$c})
 	{
-		print "'", join("', '",  sort @{$c->[$idx]}), "'\n";
+		my @cvs = @{$c->[$idx]};
+		print "'", join("', '",  sort @cvs), "' => ";
+		print $q->to_boolean(\@cvs), "\n";
 	}
 }
 else
