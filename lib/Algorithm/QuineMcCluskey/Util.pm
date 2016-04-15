@@ -11,8 +11,7 @@ use strict;
 use warnings;
 use 5.010001;
 
-use List::MoreUtils qw(pairwise indexes uniq firstidx);
-use List::Util qw(any sum);
+use List::MoreUtils qw(any pairwise indexes uniq firstidx);
 use List::Compare::Functional qw(is_LequivalentR is_LsubsetR);
 
 use Exporter;
@@ -39,7 +38,7 @@ our @EXPORT_OK = (
 	@{ $EXPORT_TAGS{all} }
 );
 
-our $VERSION = 0.07;
+our $VERSION = 0.08;
 
 =head1 DESCRIPTION
 
@@ -310,7 +309,7 @@ sub countels
 	my($el, $aref) = @_;
 
 	return 0 unless (@$aref);
-	return sum map { $_ eq $el } @$aref;
+	return scalar grep { $_ eq $el } @$aref;
 }
 
 =head3 uniqels()
@@ -359,7 +358,12 @@ Find the location of the first difference between two strings
 
 =cut
 
-sub diffpos { firstidx { $_ } diffposes(@_)}
+sub diffpos
+{
+	return firstidx { $_ } pairwise { $a ne $b }
+			@{[ split(//, shift)]},
+			@{[ split(//, shift)]};
+}
 
 =head3 hdist()
 
@@ -369,21 +373,15 @@ Return the Hamming distance between two strings.
 
 =cut
 
-sub hdist { sum diffposes(@_)}
-
-=head3 diffposes()
-
-Return pairwise the 'un-sameness' of two strings.
-
-=cut
-
-sub diffposes
+sub hdist
 {
-	return pairwise { $a ne $b }
+	my $x = 0;
+
+	pairwise { $x += ($a ne $b) }
 			@{[ split(//, shift)]},
 			@{[ split(//, shift)]};
+	return $x;
 }
-
 
 =head1 SEE ALSO
 

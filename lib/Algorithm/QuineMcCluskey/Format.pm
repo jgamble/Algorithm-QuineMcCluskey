@@ -11,16 +11,15 @@ use strict;
 use warnings;
 use 5.010001;
 
-use Exporter;
-use vars qw(@ISA @EXPORT_OK);
 use Algorithm::QuineMcCluskey::Util qw(matchcount);
 use List::MoreUtils qw(uniq firstidx);
 
-@ISA = qw(Exporter);
+use Exporter;
+our @ISA = qw(Exporter);
 
 our @EXPORT_OK = qw(arrayarray hasharray chart);
 
-our $VERSION = 0.07;
+our $VERSION = 0.08;
 
 =head1 DESCRIPTION
 

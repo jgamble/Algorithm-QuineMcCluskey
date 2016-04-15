@@ -1,5 +1,16 @@
 Revision history for Algorithm-QuineMcCluskey
 
+     2016-4-21
+	- Changed a "sum map" to a "scalar grep" in countels(),
+	  and inlined the diffposes() code in hdist() and diffpos().
+	  This let us eliminate the last cases of calling sum().
+	- These changes, along with using the any() function from
+	  List::MoreUtils instead of List::Util, mean that we don't
+	  need to load List::Util anymore.
+	- Edited Build.PL add 'provides' and 'add-to-cleanup' keys;
+	  bumped the min version requirement of List::MoreUtils to 0.401;
+	  Removed List::Util and bumped the dist version.
+	- Module now at version 0.08.
      2015-8-14
 	- List::MoreUtils wasn't in the list of required modules
 	  in Build.PL. Added it.
