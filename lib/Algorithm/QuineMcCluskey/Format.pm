@@ -39,13 +39,13 @@ Returns a more compact string form of the covers structure.
 sub arrayarray
 {
 	my ($ar) = @_;
-	my $fmt = "%" . length(scalar @{$ar}) . "d: ";
+	my $fmt = "%" . length(scalar @{$ar}) . "d: [%s]";
 	my $idx = 0;
 	my @output;
 
 	for my $ref (@{$ar})
 	{
-		push @output, sprintf($fmt, $idx) . " [" . join(", ", @{ $ref }) . "]";
+		push @output, sprintf($fmt, $idx, (defined $ref)? join(", ", @{ $ref }): " ");
 		$idx++;
 	}
 
@@ -65,13 +65,15 @@ sub hasharray
 
 	for my $r (sort bit_cmp keys %$hr)
 	{
-		push @output, "'$r' => [" . join(", ", @{ $hr->{$r} }) . "]";
+		push @output, "$r => [" . join(", ", @{ $hr->{$r} }) . "]";
 	}
 
 	return "\n" . join("\n", @output);
 }
 
 =head3 chart()
+
+    $chart = chart(\%prime_implicants, $width);
 
 Return a string that interprets the primes' hash-of-array structure
 into a column and row chart usable for visual searching of essential prime
@@ -81,12 +83,13 @@ implicants.
 
 sub chart
 {
-	my ($hr, $width) = @_;
+	my($hr, $width) = @_;
+
+	my @rows = sort bit_cmp keys %$hr;
+	my @columns = sort(uniq(map{ @{ $hr->{$_} } } @rows));
 	my $fmt = "%" . ($width+2) . "s";
 	my @output;
-	my @rows = sort bit_cmp keys %$hr;
 
-	my @columns = sort(uniq(map{ @{ $hr->{$_} } } @rows));
 	push @output, join("", map{sprintf($fmt, $_)} ' ', @columns);
 
 	#
