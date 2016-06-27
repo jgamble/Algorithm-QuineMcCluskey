@@ -419,12 +419,9 @@ sub generate_primes
 	my %implicant;
 
 	#
-	### generate_primes() group the bit terms
-	### by bit count: $bits[0]
-	#
-
-	#
 	# Separate into bins based on number of 1's (the weight).
+	#
+	### generate_primes() group the bit terms
 	#
 	for ($self->all_bit_terms())
 	{
@@ -450,6 +447,9 @@ sub generate_primes
 		#
 		last unless ref $bits[$level];
 
+		#
+		### Level: $level
+		### grouped by bit count: $bits[$level]
 		#
 		# Find pairs with Hamming distance of 1 (i.e., a weight
 		# difference of 1).
