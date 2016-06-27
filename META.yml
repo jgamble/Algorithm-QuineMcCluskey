@@ -8,7 +8,7 @@ build_requires:
 configure_requires:
   Module::Build: '0.4'
 dynamic_config: 0
-generated_by: 'Module::Build version 0.4214, CPAN::Meta::Converter version 2.150005'
+generated_by: 'Module::Build version 0.4218, CPAN::Meta::Converter version 2.150005'
 keywords:
   - boolean
   - boolean-algebra
@@ -21,13 +21,13 @@ name: Algorithm-QuineMcCluskey
 provides:
   Algorithm::QuineMcCluskey:
     file: lib/Algorithm/QuineMcCluskey.pm
-    version: '0.08'
+    version: '0.09'
   Algorithm::QuineMcCluskey::Format:
     file: lib/Algorithm/QuineMcCluskey/Format.pm
-    version: '0.08'
+    version: '0.09'
   Algorithm::QuineMcCluskey::Util:
     file: lib/Algorithm/QuineMcCluskey/Util.pm
-    version: '0.08'
+    version: '0.09'
 requires:
   Carp: '0'
   List::Compare::Functional: '0.53'
@@ -39,5 +39,5 @@ requires:
 resources:
   license: http://dev.perl.org/licenses/
   repository: git://github.com/jgamble/Algorithm-QuineMcCluskey
-version: '0.08'
-x_serialization_backend: 'CPAN::Meta::YAML version 0.012'
+version: '0.09'
+x_serialization_backend: 'CPAN::Meta::YAML version 0.018'
