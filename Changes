@@ -1,5 +1,17 @@
 Revision history for Algorithm-QuineMcCluskey
 
+0.09
+     2016-6-27
+	- Found a case where don't-care terms with no covers
+	  were nonetheless included with the prime implicants.
+	  Fixed by changing a map{}-everything-will-work into
+	  a loop with an if statement to check for that.
+	- New test file 25-solve.t (Rock Paper Scissors) that
+	  covers the above problem.
+	- Streamlined the bit term functions, and added some
+	  more 'smart' comments to show the bit terms.
+	- Added a release_status key to the Build.PL hash.
+0.08
      2016-4-21
 	- Changed a "sum map" to a "scalar grep" in countels(),
 	  and inlined the diffposes() code in hdist() and diffpos().
@@ -11,18 +23,21 @@ Revision history for Algorithm-QuineMcCluskey
 	  bumped the min version requirement of List::MoreUtils to 0.401;
 	  Removed List::Util and bumped the dist version.
 	- Module now at version 0.08.
+0.07
      2015-8-14
 	- List::MoreUtils wasn't in the list of required modules
 	  in Build.PL. Added it.
 	- The description of get_covers() in the documentation
 	  wasn't enough. Extended the example.
 	- Bump the version to 0.07.
+0.06
      2015-8-1
 	- The changes of 2015-5-30 mean that the check for an empty
 	  array in row_dominance() isn't needed anymore.
 	- Use a simple join() in uniqel() instead of Data::Dumper.
 	- Remove Data::Dumper from 'requires' key in Build.PL.
 	- Bumped Version everywhere to 0.06; up to CPAN.
+0.05
      2015-7-29
 	- Documented methods get_primes(), get_essentials(), and
 	  get_covers().
@@ -31,6 +46,7 @@ Revision history for Algorithm-QuineMcCluskey
 	- Renamed tableform() function to chart().
 	- Updated README to current status of the API.
 	- Version 0.05 now, and up to CPAN.
+0.04
      2015-6-13
 	- The build-and-break-a-columnstring mechanism for making
 	  complements and duals of the object was clear but involved
@@ -43,12 +59,14 @@ Revision history for Algorithm-QuineMcCluskey
 	  than October 2013, when any() was introduced. Specified version
 	  1.35 in Build.PL to be safe.
 	- Bump everthing's version up to 0.04. Up to CPAN.
+0.03
      2015-6-12
 	- The minimum perl required was 5.10.1, but the module
 	  was using the /r modifier on the tr// operator, which
 	  doesn't appear until 5.14. Oops. Changed the string
 	  assignment order in dual() and complement().
 	- Version goes to 0.03, and up to CPAN.
+0.02
      2015-6-11
 	- Realized that the maskmatcher regex could be changed to
 	  not require the don't-care character, which means it doesn't
