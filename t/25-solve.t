@@ -23,7 +23,7 @@ $q = Algorithm::QuineMcCluskey->new(
 #    (a0'b0) + (a0b0')/
 #
 @expected = (
-	q/(a0'b0) + (a0b0')/,
+	q/(a0b0') + (a0'b0)/,
 );
 
 $eqn = $q->solve;
@@ -38,7 +38,7 @@ $q = Algorithm::QuineMcCluskey->new(
 );
 
 @expected = (
-    q/(a1a0b1') + (a1'b1b0) + (a0'b1b0) + (a1a0b0)'/,
+    q/(a1a0b1') + (a1a0b0') + (a1'b1b0) + (a0'b1b0)/,
 );
 
 $eqn = $q->solve;

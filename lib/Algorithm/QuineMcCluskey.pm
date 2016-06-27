@@ -223,6 +223,7 @@ sub BUILD
 		} @terms;
 
 		$self->min_bits(\@bitstrings);
+		### Min terms binary: sort $self->min_bits()
 	}
 	if ($self->has_maxterms)
 	{
@@ -233,6 +234,7 @@ sub BUILD
 		} @terms;
 
 		$self->max_bits(\@bitstrings);
+		### Max terms binary: sort $self->max_bits()
 	}
 
 	if ($self->has_dontcares)
@@ -251,6 +253,7 @@ sub BUILD
 		} @dontcares;
 
 		$self->dc_bits(\@bitstrings);
+		### Don't-cares binary: sort $self->dc_bits()
 	}
 
 	$self->title("$w-variable truth table") unless ($self->has_title);
@@ -397,20 +400,16 @@ sub all_bit_terms
 	my $self = shift;
 	my @terms;
 
-	push @terms, @{ $self->min_bits } if ($self->has_min_bits);
-	push @terms, @{ $self->max_bits } if ($self->has_max_bits);
+	push @terms, $self->minmax_bit_terms();
 	push @terms, @{ $self->dc_bits } if ($self->has_dc_bits);
-	return @terms;
+	return sort @terms;
 }
 
 sub minmax_bit_terms
 {
 	my $self = shift;
-	my @terms;
 
-	push @terms, @{ $self->min_bits } if ($self->has_min_bits);
-	push @terms, @{ $self->max_bits } if ($self->has_max_bits);
-	return @terms;
+	return ($self->has_min_bits)? @{$self->min_bits}: @{$self->max_bits};
 }
 
 sub generate_primes
@@ -420,17 +419,17 @@ sub generate_primes
 	my %implicant;
 
 	#
+	### generate_primes() group the bit terms
+	### by bit count: $bits[0]
+	#
+
+	#
 	# Separate into bins based on number of 1's (the weight).
 	#
 	for ($self->all_bit_terms())
 	{
 		push @{$bits[0][ matchcount($_, '1') ]}, $_;
 	}
-
-	#
-	### generate_primes() group the bit terms
-	### by bit count: $bits[0]
-	#
 
 	#
 	# Now for each level, we look for terms that be absorbed into
@@ -515,8 +514,13 @@ sub generate_primes
 	# minterms (or maxterms). The resulting hash of arrays is our
 	# set of prime implicants.
 	#
-	my %p = map { $_ => [ maskedmatch($_, $self->minmax_bit_terms()) ] }
-		grep { !$implicant{$_} } keys %implicant;
+	my %p;
+
+	for my $unmarked (grep { !$implicant{$_} } keys %implicant)
+	{
+		my @matched = maskedmatch($unmarked, $self->minmax_bit_terms());
+		$p{$unmarked} = [@matched] if (@matched);
+	}
 
 	#
 	### generate_primes() -- prime implicants: hasharray(\%p)
