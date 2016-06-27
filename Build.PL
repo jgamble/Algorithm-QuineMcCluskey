@@ -1,4 +1,4 @@
-use 5.010;
+use 5.010001;
 use strict;
 use warnings FATAL =>'all';
 use Module::Build;
@@ -10,6 +10,7 @@ my $builder = Module::Build->new(
 	dist_author => [q{Darren Kulp <darren@kulp.ch>},
 			q{John M. Gamble <jgamble@cpan.org>}],
 	dist_version => '0.08',
+	release_status => 'stable',
 
 	provides => {
 		'Algorithm::QuineMcCluskey' => {
