@@ -10,6 +10,7 @@ use namespace::autoclean;
 use Carp qw(croak);
 
 use Algorithm::QuineMcCluskey::Util qw(:all);
+use List::MoreUtils qw(uniq);
 use List::Compare::Functional qw(get_complement get_intersection is_LequivalentR);
 use Tie::Cycle;
 
@@ -160,12 +161,13 @@ has 'covers'	=> (
 	builder => 'generate_covers'
 );
 
-our $VERSION = 0.09;
+our $VERSION = 0.10;
 
 sub BUILD
 {
 	my $self = shift;
 	my $w = $self->width;
+	my $last_idx = (1 << $w) - 1;
 	my @terms;
 
 	#
@@ -179,15 +181,36 @@ sub BUILD
 		croak "No other terms necessary when using the columnstring attribute"
 			if ($self->has_minterms or $self->has_maxterms or $self->has_dontcares);
 
-		my $cl = length $self->columnstring;
-		my $wl = 1 << $self->width;
+		my $cl = $last_idx + 1 - length $self->columnstring;
 
-		croak "Columnstring length is off by ", $wl - $cl unless ($wl == $cl);
+		croak "Columnstring length is off by ", $cl unless ($cl == 0);
 	}
 	else
 	{
-		croak "Must supply either minterms or maxterms"
-			unless ($self->has_minterms or $self->has_maxterms);
+		if ($self->has_minterms)
+		{
+			@terms = @{$self->minterms};
+		}
+		elsif ($self->has_maxterms)
+		{
+			@terms = @{$self->maxterms};
+		}
+		else
+		{
+			croak "Must supply either minterms or maxterms";
+		}
+
+		push @terms, @{$self->dontcares} if ($self->has_dontcares);
+
+		#
+		# Can those terms be expressed in 'width' bits?
+		#
+		my @outside = grep {$_ > $last_idx or $_ < 0} @terms;
+
+		if (scalar @outside)
+		{
+			croak "Terms (" . join(", ", @outside) . ") are larger than $w bits";
+		}
 	}
 
 	#
@@ -200,7 +223,7 @@ sub BUILD
 	#
 	# And make sure we have enough variable names.
 	#
-	croak "Not enough variable names for your width" if (scalar @{$self->vars} < $self->width);
+	croak "Not enough variable names for your width" if (scalar @{$self->vars} < $w);
 
 	if ($self->has_columnstring)
 	{
@@ -216,30 +239,30 @@ sub BUILD
 
 	if ($self->has_minterms)
 	{
-		@terms = @{$self->minterms};
+		@terms = sort(uniq(@{$self->minterms}));
 
 		my @bitstrings = map {
 			substr(unpack("B32", pack("N", $_)), -$w)
 		} @terms;
 
 		$self->min_bits(\@bitstrings);
-		### Min terms binary: sort $self->min_bits()
+		### Min terms binary: $self->min_bits()
 	}
 	if ($self->has_maxterms)
 	{
-		@terms = @{$self->maxterms};
+		@terms = sort(uniq(@{$self->maxterms}));
 
 		my @bitstrings = map {
 			substr(unpack("B32", pack("N", $_)), -$w)
 		} @terms;
 
 		$self->max_bits(\@bitstrings);
-		### Max terms binary: sort $self->max_bits()
+		### Max terms binary: $self->max_bits()
 	}
 
 	if ($self->has_dontcares)
 	{
-		my @dontcares = @{$self->dontcares};
+		my @dontcares = sort(uniq(@{$self->dontcares}));
 
 		my @intersect = get_intersection([\@dontcares, \@terms]);
 		if (scalar @intersect != 0)
@@ -253,7 +276,7 @@ sub BUILD
 		} @dontcares;
 
 		$self->dc_bits(\@bitstrings);
-		### Don't-cares binary: sort $self->dc_bits()
+		### Don't-cares binary: $self->dc_bits()
 	}
 
 	$self->title("$w-variable truth table") unless ($self->has_title);
@@ -313,9 +336,7 @@ sub complement_terms
 {
 	my $self = shift;
 	my @bitlist = (0 .. (1 << $self->width) - 1);
-	my @termlist;
-
-	@termlist = @{$self->dontcares} if ($self->has_dontcares);
+	my @termlist = @{$self->dontcares} if ($self->has_dontcares);
 
 	if ($self->has_minterms)
 	{
@@ -337,7 +358,6 @@ sub complement
 {
 	my $self = shift;
 	my %term;
-
 
 	$term{dontcares} = [@{$self->dontcares}] if ($self->has_dontcares);
 
