@@ -1,5 +1,13 @@
 Revision history for Algorithm-QuineMcCluskey
 
+0.10
+     2016-7-20
+	- Check to see if the terms (minterms, maxterms, or
+	  dont-cares) are larger than 'width' in bit size.
+	  It's possible I made that mistake myself recently.
+	- And although it's not an error, run the terms through
+	  sort and uniq before converting to bitstrings. It
+	  makes visual inspection of the debug output easier.
 0.09
      2016-6-27
 	- Found a case where don't-care terms with no covers
