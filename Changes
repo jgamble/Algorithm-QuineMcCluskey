@@ -1,5 +1,9 @@
 Revision history for Algorithm-QuineMcCluskey
 
+0.11
+     2016-8-25
+	- Add method all_solutions(). Update the POD concerning using
+	  get_covers() to refer to all_solutions().
 0.10
      2016-7-20
 	- Check to see if the terms (minterms, maxterms, or
