@@ -626,6 +626,14 @@ sub solve
 	return $self->to_boolean($c->[0]);
 }
 
+sub all_solutions
+{
+	my $self = shift;
+	my $c = $self->get_covers();
+
+	return map {$self->to_boolean($_)} @$c;
+}
+
 #
 # recurse_solve
 #
@@ -927,7 +935,23 @@ attribute as far as solve() is concerned.
 
 It is possible for solve() to return two different (but equally valid)
 equations on separate runs. You can have the full list of possible
-equations by using L</get_covers()>, described below.
+equations by using L</all_solutions>. Likewise, the terms that describe
+the solution (before they are converted with the variable names) are
+returned with L</get_covers()>, described below.
+
+=head3 all_solutions()
+
+Return an array of strings that represent the Boolean equation.
+
+It is often possible that there are more than one equation that
+covers the terms.
+
+    my @sol = $q->all_solutions();
+
+    print "    ", join("\n    ", @sol), "\n";
+
+The first equation in the list will be the equation returned by L</solve>.
+
 
 =head3 complement()
 
@@ -1002,10 +1026,16 @@ prints
 Returns all of the reduced implicant combinations that cover the booelan
 expression.
 
+The implicants are in a form that combines 1, 0, and the don't-care character
+(found and set with the C<dc> attribute). These are used by L</solve()> to
+create a boolean equation that solves the set of minterms or maxterms.
+
 It is possible to have more than one possible equation solve a boolean
-expression. The solve() method returns a minimum set, but other sets
-are often generated too as part of the solving process. To see the other
-solutions, return them via get_covers().
+expression. The solve() method returns a minimum set, and all_solutions()
+show the complete set of solutions found by the algorithm.
+
+But if you want to see how the solutions match up with their associated
+covers, you may use this:
 
     use Algorithm::QuineMcCluskey;
 
@@ -1042,8 +1072,9 @@ prints
     '-10-', '0-00', '001-', '1-10', '11--' => (AB) + (ACD') + (A'B'C) + (A'C'D') + (BC')
 
 
-Note the use of the method to_boolean() in the loop. This is the method solve() uses
-to create its equation, by passing it the first of the list of covers.
+Note the use of the method to_boolean() in the loop. This is the method
+solve() uses to create its equation, by passing it the first of the list
+of covers.
 
 =head3 to_columnstring()
 
