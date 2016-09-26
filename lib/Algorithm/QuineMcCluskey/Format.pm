@@ -19,7 +19,7 @@ our @ISA = qw(Exporter);
 
 our @EXPORT_OK = qw(arrayarray hasharray chart);
 
-our $VERSION = 0.10;
+our $VERSION = 0.11;
 
 =head1 DESCRIPTION
 
@@ -117,6 +117,7 @@ and hasharray() functions.
 
 sub bit_cmp
 {
+	#return (matchcount($a, '1') <=> matchcount($b, '1')) || ($a cmp $b);
 	my $result = matchcount($a, '1') <=> matchcount($b, '1');
 	return ($result? $result: ($a cmp $b));
 }
