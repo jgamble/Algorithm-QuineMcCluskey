@@ -161,7 +161,7 @@ has 'covers'	=> (
 	builder => 'generate_covers'
 );
 
-our $VERSION = 0.10;
+our $VERSION = 0.11;
 
 sub BUILD
 {
@@ -807,9 +807,8 @@ sub recurse_solve
 	##### Covers is: arrayarray(\@covers)
 	##### after the weeding out.
 	#
-
-	# Return our covers table to be treated similarly one level up
-	# FIXME: How to best ensure non-duplicated answers?
+	# Return our covers table to be treated similarly one level up.
+	#
 	return uniqels @covers;
 }
 
@@ -933,8 +932,9 @@ attribute, the equation will be returned in product-of-sum form.
 Using the columnstring attribute is the same as using the minterm
 attribute as far as solve() is concerned.
 
-It is possible for solve() to return two different (but equally valid)
-equations on separate runs. You can have the full list of possible
+It is possible that there will be more than one equation that solves the
+boolean expression. Therefore solve() can return a different (but equally
+valid) equation on separate runs. You can have the full list of possible
 equations by using L</all_solutions>. Likewise, the terms that describe
 the solution (before they are converted with the variable names) are
 returned with L</get_covers()>, described below.
@@ -943,7 +943,7 @@ returned with L</get_covers()>, described below.
 
 Return an array of strings that represent the Boolean equation.
 
-It is often possible that there are more than one equation that
+It is often the case that there will be more than one equation that
 covers the terms.
 
     my @sol = $q->all_solutions();
@@ -1030,7 +1030,7 @@ The implicants are in a form that combines 1, 0, and the don't-care character
 (found and set with the C<dc> attribute). These are used by L</solve()> to
 create a boolean equation that solves the set of minterms or maxterms.
 
-It is possible to have more than one possible equation solve a boolean
+It is possible that there will be more than one equation that solves a boolean
 expression. The solve() method returns a minimum set, and all_solutions()
 show the complete set of solutions found by the algorithm.
 
@@ -1051,12 +1051,12 @@ covers, you may use this:
 
     for my $idx (0 .. $#{$covers})
     {
-        my @cvs = @{$covers->[$idx]};
+        my @cvs = sort @{$covers->[$idx]};
 
         #
         # The raw ones, zeroes, and dont-care characters.
         #
-        print "'", join("', '",  sort @cvs), "' => ";
+        print "'", join("', '",  @cvs), "' => ";
 
         #
         # And the resulting boolean equation.
@@ -1066,10 +1066,10 @@ covers, you may use this:
 
 prints
 
-    '-010', '-10-', '00-0', '001-', '11--' => (AB) + (A'B'C) + (A'B'D') + (BC') + (B'CD')
-    '-10-', '00-0', '001-', '1-10', '11--' => (AB) + (ACD') + (A'B'C) + (A'B'D') + (BC')
-    '-010', '-10-', '0-00', '001-', '11--' => (AB) + (A'B'C) + (A'C'D') + (BC') + (B'CD')
-    '-10-', '0-00', '001-', '1-10', '11--' => (AB) + (ACD') + (A'B'C) + (A'C'D') + (BC')
+    '-010', '-10-', '00-0', '001-', '11--' => (B'CD') + (BC') + (A'B'D') + (A'B'C) + (AB)
+    '-10-', '00-0', '001-', '1-10', '11--' => (BC') + (A'B'D') + (A'B'C) + (ACD') + (AB)
+    '-010', '-10-', '0-00', '001-', '11--' => (B'CD') + (BC') + (A'C'D') + (A'B'C) + (AB)
+    '-10-', '0-00', '001-', '1-10', '11--' => (BC') + (A'C'D') + (A'B'C) + (ACD') + (AB)
 
 
 Note the use of the method to_boolean() in the loop. This is the method
