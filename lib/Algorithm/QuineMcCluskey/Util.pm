@@ -38,7 +38,7 @@ our @EXPORT_OK = (
 	@{ $EXPORT_TAGS{all} }
 );
 
-our $VERSION = 0.10;
+our $VERSION = 0.11;
 
 =head1 DESCRIPTION
 
@@ -314,7 +314,8 @@ sub countels
 
 =head3 uniqels()
 
-Returns the unique arrays from an array of arrays.
+Returns the unique arrays from an array of arrays (i.e., we're
+ensuring non-duplicate answers).
 
       my @uels = uniqels(@els);
 
