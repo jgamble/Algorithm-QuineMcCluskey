@@ -19,7 +19,7 @@ our @ISA = qw(Exporter);
 
 our @EXPORT_OK = qw(arrayarray hasharray chart);
 
-our $VERSION = 0.11;
+our $VERSION = 0.12;
 
 =head1 DESCRIPTION
 
@@ -63,7 +63,7 @@ sub hasharray
 	my ($hr) = @_;
 	my @output;
 
-	for my $r (sort bit_cmp keys %$hr)
+	for my $r (sort setbit_cmp keys %$hr)
 	{
 		push @output, "$r => [" . join(", ", @{ $hr->{$r} }) . "]";
 	}
@@ -85,7 +85,7 @@ sub chart
 {
 	my($hr, $width) = @_;
 
-	my @rows = sort bit_cmp keys %$hr;
+	my @rows = sort setbit_cmp keys %$hr;
 	my @columns = sort(uniq(map{ @{ $hr->{$_} } } @rows));
 	my $fmt = "%" . ($width+2) . "s";
 	my @output;
@@ -108,20 +108,23 @@ sub chart
 	return join("\n", @output);
 }
 
-=head3 bit_cmp()
+=head3 setbit_cmp()
+=head3 unsetbit_cmp()
 
 Comparison function for sort() that orders the rows in the chart() 
 and hasharray() functions.
 
 =cut
 
-sub bit_cmp
+sub setbit_cmp
 {
-	#return (matchcount($a, '1') <=> matchcount($b, '1')) || ($a cmp $b);
-	my $result = matchcount($a, '1') <=> matchcount($b, '1');
-	return ($result? $result: ($a cmp $b));
+	return ((matchcount($a, '1') <=> matchcount($b, '1')) || ($a cmp $b));
 }
 
+sub unsetbit_cmp
+{
+	return ((matchcount($a, '0') <=> matchcount($b, '0')) || ($b cmp $a));
+}
 
 =head1 SEE ALSO
 

@@ -27,7 +27,7 @@ use Tie::Cycle;
 # in concert with Smart::Comments as needed.
 #
 #use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray chart);
-#use Smart::Comments ('###', '####', '#####');
+#use Smart::Comments ('###');
 
 #
 # Required attributes to create the object.
@@ -84,7 +84,12 @@ has 'vars'	=> (
 #
 # Change behavior.
 #
-has ['minonly'] => (
+has 'order_by' => (
+	isa => 'Str', is => 'rw',
+	default => 'none',
+);
+
+has 'minonly' => (
 	isa => 'Bool', is => 'rw',
 	default => 1
 );
@@ -111,7 +116,7 @@ has 'max_bits'	=> (
 
 #
 # Prime implicants, essentials, and covers (the building blocks
-# to and final form of the solution to the equation) are all "lazy"
+# to, and final form of, the solution to the equation) are all "lazy"
 # attributes and calculated when asked for in code or by the user.
 #
 
@@ -161,7 +166,7 @@ has 'covers'	=> (
 	builder => 'generate_covers'
 );
 
-our $VERSION = 0.11;
+our $VERSION = 0.12;
 
 sub BUILD
 {
@@ -171,7 +176,7 @@ sub BUILD
 	my @terms;
 
 	#
-	# Catch errors.
+	# Catch errors involving minterms, maxterms, and don't-cares.
 	#
 	croak "Mixing minterms and maxterms not allowed"
 		if ($self->has_minterms and $self->has_maxterms);
@@ -183,7 +188,8 @@ sub BUILD
 
 		my $cl = $last_idx + 1 - length $self->columnstring;
 
-		croak "Columnstring length is off by ", $cl unless ($cl == 0);
+		croak "Columnstring length is too short by ", $cl if ($cl > 0);
+		croak "Columnstring length is too long by ", -$cl if ($cl < 0);
 	}
 	else
 	{
@@ -200,7 +206,17 @@ sub BUILD
 			croak "Must supply either minterms or maxterms";
 		}
 
-		push @terms, @{$self->dontcares} if ($self->has_dontcares);
+		if ($self->has_dontcares)
+		{
+			my @intersect = get_intersection([$self->dontcares, \@terms]);
+			if (scalar @intersect != 0)
+			{
+				croak "Term(s) ", join(", ", @intersect),
+					" are in both the don't-care list and the term list.";
+			}
+
+			push @terms, @{$self->dontcares};
+		}
 
 		#
 		# Can those terms be expressed in 'width' bits?
@@ -221,10 +237,14 @@ sub BUILD
 	croak "The don't-care character can not be '0' or '1'" if ($self->dc =~ qr([01]));
 
 	#
-	# And make sure we have enough variable names.
+	# Make sure we have enough variable names, and limit them to the width.
 	#
 	croak "Not enough variable names for your width" if (scalar @{$self->vars} < $w);
+	$self->vars([ @{$self->vars}[0 .. $w-1] ]);
 
+	#
+	# We've gotten past the error-checking. Create the object.
+	#
 	if ($self->has_columnstring)
 	{
 		my($min_ref, $max_ref, $dc_ref) = $self->break_columnstring();
@@ -263,13 +283,6 @@ sub BUILD
 	if ($self->has_dontcares)
 	{
 		my @dontcares = sort(uniq(@{$self->dontcares}));
-
-		my @intersect = get_intersection([\@dontcares, \@terms]);
-		if (scalar @intersect != 0)
-		{
-			croak "Term(s) ", join(", ", @intersect),
-				" are in both the don't-care list and the term list.";
-		}
 
 		my @bitstrings = map {
 			substr(unpack("B32", pack("N", $_)), -$w)
@@ -376,7 +389,7 @@ sub complement
 		title => $title,
 		width => $self->width,
 		dc => $self->dc,
-		vars => $self->vars,
+		vars => [ @{$self->vars} ],
 		%term
 	);
 }
@@ -410,7 +423,7 @@ sub dual
 		title => $title,
 		width => $self->width,
 		dc => $self->dc,
-		vars => $self->vars,
+		vars => [ @{$self->vars} ],
 		%term
 	);
 }
@@ -551,11 +564,8 @@ sub generate_primes
 sub generate_covers
 {
 	my $self = shift;
-	my @c = $self->recurse_solve($self->get_primes, 0);
 
-	### generate_covers() -- recurse_solve() returned: arrayarray(\@c)
-
-	return \@c;
+	return [ $self->recurse_solve($self->get_primes, 0) ];
 }
 
 sub generate_essentials
@@ -566,23 +576,22 @@ sub generate_essentials
 	my %e = find_essentials($p, $self->minmax_bit_terms());
 
 	### generate_essentials() -- essentials: hasharray(\%e)
-	my @essential_keys = sort keys %e;
 
-	return \@essential_keys;
+	return [sort keys %e];
 }
 
 sub to_boolean
 {
 	my $self = shift;
-	my @terms = @_;
+	my($cref) = @_;
 	my $is_sop = $self->has_min_bits;
 
 	#
-	### to_boolean() called with: arrayarray(\@terms)
+	### to_boolean() called with: arrayarray([$cref])
 	#
 	# Group separators (grouping character pairs)
 	#
-	my @gs = ('(', ')');
+	my($gsb, $gse) = ('(', ')');
 
 	#
 	# Group joiner string, depending on whether this
@@ -590,10 +599,13 @@ sub to_boolean
 	#
 	my $gj = $is_sop ? ' + ': '';
 
-	return
-		join $gj,
-			map { $gs[0] . $self->to_boolean_term($_, $is_sop) . $gs[1] } @$_
-		for (@terms);
+	my @covers = @$cref;
+	@covers = sort @covers if ($self->order_by eq 'covers');
+
+	my @exprns = map {$gsb . $self->to_boolean_term($_, $is_sop) . $gse} @covers;
+	@exprns = sort @exprns if ($self->order_by eq 'vars');
+
+	return join $gj, @exprns;
 }
 
 #
@@ -607,8 +619,8 @@ sub to_boolean_term
 	#
 	# Element joiner and match condition
 	#
-	my ($ej, $cond) = $is_sop ? ('', 1) : (' + ', 0);
-	tie my $var, 'Tie::Cycle', [ @{$self->vars}[0 .. $self->width - 1] ];
+	my($ej, $cond) = $is_sop ? ('', 1) : (' + ', 0);
+	tie my $var, 'Tie::Cycle', [ @{$self->vars} ];
 
 	my $varstring = join $ej, map {
 			my $var = $var;	# Activate cycle even if not used
@@ -623,6 +635,8 @@ sub solve
 	my $self = shift;
 	my $c = $self->get_covers();
 
+	### solve -- get_covers() returned: arrayarray($c)
+
 	return $self->to_boolean($c->[0]);
 }
 
@@ -630,6 +644,8 @@ sub all_solutions
 {
 	my $self = shift;
 	my $c = $self->get_covers();
+
+	### solve -- get_covers() returned: arrayarray($c)
 
 	return map {$self->to_boolean($_)} @$c;
 }
@@ -649,7 +665,7 @@ sub all_solutions
 # some PIs will become essential (i.e., some columns will have a single
 # 'x'. Go back to step 1."
 #
-# Introduction To Logic Design, by Sajjan G. Shiva page 129.
+# Introduction To Logic Design, by Sajjan G. Shiva, page 129.
 #
 sub recurse_solve
 {
@@ -672,19 +688,16 @@ sub recurse_solve
 	#
 	do
 	{
+		#
 		##### recurse_solve() essentials: %ess
-
-		#
-		# REMOVE LATER: the sort op isn't necessary
-		# to the algorithm, but it makes debugging easier.
-		#
-		@essentials_keys = sort keys %ess;
-
 		#
 		# Remove the essential prime implicants from
 		# the prime implicants table.
 		#
-		##### Purging prime hash of: "[" . join(", ", @essentials_keys) . "]"
+		@essentials_keys = keys %ess;
+
+		#
+		##### Purging prime hash of: "[" . join(", ", sort @essentials_keys) . "]"
 		#
 		purge_elements(\%primes, @essentials_keys);
 		push @prefix, grep { $ess{$_} > 0} @essentials_keys;
@@ -836,12 +849,38 @@ Algorithm::QuineMcCluskey - solve Quine-McCluskey set-cover problems
 
 or
 
+    use Algorithm::QuineMcCluskey;
+
     my $q = Algorithm::QuineMcCluskey->new(
 	width => 5,
         columnstring => '10-0010110110001-11-0-01--110000'
     );
 
+    my $result = $q->solve();
+
 In either case C<$result> will be C<"(AC') + (A'BDE) + (B'CE) + (C'E')">.
+
+The strings that represent the covered terms are also viewable:
+
+
+    use Algorithm::QuineMcCluskey;
+
+    #
+    # Five-bit, 12-minterm Boolean expression test with don't-cares
+    #
+    my $q = Algorithm::QuineMcCluskey->new(
+        width => 4,
+        minterms => [ 1, 6, 7, 8, 11, 13, 15],
+    );
+
+    my @covers = $q->get_covers();
+
+    print join(", ", @covers[0];
+
+Will print out
+
+    '0001', '011-', '1-11', '1000', '11-1'
+    (A'B'C'D) + (A'BC) + (ACD) + (AB'C'D') + (ABD)
 
 =head1 DESCRIPTION
 

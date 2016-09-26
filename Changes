@@ -1,5 +1,17 @@
 Revision history for Algorithm-QuineMcCluskey
 
+0.12
+     2016-10-10
+	- In BUILD, limit 'vars' to the number of variables actually needed.
+	- With that change, remove array slice of 'vars' in other parts of
+	  the code.
+	- Add an 'order_by' attribute (undocumented for now) for use in
+	  to_boolean().
+	- Added another bitcount comparison function for sorting.
+	- Removed an unnecessary loop in to_boolean().
+	- Corrected the sorting in the get_covers() example.
+	- Update comments and Smart Comments.
+
 0.11
      2016-8-25
 	- Add method all_solutions(). Update the POD concerning using
