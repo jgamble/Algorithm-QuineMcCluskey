@@ -585,6 +585,7 @@ sub to_boolean
 	my $self = shift;
 	my($cref) = @_;
 	my $is_sop = $self->has_min_bits;
+	my $w = $self->width;
 
 	#
 	### to_boolean() called with: arrayarray([$cref])
@@ -600,6 +601,20 @@ sub to_boolean
 	my $gj = $is_sop ? ' + ': '';
 
 	my @covers = @$cref;
+
+	#
+	# Check for the special case where the covers are a single
+	# expression of nothing but dc characters (e.g., "----").
+	# This is caused when all of the terms (including
+	# don't-care) are covered, resulting in an equation that would
+	# be simply "(1)" (or "(0)" if using maxterms). Since the usual
+	# translation will return "()", this has to checked.
+	#
+	if ($#covers == 0 and $covers[0] =~ /[^01]{$w}/)
+	{
+		return ($is_sop)? "(1)": "(0)";
+	}
+
 	@covers = sort @covers if ($self->order_by eq 'covers');
 
 	my @exprns = map {$gsb . $self->to_boolean_term($_, $is_sop) . $gse} @covers;

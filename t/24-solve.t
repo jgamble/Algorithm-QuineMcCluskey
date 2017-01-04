@@ -6,7 +6,7 @@ use Algorithm::QuineMcCluskey;
 # Testing code starts here
 #
 
-use Test::More tests => 1;
+use Test::More tests => 2;
 
 my($q, $eqn, @expected);
 
@@ -24,6 +24,29 @@ $q = Algorithm::QuineMcCluskey->new(
 @expected = (
 	q/(AC'E') + (A'B'C') + (A'B'D'E) + (BCDE')/,
 	q/(AC'E') + (A'B'D'E) + (BCDE') + (B'C'E')/
+);
+
+$eqn = $q->solve;
+ok(scalar (grep($eqn eq $_, @expected)) == 1, $q->title);
+
+$q = Algorithm::QuineMcCluskey->new(
+	title => "A problem with four possible covers",
+	width  => 4,
+	minterms => [ 1, 2, 8, 9, 14, 15 ],
+	dontcares => [5, 6, 10, 13],
+);
+
+#
+#    (ABD) + (AB'C') + (CD') + (C'D)
+# or (ABC) + (AB'C') + (CD') + (C'D)
+# or (ABD) + (AB'D') + (CD') + (C'D)
+# or (ABC) + (AB'D') + (CD') + (C'D)
+#
+@expected = (
+	q/(ABD) + (AB'C') + (CD') + (C'D)/,
+	q/(ABC) + (AB'C') + (CD') + (C'D)/,
+	q/(ABD) + (AB'D') + (CD') + (C'D)/,
+	q/(ABC) + (AB'D') + (CD') + (C'D)/,
 );
 
 $eqn = $q->solve;

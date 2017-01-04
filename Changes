@@ -1,5 +1,11 @@
 Revision history for Algorithm-QuineMcCluskey
 
+0.13
+     2017-01-5
+	- The special cases where all entries are covered (i.e., all 1s or
+	  all 0s in the truth table) causes a cover of all dc characters,
+	  which returns "()" for solve(). That's a little unhelpful, so
+	  check for that and return either a "(1)" or "(0)".
 0.12
      2016-10-8
 	- In BUILD, limit 'vars' to the number of variables actually needed.
