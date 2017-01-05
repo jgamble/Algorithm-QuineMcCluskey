@@ -16,11 +16,13 @@ t/11-solvesimple.t
 t/13-solvesimple.t
 t/14-solvesimple.t
 t/17-solvesimple.t
+t/18-solvesimple.t
 t/21-solve.t
 t/22-solve.t
 t/23-solve.t
 t/24-solve.t
 t/25-solve.t
+t/26-solve.t
 t/pod.t
 LICENSE
 META.json
