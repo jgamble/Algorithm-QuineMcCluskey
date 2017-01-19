@@ -38,7 +38,7 @@ our @EXPORT_OK = (
 	@{ $EXPORT_TAGS{all} }
 );
 
-our $VERSION = 0.13;
+our $VERSION = 0.14;
 
 =head1 DESCRIPTION
 
