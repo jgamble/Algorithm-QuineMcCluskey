@@ -24,10 +24,10 @@ provides:
     version: '0.13'
   Algorithm::QuineMcCluskey::Format:
     file: lib/Algorithm/QuineMcCluskey/Format.pm
-    version: '0.13'
+    version: '0.14'
   Algorithm::QuineMcCluskey::Util:
     file: lib/Algorithm/QuineMcCluskey/Util.pm
-    version: '0.13'
+    version: '0.14'
 requires:
   Carp: '0'
   List::Compare::Functional: '0.53'
@@ -39,5 +39,5 @@ requires:
 resources:
   license: http://dev.perl.org/licenses/
   repository: git://github.com/jgamble/Algorithm-QuineMcCluskey
-version: '0.13'
+version: '0.14'
 x_serialization_backend: 'CPAN::Meta::YAML version 0.018'
