@@ -808,17 +808,23 @@ sub recurse_solve
 	}
 
 	#
-	##### Weed out the expensive solutions.
+	##### Weed out the duplicated and expensive solutions.
 	#
-	if ($self->minonly)
+	@covers = uniqels @covers;
+
+	if ($self->minonly and scalar @covers > 1)
 	{
-		my $mincost = 1 << $self->width;
-		my @weededcovers;
+		my @weededcovers = shift @covers;
+		my $mincost = matchcount(join('', @{$weededcovers[0]}), "[01]");
 
 		for my $c (@covers)
 		{
 			my $cost = matchcount(join('', @$c), "[01]");
 
+			#
+			##### Cover: join(',', @$c)
+			##### Cost: $cost
+			#
 			next if ($cost > $mincost);
 
 			if ($cost < $mincost)
@@ -837,7 +843,7 @@ sub recurse_solve
 	#
 	# Return our covers table to be treated similarly one level up.
 	#
-	return uniqels @covers;
+	return @covers;
 }
 
 1;
