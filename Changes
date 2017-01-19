@@ -1,5 +1,14 @@
 Revision history for Algorithm-QuineMcCluskey
 
+0.14
+     2017-01-19
+	- Had set the weed-out-expensive-solutions cost at the start of
+	  the loop at 2**width, wrongly thinking that that would be the
+	  maximum cost. Found a couple cases where that's not true,
+	  making solve() return them as "()". Put those cases in a new
+	  test file 27-solve.t.
+	- Changed the weeding-out code to use an actual cost from the
+	  covers array for the starting value.
 0.13
      2017-01-5
 	- The special cases where all entries are covered (i.e., all 1s or
