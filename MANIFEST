@@ -23,6 +23,7 @@ t/23-solve.t
 t/24-solve.t
 t/25-solve.t
 t/26-solve.t
+t/27-solve.t
 t/pod.t
 LICENSE
 META.json
