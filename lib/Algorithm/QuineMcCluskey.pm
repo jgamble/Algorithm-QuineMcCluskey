@@ -1150,5 +1150,9 @@ Darren M. Kulp B<darren@kulp.ch>
 
 John M. Gamble B<jgamble@cpan.org> (current maintainer)
 
+=head1 LICENSE
+
+Same as Perl 5.
+
 =cut
 
