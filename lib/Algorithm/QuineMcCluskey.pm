@@ -166,7 +166,7 @@ has 'covers'	=> (
 	builder => 'generate_covers'
 );
 
-our $VERSION = 0.13;
+our $VERSION = 0.14;
 
 sub BUILD
 {
@@ -1149,6 +1149,10 @@ of zeros, ones, and the don't-care character (which by default is '-').
 Darren M. Kulp B<darren@kulp.ch>
 
 John M. Gamble B<jgamble@cpan.org> (current maintainer)
+
+=head1 LICENSE
+
+Same as Perl 5.
 
 =cut
 
