@@ -1,5 +1,10 @@
 Revision history for Algorithm-QuineMcCluskey
 
+0.15
+     2017-01-31
+	- Stupidly didn't upgrade the version number in QuineMcCluskey.pm.
+	- Fix tests in 24-solve.t and 27-solve.t that had a typo in their
+	  solution sets.
 0.14
      2017-01-19
 	- Had set the weed-out-expensive-solutions cost at the start of
