@@ -26,7 +26,7 @@ $q = Algorithm::QuineMcCluskey->new(
 
 $eqn = $q->solve;
 
-diag(join("\n", $q->all_solutions()));
+#diag(join("\n", $q->all_solutions()));
 
 ok(scalar (grep($eqn eq $_, @expected)) == 1, $q->title);
 
@@ -43,12 +43,12 @@ $q = Algorithm::QuineMcCluskey->new(
 	q/(ABD') + (AB'CD) + (A'BD) + (A'B'C') + (BC'D) + (B'C'D')/,
 	q/(ABD') + (AB'CD) + (A'BD) + (A'C'D) + (BC'D) + (B'C'D')/,
 	q/(AB'CD) + (A'BD) + (A'B'C') + (BCD') + (BC'D) + (B'C'D')/,
-	q/(AB'CD) + (A'BD) + (A'C'D') + (BCD') + (BC'D) + (B'C'D')/,
+	q/(AB'CD) + (A'BD) + (A'C'D) + (BCD') + (BC'D) + (B'C'D')/,
 );
 
 $eqn = $q->solve;
 
-diag(join("\n", $q->all_solutions()));
+#diag(join("\n", $q->all_solutions()));
 
 ok(scalar (grep($eqn eq $_, @expected)) == 1, $q->title);
 

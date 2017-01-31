@@ -6,7 +6,7 @@ use Algorithm::QuineMcCluskey;
 # Testing code starts here
 #
 
-use Test::More tests => 2;
+use Test::More tests => 3;
 
 my($q, $eqn, @expected);
 
@@ -51,4 +51,41 @@ $q = Algorithm::QuineMcCluskey->new(
 
 $eqn = $q->solve;
 ok(scalar (grep($eqn eq $_, @expected)) == 1, $q->title);
+
+$q = Algorithm::QuineMcCluskey->new(
+	title => "A problem with sixteen possible covers",
+	width  => 4,
+	minterms => [ 4, 7, 8, 13 ],
+	dontcares => [2, 3, 6, 10, 11, 12, 15],
+);
+
+
+#
+# The sixteen possible solutions. Gaze in wonder.
+#
+@expected = (
+	q/(ABC') + (AB'D') + (A'BD') + (A'C)/,
+	q/(ABC') + (AB'D') + (A'BD') + (CD)/,
+	q/(ABC') + (AB'D') + (A'C) + (BC'D')/,
+	q/(ABC') + (AB'D') + (BC'D) + (CD)/,
+	q/(ABC') + (AC'D') + (A'BD') + (A'C)/,
+	q/(ABC') + (AC'D') + (A'BD') + (CD)/,
+	q/(ABC') + (AC'D') + (A'C) + (BC'D)/,
+	q/(ABC') + (AC'D') + (BC'D') + (CD)/,
+	q/(ABD) + (AB'D') + (A'BD') + (A'C)/,
+	q/(ABD) + (AB'D') + (A'BD') + (CD)/,
+	q/(ABD) + (AB'D') + (A'C) + (BC'D')/,
+	q/(ABD) + (AB'D') + (BC'D) + (CD)/,
+	q/(ABD) + (AC'D') + (A'BD') + (A'C)/,
+	q/(ABD) + (AC'D') + (A'BD') + (CD)/,
+	q/(ABD) + (AC'D') + (A'C) + (BC'D)/,
+	q/(ABD) + (AC'D') + (BC'D') + (CD)/,
+);
+
+$eqn = $q->solve;
+
+#diag(join("\n", sort $q->all_solutions()));
+
+ok(scalar (grep($eqn eq $_, @expected)) == 1, $q->title);
+
 
