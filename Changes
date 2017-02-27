@@ -1,5 +1,12 @@
 Revision history for Algorithm-QuineMcCluskey
 
+0.16
+     2017-02-27
+	- The test in 24-solve.t, "A problem with sixteen possible covers",
+	  had typos in four of its covers, all involving the term that
+	  should have been BC'D' (the D variable was missing its complement
+	  symbol).
+
 0.15
      2017-01-31
 	- Stupidly didn't upgrade the version number in QuineMcCluskey.pm.
