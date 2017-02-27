@@ -50,6 +50,10 @@ $q = Algorithm::QuineMcCluskey->new(
 );
 
 $eqn = $q->solve;
+
+#diag("solution: \"" . $eqn . "\"\n");
+#diag("\nall solutions:\n\"" . join("\"\n\"", $q->all_solutions()) . "\"\n\n");
+
 ok(scalar (grep($eqn eq $_, @expected)) == 1, $q->title);
 
 $q = Algorithm::QuineMcCluskey->new(
@@ -67,24 +71,25 @@ $q = Algorithm::QuineMcCluskey->new(
 	q/(ABC') + (AB'D') + (A'BD') + (A'C)/,
 	q/(ABC') + (AB'D') + (A'BD') + (CD)/,
 	q/(ABC') + (AB'D') + (A'C) + (BC'D')/,
-	q/(ABC') + (AB'D') + (BC'D) + (CD)/,
+	q/(ABC') + (AB'D') + (BC'D') + (CD)/,
 	q/(ABC') + (AC'D') + (A'BD') + (A'C)/,
 	q/(ABC') + (AC'D') + (A'BD') + (CD)/,
-	q/(ABC') + (AC'D') + (A'C) + (BC'D)/,
+	q/(ABC') + (AC'D') + (A'C) + (BC'D')/,
 	q/(ABC') + (AC'D') + (BC'D') + (CD)/,
 	q/(ABD) + (AB'D') + (A'BD') + (A'C)/,
 	q/(ABD) + (AB'D') + (A'BD') + (CD)/,
 	q/(ABD) + (AB'D') + (A'C) + (BC'D')/,
-	q/(ABD) + (AB'D') + (BC'D) + (CD)/,
+	q/(ABD) + (AB'D') + (BC'D') + (CD)/,
 	q/(ABD) + (AC'D') + (A'BD') + (A'C)/,
 	q/(ABD) + (AC'D') + (A'BD') + (CD)/,
-	q/(ABD) + (AC'D') + (A'C) + (BC'D)/,
+	q/(ABD) + (AC'D') + (A'C) + (BC'D')/,
 	q/(ABD) + (AC'D') + (BC'D') + (CD)/,
 );
 
 $eqn = $q->solve;
 
-#diag(join("\n", sort $q->all_solutions()));
+#diag("solution: \"" . $eqn . "\"\n");
+#diag("\nall solutions:\n\"" . join("\"\n\"", $q->all_solutions()) . "\"\n\n");
 
 ok(scalar (grep($eqn eq $_, @expected)) == 1, $q->title);
 
