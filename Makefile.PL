@@ -5,17 +5,17 @@ WriteMakefile
 (
   'INSTALLDIRS' => 'site',
   'NAME' => 'Algorithm::QuineMcCluskey',
+  'EXE_FILES' => [],
   'PREREQ_PM' => {
-                   'List::Compare::Functional' => '0.53',
-                   'Tie::Cycle' => '1.19',
+                   'Moose' => '2.16',
                    'namespace::autoclean' => '0.16',
-                   'Carp' => 0,
-                   'Test::More' => 0,
                    'List::MoreUtils' => '0.401',
-                   'Moose' => '2.16'
+                   'List::Compare::Functional' => '0.53',
+                   'Carp' => 0,
+                   'Tie::Cycle' => '1.19',
+                   'Test::More' => 0
                  },
   'VERSION_FROM' => 'lib/Algorithm/QuineMcCluskey.pm',
-  'EXE_FILES' => [],
   'PL_FILES' => {}
 )
 ;
