@@ -276,6 +276,7 @@ sub remels
 	for my $k (@kp)
 	{
 		my @pos = indexes { maskedmatch($el, $_) } @{$href->{$k}};
+		$rems += scalar @pos;
 
 		#
 		# If it turns out that all the elements in the array
@@ -285,15 +286,10 @@ sub remels
 		if (scalar @pos == scalar @{$href->{$k}})
 		{
 			delete $href->{$k};
-			$rems += scalar @pos;
 		}
 		else
 		{
-			for my $pos (reverse @pos)
-			{
-				splice(@{$href->{$k}}, $pos, 1);
-				$rems++;
-			}
+			splice(@{$href->{$k}}, $_, 1) for (reverse sort @pos);
 		}
 	}
 
