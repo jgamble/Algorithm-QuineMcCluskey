@@ -212,8 +212,9 @@ sub covered_least
 	} @bit_terms;
 
 	#
-	# Find out how many keys in the primes hash cover
-	# each term (the values in each primes' arrays).
+	# Find out which keys in the primes hash
+	# cover each term (that is, have the term
+	# in each primes' arrays).
 	#
 	my @pkeys = keys %$primes;
 	my $count = 1 + scalar @pkeys;

@@ -10,7 +10,7 @@ use namespace::autoclean;
 use Carp qw(croak);
 
 use Algorithm::QuineMcCluskey::Util qw(:all);
-use List::MoreUtils qw(uniq any);
+use List::MoreUtils qw(uniq);
 use List::Compare::Functional qw(get_complement get_intersection is_LequivalentR);
 use Tie::Cycle;
 
@@ -26,8 +26,8 @@ use Tie::Cycle;
 # The ::Format package is only needed for Smart Comments -- comment or uncomment
 # in concert with Smart::Comments as needed.
 #
-use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray chart);
-use Smart::Comments ('#####');
+#use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray chart);
+#use Smart::Comments ('#####');
 
 #
 # Required attributes to create the object.
@@ -709,7 +709,8 @@ sub recurse_solve
 
 	#
 	##### recurse_solve() level: $level
-	##### recurse_solve() called with: "\n" . chart(\%primes, $self->width)
+	##### recurse_solve() called with
+	##### primes: "\n" . chart(\%primes, $self->width)
 	#
 	
 	my %ess = find_essentials(\%primes, $self->minmax_bit_terms());
@@ -768,7 +769,8 @@ sub recurse_solve
 	# prime implicants. Use that list to figure out the best set
 	# to cover the rest of the terms.
 	#
-	##### recurse_solve() Primes after loop: "\n" . chart(\%primes, $self->width)
+	##### recurse_solve() Primes after loop
+	##### primes: "\n" . chart(\%primes, $self->width)
 	#
 	my($term, @ta) = covered_least(\%primes, $self->minmax_bit_terms());
 
