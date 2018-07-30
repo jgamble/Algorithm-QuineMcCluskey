@@ -11,7 +11,7 @@ use strict;
 use warnings;
 use 5.010001;
 
-use List::MoreUtils qw(any indexes uniq);
+use List::MoreUtils qw(any indexes);
 use List::Compare::Functional qw(is_LequivalentR is_LsubsetR);
 
 use Exporter;
@@ -164,7 +164,7 @@ sub row_dominance
 {
 	my($primes, $dominant_rows) = @_;
 	my @kp = keys %$primes;
-	my @rows;
+	my %unique_rows;
 
 	$dominant_rows //= 0;
 
@@ -183,11 +183,11 @@ sub row_dominance
 				is_LequivalentR([ $primes->{$row1} => $primes->{$row2} ]) or
 				!is_LsubsetR([ $primes->{$row1} => $primes->{$row2} ]));
 
-			push @rows, (($dominant_rows)? $row1: $row2);
+			$unique_rows{(($dominant_rows)? $row1: $row2)} = 1;
 		}
 	}
 
-	return uniq(@rows);
+	return keys %unique_rows;
 }
 
 =head3 covered_least()
