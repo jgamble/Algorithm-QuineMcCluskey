@@ -1,5 +1,20 @@
 Revision history for Algorithm-QuineMcCluskey
 
+0.19
+    2019-07-30
+	- There was more processing than needed in least_covered() to do
+	  a find-the-minimum loop, plus it was throwing away information
+	  that had to be re-created by the next line of code.
+	  Consolidated all that with less hash-of-array manipulation,
+	  and changed the return value from the single term to the term
+	  plus its covers.
+	- A side-effect of the above is that countels() is no longer
+	  needed, and was removed.
+	- Also, while I was doing A-B comparisons, the new version of the
+	  function was named covered_least(), and it stayed that way.
+	- Streamlined remels() some more, and changed it from a function
+	  that got called multiple times for each item in a list, to a
+	  function that is called with a list.
 0.18
     2018-07-10
 	- Check for existence of next-level implicant before pushing it
