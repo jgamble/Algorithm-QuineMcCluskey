@@ -10,7 +10,7 @@ use namespace::autoclean;
 use Carp qw(croak);
 
 use Algorithm::QuineMcCluskey::Util qw(:all);
-use List::MoreUtils qw(uniq);
+use List::MoreUtils qw(uniq any);
 use List::Compare::Functional qw(get_complement get_intersection is_LequivalentR);
 use Tie::Cycle;
 
@@ -26,8 +26,8 @@ use Tie::Cycle;
 # The ::Format package is only needed for Smart Comments -- comment or uncomment
 # in concert with Smart::Comments as needed.
 #
-#use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray chart);
-#use Smart::Comments ('###');
+use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray chart);
+use Smart::Comments ('#####');
 
 #
 # Required attributes to create the object.
@@ -166,7 +166,7 @@ has 'covers'	=> (
 	builder => 'generate_covers'
 );
 
-our $VERSION = 0.18;
+our $VERSION = 0.19;
 
 sub BUILD
 {
@@ -750,7 +750,7 @@ sub recurse_solve
 		my @cols = row_dominance(\%cols, 0);
 		#### row_dominance called with primes (rotated): "\n" . chart(\%cols, $self->width)
 		#### row_dominance returns for removal: "[" . join(", ", @cols) . "]"
-		remels($_, \%primes) for (@cols);
+		remels(\%primes, @cols);
 
 		%ess = find_essentials(\%primes, $self->minmax_bit_terms());
 
@@ -763,21 +763,18 @@ sub recurse_solve
 	return [ reverse sort @prefix ] unless (keys %primes);
 
 	#
+	# Find a term (there may be more than one) that has the least
+	# number of prime implicants covering it, and a list of those
+	# prime implicants. Use that list to figure out the best set
+	# to cover the rest of the terms.
+	#
 	##### recurse_solve() Primes after loop: "\n" . chart(\%primes, $self->width)
 	#
+	my($term, @ta) = covered_least(\%primes, $self->minmax_bit_terms());
 
 	#
-	# Find the term that has the least number of prime implicants
-	# covering it. Then having found it, make a list of those
-	# prime implicants, and use that list to figure out the best
-	# set to cover the rest of the terms.
-	#
-	my $term = least_covered(\%primes, $self->minmax_bit_terms());
-	my @ta = grep { countels($term, $primes{$_}) } keys %primes;
-
-	#
-	##### Least-covered term returned is: $term
-	##### Prime implicants that cover term are: "[" . join(", ", @ta) . "]"
+	##### Least Covered term: $term
+	##### Covered by: @ta
 	#
 	# Make a copy of the section of the prime implicants
 	# table that don't cover that term.
