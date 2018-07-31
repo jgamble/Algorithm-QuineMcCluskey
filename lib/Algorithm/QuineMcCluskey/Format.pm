@@ -23,8 +23,8 @@ our $VERSION = 0.19;
 
 =head1 DESCRIPTION
 
-This module provides formatting utilities designed for (but not limited to) use in
-Algorithm::QuineMcCluskey.
+This module provides formatting utilities designed for (but not limited
+to) use in Algorithm::QuineMcCluskey.
 
 =cut
 
@@ -109,6 +109,7 @@ sub chart
 }
 
 =head3 setbit_cmp()
+
 =head3 unsetbit_cmp()
 
 Comparison function for sort() that orders the rows in the chart() 

@@ -393,6 +393,14 @@ Darren M. Kulp C<< <darren@kulp.ch> >>
 
 John M. Gamble B<jgamble@cpan.org> (current maintainer)
 
+=head1 LICENSE AND COPYRIGHT
+
+Copyright (c) 2006 Darren Kulp. All rights reserved. This program is
+free software; you can redistribute it and/or modify it under the same
+terms as Perl itself.
+
+See L<http://dev.perl.org/licenses/> for more information.
+
 =cut
 
 1;
