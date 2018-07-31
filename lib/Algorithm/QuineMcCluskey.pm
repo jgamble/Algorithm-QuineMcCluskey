@@ -27,7 +27,7 @@ use Tie::Cycle;
 # in concert with Smart::Comments as needed.
 #
 #use Algorithm::QuineMcCluskey::Format qw(arrayarray hasharray chart);
-#use Smart::Comments ('#####');
+#use Smart::Comments ('###');
 
 #
 # Required attributes to create the object.
@@ -489,14 +489,14 @@ sub generate_primes
 		#
 		for my $low (0 .. $#{ $bits[$level] })
 		{
+			my %nextlvlimp;
+
 			#
 			# These nested for-loops get all permutations
 			# of adjacent sets.
 			#
 			for my $lv (@{ $bits[$level][$low] })
 			{
-				my %nextlvlimp;
-
 				#
 				# Initialize the implicant as unused.
 				#
@@ -529,27 +529,24 @@ sub generate_primes
 						#
 						### Compared: $lv
 						### to      : $hv
-						### pushing : $new
+						### saving  : $new
 						#
 						# Save the new implicant to the
 						# next level, then mark the two
 						# values as used.
 						#
-						push @{ $bits[$level + 1][$low + 1] }, $new unless (exists $nextlvlimp{$new});
 						$nextlvlimp{$new} = 1;
 						$implicant{$lv} = 1;
 						$implicant{$hv} = 1;
 					}
-					else
-					{
-						#
-						### Compared: $lv
-						### to      : $hv
-						### No push
-						#
-					}
 				}
 			}
+
+			#
+			# Push those next-level implicants to the next level,
+			# assuming we found any.
+			#
+			push @{ $bits[$level + 1][$low + 1] }, keys %nextlvlimp if (%nextlvlimp);
 		}
 	}
 
