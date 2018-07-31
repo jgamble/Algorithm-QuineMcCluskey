@@ -21,7 +21,8 @@ use Tie::Cycle;
 # 4 pound signs for code that manipulates prime/essentials/covers hashes:
 #      row_dominance().
 #
-# 5 pound signs for the solve() and recurse_solve() code, and the remels() calls.
+# 5 pound signs for the solve() and recurse_solve() code, and the remels()
+# calls.
 #
 # The ::Format package is only needed for Smart Comments -- comment or uncomment
 # in concert with Smart::Comments as needed.
@@ -613,6 +614,9 @@ sub to_boolean
 	#
 	my $gj = $is_sop ? ' + ': '';
 
+	#
+	### to_boolean() called with: arrayarray([$cref])
+	#
 	my @covers = @$cref;
 
 	#
@@ -625,7 +629,7 @@ sub to_boolean
 	#
 	if ($#covers == 0 and $covers[0] =~ /[^01]{$w}/)
 	{
-		return ($is_sop)? "(1)": "(0)";
+		return $gsb . (($is_sop)? "1": "0") . $gse;
 	}
 
 	@covers = sort @covers if ($self->order_by eq 'covers');
@@ -648,11 +652,11 @@ sub to_boolean_term
 	# Element joiner and match condition
 	#
 	my($ej, $cond) = $is_sop ? ('', 1) : (' + ', 0);
-	tie my $var, 'Tie::Cycle', [ @{$self->vars} ];
+	tie my $vars, 'Tie::Cycle', [ @{$self->vars} ];
 
 	my $varstring = join $ej, map {
-			my $var = $var;	# Activate cycle even if not used
-			$_ eq $self->dc ? () : $var . ($_ == $cond ? '' : "'")
+			my $v = $vars;	# Activate cycle even if not used
+			$_ eq $self->dc ? () : $v . ($_ == $cond ? '' : "'")
 		} split(//, $term);
 
 	return $varstring;
@@ -1007,7 +1011,7 @@ attribute as far as solve() is concerned.
 It is possible that there will be more than one equation that solves the
 boolean expression. Therefore solve() can return a different (but equally
 valid) equation on separate runs. You can have the full list of possible
-equations by using L</all_solutions>. Likewise, the terms that describe
+equations by using L</all_solutions()>. Likewise, the terms that describe
 the solution (before they are converted with the variable names) are
 returned with L</get_covers()>, described below.
 
@@ -1022,7 +1026,7 @@ covers the terms.
 
     print "    ", join("\n    ", @sol), "\n";
 
-The first equation in the list will be the equation returned by L</solve>.
+The first equation in the list will be the equation returned by L</solve()>.
 
 
 =head3 complement()
@@ -1164,3 +1168,28 @@ John M. Gamble B<jgamble@cpan.org> (current maintainer)
 
 =cut
 
+=head1 SEE ALSO
+
+=over 3
+
+=item
+
+Introduction To Logic Design, by Sajjan G. Shiva, 1998.
+
+=item
+
+Discrete Mathematics and its Applications, by Kenneth H. Rosen, 1995
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright (c) 2006 Darren Kulp. All rights reserved. This program is
+free software; you can redistribute it and/or modify it under the same
+terms as Perl itself.
+
+See L<http://dev.perl.org/licenses/> for more information.
+
+=cut
+
+1;
