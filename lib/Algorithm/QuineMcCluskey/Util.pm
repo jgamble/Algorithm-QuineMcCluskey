@@ -11,7 +11,7 @@ use strict;
 use warnings;
 use 5.010001;
 
-use List::MoreUtils qw(any indexes);
+use List::MoreUtils qw(any);
 use List::Compare::Functional qw(is_LequivalentR is_LsubsetR);
 
 use Exporter;
@@ -19,7 +19,6 @@ our @ISA = qw(Exporter);
 
 our %EXPORT_TAGS = (
 	all => [ qw(
-		columns
 		covered_least
 		find_essentials
 		hammingd1pos
@@ -28,6 +27,7 @@ our %EXPORT_TAGS = (
 		purge_elements
 		remels
 		row_dominance
+		transpose
 		uniqels
 	) ],
 );
@@ -44,8 +44,9 @@ This module provides various utilities designed for (but not limited to) use in
 Algorithm::QuineMcCluskey.
 
 The prime implicant and essentials "tables" are in the form of a hash of
-array refs, and are manipulated with the functions columns(), find_essentials(),
-least_covered(), purge_elements(), remels(), row_dominance(), and uniqels().
+array refs, and are manipulated with the functions find_essentials(),
+least_covered(), purge_elements(), remels(), row_dominance(), transpose(),
+and uniqels().
 
 =cut
 
@@ -109,6 +110,39 @@ sub maskedmatch
 	}
 
 	return @t;
+}
+
+=head3 maskedmatchindexes()
+
+Returns the indexes of the terms that match a mask made up of zeros,
+ones, and don't-care characters.
+
+      my @pos = maskedmatchindexes("010-0", @terms);
+
+=cut
+
+sub maskedmatchindexes
+{
+	my($mask, @terms) = @_;
+	my @p;
+
+	#
+	# Make two patterns based on the don't-care characters
+	# in the mask (assumed to be the character that's not
+	# a zero or a one, an assumption enforced in BUILD.)
+	#
+	(my $m0 = $mask) =~ s/[^01]/0/g;
+	(my $m1 = $mask) =~ s/[^01]/1/g;
+	$m0 = oct "0b" . $m0;
+	$m1 = oct "0b" . $m1;
+
+	for my $j (0 .. $#terms)
+	{
+		my $b = oct "0b" . $terms[$j];
+		push @p, $j if ((($m0 & $b) == $m0) && (($m1 & $b) == $b));
+	}
+
+	return @p;
 }
 
 =head3 find_essentials()
@@ -180,8 +214,8 @@ sub row_dominance
 			#    it isn't dominated by row2).
 			#
 			next if ($row1 eq $row2 or
-				is_LequivalentR([ $primes->{$row1} => $primes->{$row2} ]) or
-				!is_LsubsetR([ $primes->{$row1} => $primes->{$row2} ]));
+				is_LequivalentR([ $primes->{$row1}, $primes->{$row2} ]) or
+				!is_LsubsetR([ $primes->{$row1}, $primes->{$row2} ]));
 
 			$unique_rows{(($dominant_rows)? $row1: $row2)} = 1;
 		}
@@ -292,7 +326,7 @@ sub remels
 	{
 		for my $k (@kp)
 		{
-			my @pos = indexes { maskedmatch($el, $_) } @{$href->{$k}};
+			my @pos = maskedmatchindexes($el, @{$href->{$k}});
 			$rems += scalar @pos;
 
 			#
@@ -329,27 +363,33 @@ sub uniqels
 	return map { $h{ join(",", @{$_}) }++ == 0 ? $_ : () } @_;
 }
 
-=head3 columns()
+=head3 transpose()
 
-Rotates 90 degrees a hashtable of the type used for %primes, using
-only @columms.
+Transposes a hash-of-arrays structure of the type used for %primes.
 
-      my %table90 = columns(\%table, @columns)
+      my %table90 = transpose(\%table)
 
 =cut
 
-sub columns
+sub transpose
 {
-	my ($r, @c) = @_;
-	my %r90;
-	for my $o (@c)
-	{
-		my @t = grep {
-			any { $_ eq $o } @{ $r->{$_} }
-		} keys %$r;
+	my($table) = @_;
+	my(%r90, %hoh);
 
-		$r90{$o} = [@t] if (scalar @t);
+	#
+	# Set up a hash-of-hashes, inverting the
+	# key to array-of-values relationship.
+	#
+	for my $r (keys %{$table})
+	{
+		$hoh{$_}{$r} = 1 for (@{$table->{$r}});
 	}
+
+	#
+	# For each key collect those sub-hash keys into arrays.
+	#
+	%r90 = map{ ($_ , [ keys %{$hoh{$_}} ]) } keys %hoh;
+
 	return %r90;
 }
 
@@ -379,6 +419,7 @@ sub hammingd1pos
 	# interest. Otherwise, return that character position.
 	#
 	return -1 unless(scalar(() = $v=~ m/[^0]/g) == 1);
+
 	$v =~ m/[^0]/g;
 	return pos($v) - 1;
 }
