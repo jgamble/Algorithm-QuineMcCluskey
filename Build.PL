@@ -28,6 +28,7 @@ my $builder = Module::Build->new(
 		perl => '5.10.1',
 		Moose => '2.16',
 		Carp => 0,
+		'Logic::Minimizer' => '1.00',
 		'List::Compare::Functional' => '0.53',
 		'List::MoreUtils' => '0.401',
 		'Tie::Cycle' => '1.225',
