@@ -10,7 +10,7 @@ use namespace::autoclean;
 use Carp;
 
 use Algorithm::QuineMcCluskey::Util qw(:all);
-use List::MoreUtils qw(uniq);
+use List::Util qw(uniqnum);
 use List::Compare::Functional qw(get_complement is_LequivalentR);
 use Tie::Cycle;
 
@@ -102,7 +102,7 @@ sub BUILD
 
 	if ($self->has_minterms)
 	{
-		@terms = sort(uniq(@{$self->minterms}));
+		@terms = sort(uniqnum(@{$self->minterms}));
 
 		my @bitstrings = map {
 			substr(unpack("B32", pack("N", $_)), -$w)
@@ -113,7 +113,7 @@ sub BUILD
 	}
 	if ($self->has_maxterms)
 	{
-		@terms = sort(uniq(@{$self->maxterms}));
+		@terms = sort(uniqnum(@{$self->maxterms}));
 
 		my @bitstrings = map {
 			substr(unpack("B32", pack("N", $_)), -$w)
@@ -125,7 +125,7 @@ sub BUILD
 
 	if ($self->has_dontcares)
 	{
-		my @dontcares = sort(uniq(@{$self->dontcares}));
+		my @dontcares = sort(uniqnum(@{$self->dontcares}));
 
 		my @bitstrings = map {
 			substr(unpack("B32", pack("N", $_)), -$w)
@@ -356,10 +356,11 @@ sub generate_primes
 	# set of prime implicants.
 	#
 	my %p;
+	my @bit_terms = $self->minmax_bit_terms();
 
 	for my $unmarked (grep { !$implicant{$_} } keys %implicant)
 	{
-		my @matched = maskedmatch($unmarked, $self->minmax_bit_terms());
+		my @matched = maskedmatch($unmarked, @bit_terms);
 		$p{$unmarked} = [@matched] if (@matched);
 	}
 
@@ -469,7 +470,7 @@ sub all_solutions
 	my $self = shift;
 	my $c = $self->get_covers();
 
-	### solve -- get_covers() returned: arrayarray($c)
+	### all_solutions -- get_covers() returned: arrayarray($c)
 
 	return map {$self->to_boolean($_)} @$c;
 }
@@ -496,6 +497,7 @@ sub recurse_solve
 	my $self = shift;
 	my %primes = %{ $_[0] };
 	my $level = $_[1];
+	my @bit_terms = $self->minmax_bit_terms();
 	my @prefix;
 	my @covers;
 	my @essentials_keys;
@@ -506,7 +508,7 @@ sub recurse_solve
 	##### primes: "\n" . chart(\%primes, $self->width)
 	#
 	
-	my %ess = find_essentials(\%primes, $self->minmax_bit_terms());
+	my %ess = find_essentials(\%primes, @bit_terms);
 
 	#
 	##### Begin prefix/essentials loop.
@@ -535,18 +537,20 @@ sub recurse_solve
 		# Rule 1: A row dominated by another row can be eliminated.
 		# Rule 2: A column that dominated another column can be eliminated.
 		#
+		#### Looking for rows dominated by other rows
+		####    primes table: "\n" . chart(\%primes, $self->width)
 		my @rows = row_dominance(\%primes, 1);
-		#### row_dominance called with primes: "\n" . chart(\%primes, $self->width)
-		#### row_dominance returns for removal: "[" . join(", ", @rows) . "]"
 		delete $primes{$_} for (@rows);
+		#### row_dominance returns rows for removal: "[" . join(", ", @rows) . "]"
+		####      primes now: "\n" . chart(\%primes, $self->width)
 
-		my %cols = columns(\%primes, $self->minmax_bit_terms());
+		my %cols = transpose(\%primes);
 		my @cols = row_dominance(\%cols, 0);
-		#### row_dominance called with primes (rotated): "\n" . chart(\%cols, $self->width)
-		#### row_dominance returns for removal: "[" . join(", ", @cols) . "]"
 		remels(\%primes, @cols);
+		#### row_dominance returns cols for removal: "[" . join(", ", @cols) . "]"
+		####      primes now: "\n" . chart(\%primes, $self->width)
 
-		%ess = find_essentials(\%primes, $self->minmax_bit_terms());
+		%ess = find_essentials(\%primes, @bit_terms);
 
 		##### recurse_solve() essentials after purge/dom: %ess
 
@@ -565,7 +569,7 @@ sub recurse_solve
 	##### recurse_solve() Primes after loop
 	##### primes: "\n" . chart(\%primes, $self->width)
 	#
-	my($term, @ta) = covered_least(\%primes, $self->minmax_bit_terms());
+	my($term, @ta) = covered_least(\%primes, @bit_terms);
 
 	#
 	##### Least Covered term: $term
@@ -704,7 +708,7 @@ The strings that represent the covered terms are also viewable:
 
     my @covers = $q->get_covers();
 
-    print join(", ", @covers[0];
+    print $q->solve(), "\n", join(", ", @covers[0];
 
 Will print out
 
