@@ -1,5 +1,31 @@
 Revision history for Algorithm-QuineMcCluskey
 
+
+1.00
+     2018-09-29
+	- Collected the min or max bit terms into a variable in
+	  generate_primes() and recursive_solve(), for future
+	  efficiency changes.
+	- Replace columns(), and function that rotated the primes
+	  hash using grep and any(), with new function transpose(),
+	  which does the same with hash keys. NYTProf says it is
+	  faster.
+     2018-08-30
+	- Examining remels() more closely, it became obvious that
+	  it was using maskedmatch() as an block argument to indexes()
+	  for every single term against every single element three
+	  loops deep. Since maskedmatch() has a set-up cost, this
+	  seems wasteful. Created a new function maskedmatchindexes(),
+	  which sets up the masks before going through the list once.
+     2018-08-29
+	- We now use Logic::Minimizer as a base class.
+	- Consequently, removed attributes and methods that are
+	  now copied in Logic::Minimizer, and are provided
+	  automatically.
+	- Use L::M's catch_errors() for attribute validation.
+	- Update Build.PL with Logic::Minimizer requirement.
+	- And updated the version number everywhere.
+
 0.19
     2019-07-31
 	- There was more processing than needed in least_covered() to do
