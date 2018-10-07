@@ -70,7 +70,7 @@ has 'max_bits'	=> (
 	predicate => 'has_max_bits'
 );
 
-our $VERSION = 0.19;
+our $VERSION = 1.00;
 
 sub BUILD
 {
@@ -228,7 +228,7 @@ sub all_bit_terms
 	my $self = shift;
 	my @terms;
 
-	push @terms, $self->minmax_bit_terms();
+	push @terms, ($self->has_min_bits)? @{$self->min_bits}: @{$self->max_bits};
 	push @terms, @{ $self->dc_bits } if ($self->has_dc_bits);
 	return sort @terms;
 }
@@ -382,7 +382,7 @@ sub generate_essentials
 	my $self = shift;
 
 	my $p = $self->get_primes;
-	my %e = find_essentials($p, $self->minmax_bit_terms());
+	my %e = find_essentials($p);
 
 	### generate_essentials() -- essentials: hasharray(\%e)
 
@@ -497,18 +497,16 @@ sub recurse_solve
 	my $self = shift;
 	my %primes = %{ $_[0] };
 	my $level = $_[1];
-	my @bit_terms = $self->minmax_bit_terms();
 	my @prefix;
 	my @covers;
-	my @essentials_keys;
+	my @essentials;
 
 	#
 	##### recurse_solve() level: $level
 	##### recurse_solve() called with
 	##### primes: "\n" . chart(\%primes, $self->width)
 	#
-	
-	my %ess = find_essentials(\%primes, @bit_terms);
+	my @essentials_next = find_essentials(\%primes);
 
 	#
 	##### Begin prefix/essentials loop.
@@ -516,18 +514,18 @@ sub recurse_solve
 	do
 	{
 		#
-		##### recurse_solve() essentials: %ess
+		##### recurse_solve() do loop, essentials: %ess
 		#
 		# Remove the essential prime implicants from
 		# the prime implicants table.
 		#
-		@essentials_keys = keys %ess;
+		@essentials = @essentials_next;
 
 		#
-		##### Purging prime hash of: "[" . join(", ", sort @essentials_keys) . "]"
+		##### Purging prime hash of: "[" . join(", ", sort @essentials) . "]"
 		#
-		purge_elements(\%primes, @essentials_keys);
-		push @prefix, grep { $ess{$_} > 0} @essentials_keys;
+		purge_elements(\%primes, @essentials);
+		push @prefix, @essentials;
 
 		##### recurse_solve() @prefix now: "[" . join(", ", sort @prefix) . "]"
 
@@ -550,12 +548,12 @@ sub recurse_solve
 		#### row_dominance returns cols for removal: "[" . join(", ", @cols) . "]"
 		####      primes now: "\n" . chart(\%primes, $self->width)
 
-		%ess = find_essentials(\%primes, @bit_terms);
+		@essentials_next = find_essentials(\%primes);
 
 		##### recurse_solve() essentials after purge/dom: %ess
 
 	} until (is_LequivalentR([
-			[ @essentials_keys ] => [ keys %ess ]
+			[ @essentials] => [ @essentials_next ]
 			]));
 
 	return [ reverse sort @prefix ] unless (keys %primes);
@@ -569,7 +567,7 @@ sub recurse_solve
 	##### recurse_solve() Primes after loop
 	##### primes: "\n" . chart(\%primes, $self->width)
 	#
-	my($term, @ta) = covered_least(\%primes, @bit_terms);
+	my($term, @ta) = covered_least(\%primes);
 
 	#
 	##### Least Covered term: $term
