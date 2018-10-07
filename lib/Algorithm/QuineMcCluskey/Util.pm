@@ -11,7 +11,7 @@ use strict;
 use warnings;
 use 5.010001;
 
-use List::MoreUtils qw(any);
+use List::Util qw(any);
 use List::Compare::Functional qw(is_LequivalentR is_LsubsetR);
 
 use Exporter;
@@ -36,7 +36,7 @@ our @EXPORT_OK = (
 	@{ $EXPORT_TAGS{all} }
 );
 
-our $VERSION = 0.19;
+our $VERSION = 1.00;
 
 =head1 DESCRIPTION
 
@@ -147,36 +147,45 @@ sub maskedmatchindexes
 
 =head3 find_essentials()
 
-Find the essential prime implicants in a primes table, filtered
-by a list of terms.
+Find the essential prime implicants in a primes table.
 
-      my $ess = find_essentials(\%primes, @terms);
+      my @essentials = find_essentials(\%primes);
 
 =cut
 
 sub find_essentials
 {
-	my($primes, @terms) = @_;
+	my($primes) = @_;
 
-	my @kp = keys %$primes;
 	my %essentials;
+	my %bterms;
 
-	for my $term (@terms)
+	#
+	# Invert the hash-of-arrays
+	#
+	while (my($k, $v) = each %{$primes})
 	{
-		my @tp = grep {
-				grep { $_ eq $term } @{ $primes->{$_} }
-			} @kp;
-
-		#
-		# TODO: It would be nice to track the terms that make
-		# this essential
-		if (scalar @tp == 1)
+		for my $term (@{ $v })
 		{
-			$essentials{$tp[0]}++;
+			$bterms{$term} = [] unless (exists $bterms{$term});
+			push @{$bterms{$term}}, $k;
 		}
 	}
 
-	return %essentials;
+	#
+	# Find the term that can be covered by only one bit term. Those
+	# terms are essentials.
+	#
+	for my $k (keys %bterms)
+	{
+		if (scalar @{ $bterms{$k}} == 1)
+		{
+			my @bt = @{ $bterms{$k}};
+			$essentials{ ${ $bterms{$k}}[0]} = 1;
+		}
+	}
+
+	return keys %essentials;
 }
 
 =head3 row_dominance()
@@ -186,8 +195,11 @@ Row dominance checking.
 @dominated_rows = row_dominance(\%primes, 0);
 @dominant_rows = row_dominance(\%primes, 1);
 
-A row (column) I<i> of a PI chart dominates row (column) I<j>
-if row (column) I<i> contains an x in each column (row) dominated by it.
+A row I<i> of a PI chart dominates row I<j> if row I<i> contains an x in each
+column dominated by it.
+
+A column I<p> of a PI chart dominates column I<q> if column I<p> contains an x
+in each row dominated by it.
 
 Return those rows (columns are handled by rotating the primes hash before
 calling this function).
@@ -229,21 +241,28 @@ sub row_dominance
 Find the term with the fewest implicant covers, along with a list of
 those covers.
 
-      my($term, @covers) = covered_least(\%primes, @terms);
+      my($term, @covers) = covered_least(\%primes);
 
 =cut
 
 sub covered_least
 {
-	my($primes, @bit_terms) = @_;
+	my($primes) = @_;
+	my(@covers);
 
 	#
-	# Find the bit terms that are within the hash's arrays.
+	# Collect the bit terms that are within the hash's arrays.
 	#
-	my @t = grep {
-		my $o = $_;
-		any { $o eq $_  } map {@$_} values %{$primes}
-	} @bit_terms;
+	my %bterms;
+	$bterms{$_} += 1 for (map {@$_} values %{$primes});
+	my @t = keys %bterms;
+
+	#print STDERR "bit terms hash:\n";
+	#for my $j (@t)
+	#{
+	#	print STDERR "\t$j => " . $bterms{$j} . "\n";
+	#}
+	#print STDERR "\n";
 
 	#
 	# Find out which keys in the primes hash
@@ -252,7 +271,6 @@ sub covered_least
 	#
 	my @pkeys = keys %$primes;
 	my $count = 1 + scalar @pkeys;
-	my @covers;
 	my $term = "";
 
 	#
@@ -260,19 +278,20 @@ sub covered_least
 	#
 	for my $o (@t)
 	{
-		my @cvs = grep {
-			any { $_ eq $o } @{ $primes->{$_} }
-		} @pkeys;
-
-		my $c = scalar @cvs;
-
+		my $c = $bterms{$o};
 		if ($c < $count)
 		{
 			$term = $o;
 			$count = $c;
-			@covers = @cvs;
 		}
 	}
+
+	for my $p (@pkeys)
+	{
+		push @covers, $p if any { $_ eq $term } @{ $primes->{$p} };
+	}
+
+	#print STDERR "covered_least() returns term ($term) and covers (" . join(", ", @covers) . ")\n";
 
 	return ($term, @covers);
 }
