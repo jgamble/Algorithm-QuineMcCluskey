@@ -19,7 +19,7 @@ our @ISA = qw(Exporter);
 
 our @EXPORT_OK = qw(arrayarray hasharray chart);
 
-our $VERSION = 0.19;
+our $VERSION = 1.00;
 
 =head1 DESCRIPTION
 
