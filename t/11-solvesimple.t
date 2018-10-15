@@ -60,7 +60,7 @@ $q = Algorithm::QuineMcCluskey->new(
 );
 
 @expected = (
-	q/(A' + B + C)(A + B' + C)(A + D)(A' + B + D)/
+	q/(A' + B + C)(A + B' + C)(A + D)(B + D)/
 );
 
 diag(join("\n", $q->title, "All solutions", $q->all_solutions()));
