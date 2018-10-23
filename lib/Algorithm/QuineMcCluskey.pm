@@ -381,12 +381,7 @@ sub generate_essentials
 {
 	my $self = shift;
 
-	my $p = $self->get_primes;
-	my %e = find_essentials($p);
-
-	### generate_essentials() -- essentials: hasharray(\%e)
-
-	return [sort keys %e];
+	return [sort find_essentials($self->get_primes) ];
 }
 
 sub to_boolean
