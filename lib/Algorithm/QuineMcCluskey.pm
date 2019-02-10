@@ -12,7 +12,6 @@ use Carp;
 use Algorithm::QuineMcCluskey::Util qw(:all);
 use List::Util qw(uniqnum);
 use List::Compare::Functional qw(get_complement is_LequivalentR);
-use Tie::Cycle;
 
 extends 'Logic::Minimizer';
 
@@ -34,21 +33,9 @@ extends 'Logic::Minimizer';
 
 #
 # Attributes inherited from Logic::Minimizer are width, minterms, maxterms,
-# dontcares, columnstring, title, dc, vars, primes, essentials, and covers.
+# dontcares, columnstring, title, dc, vars, primes, essentials, covers,
+# group_symbols, order_by, and minonly.
 #
-
-#
-# Change behavior.
-#
-has 'order_by' => (
-	isa => 'Str', is => 'rw',
-	default => 'none',
-);
-
-has 'minonly' => (
-	isa => 'Bool', is => 'rw',
-	default => 1
-);
 
 #
 # The '_bits' fields are the terms' bitstring fields, and are
@@ -382,72 +369,6 @@ sub generate_essentials
 	my $self = shift;
 
 	return [sort find_essentials($self->get_primes) ];
-}
-
-sub to_boolean
-{
-	my $self = shift;
-	my($cref) = @_;
-	my $is_sop = $self->has_min_bits;
-	my $w = $self->width;
-
-	#
-	# Group separators (grouping character pairs)
-	#
-	my($gsb, $gse) = ('(', ')');
-
-	#
-	# Group joiner string, depending on whether this
-	# is a sum-of-products or product-of-sums.
-	#
-	my $gj = $is_sop ? ' + ': '';
-
-	#
-	### to_boolean() called with: arrayarray([$cref])
-	#
-	my @covers = @$cref;
-
-	#
-	# Check for the special case where the covers are a single
-	# expression of nothing but dc characters (e.g., "----").
-	# This is caused when all of the terms (including
-	# don't-care) are covered, resulting in an equation that would
-	# be simply "(1)" (or "(0)" if using maxterms). Since the usual
-	# translation will return "()", this has to checked.
-	#
-	if ($#covers == 0 and $covers[0] =~ /[^01]{$w}/)
-	{
-		return $gsb . (($is_sop)? "1": "0") . $gse;
-	}
-
-	@covers = sort @covers if ($self->order_by eq 'covers');
-
-	my @exprns = map {$gsb . $self->to_boolean_term($_, $is_sop) . $gse} @covers;
-	@exprns = sort @exprns if ($self->order_by eq 'vars');
-
-	return join $gj, @exprns;
-}
-
-#
-# Convert an individual term or prime implicant to a boolean variable string.
-#
-sub to_boolean_term
-{
-	my $self = shift;
-	my($term, $is_sop) = @_;
-
-	#
-	# Element joiner and match condition
-	#
-	my($ej, $cond) = $is_sop ? ('', 1) : (' + ', 0);
-	tie my $vars, 'Tie::Cycle', [ @{$self->vars} ];
-
-	my $varstring = join $ej, map {
-			my $v = $vars;	# Activate cycle even if not used
-			$_ eq $self->dc ? () : $v . ($_ == $cond ? '' : "'")
-		} split(//, $term);
-
-	return $varstring;
 }
 
 sub solve

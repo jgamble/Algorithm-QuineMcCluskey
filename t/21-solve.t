@@ -46,7 +46,7 @@ $q = Algorithm::QuineMcCluskey->new(
 	vars => ['w' .. 'z'],
 );
 
-diag(join("\n", $q->title, "All solutions", $q->all_solutions()));
+#diag(join("\n", $q->title, "All solutions", $q->all_solutions()));
 $eqn = $q->solve;
 ok(scalar (grep($eqn eq $_, @expected2nd)) == 1, $q->title);
 
@@ -59,7 +59,7 @@ $q = Algorithm::QuineMcCluskey->new(
 	vars => ['w' .. 'z'],
 );
 
-diag(join("\n", $q->title, "All solutions", $q->all_solutions()));
+#diag(join("\n", $q->title, "All solutions", $q->all_solutions()));
 $eqn = $q->solve;
 ok(scalar (grep($eqn eq $_, @expected3rd)) == 1, $q->title);
 

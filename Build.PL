@@ -25,13 +25,12 @@ my $builder = Module::Build->new(
 	},
 
 	requires => {
-		perl => '5.10.1',
+		perl => '5.16.1',
 		Moose => '2.16',
 		Carp => 0,
 		'Logic::Minimizer' => '1.00',
 		'List::Compare::Functional' => '0.53',
 		'List::Util' => '1.45',
-		'Tie::Cycle' => '1.225',
 		'namespace::autoclean' => '0.28',
 	},
 
