@@ -2,17 +2,19 @@ Revision history for Algorithm-QuineMcCluskey
 
 
 1.00
-     2019-02-09
+     2019-02-10
 	- Moved the formatting functions to_boolean() and
 	  to_boolean_term() over to Logic::Minimizer. Tie::Cycle is no
 	  longer used, and gets removed from the build requirement in
 	  Build.PL.
+	- README is now README.md.
+	- With Logic::Minimizer finally released yesterday, it's time to
+	  send this off to CPAN.
      2018-10-06
-	- Remove the terms parameter from find_essentials(),
-	  covered_least(), and row_dominance(), which had been used for
-	  finding terms that we already had in other structures. This
-	  shortened the loops and reduced the number of loop structures
-	  needed. Another speed-up.
+	- Removed the terms parameter from find_essentials(),
+	  covered_least(), and row_dominance(), which we already
+	  had in other structures. This shortened the loops and reduced
+	  the number of loop structures needed. Another speed-up.
      2018-09-29
 	- Replace columns(), a function that rotated the primes
 	  hash using grep and any(), with new function transpose(),
