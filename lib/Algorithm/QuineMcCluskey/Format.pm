@@ -9,7 +9,7 @@ package Algorithm::QuineMcCluskey::Format;
 
 use strict;
 use warnings;
-use 5.010001;
+use 5.016001;
 
 use Algorithm::QuineMcCluskey::Util qw(matchcount);
 use List::MoreUtils qw(uniq firstidx);

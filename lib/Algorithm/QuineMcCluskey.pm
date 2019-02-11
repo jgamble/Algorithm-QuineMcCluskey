@@ -2,7 +2,7 @@ package Algorithm::QuineMcCluskey;
 
 use strict;
 use warnings;
-use 5.010001;
+use 5.016001;
 
 use Moose;
 use namespace::autoclean;

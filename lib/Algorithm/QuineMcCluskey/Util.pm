@@ -9,7 +9,7 @@ package Algorithm::QuineMcCluskey::Util;
 
 use strict;
 use warnings;
-use 5.010001;
+use 5.016001;
 
 use List::Util qw(any);
 use List::Compare::Functional qw(is_LequivalentR is_LsubsetR);
@@ -58,17 +58,17 @@ Returns the count of a search string Y found in the source string X.
 
 E.g.:
 
-      my $str = "d10d11d1d"; 
-      matchcount($str, "d");     # returns 4
-      matchcount($str, "d1");    # returns 3
+    my $str = "d10d11d1d"; 
+    matchcount($str, "d");     # returns 4
+    matchcount($str, "d1");    # returns 3
 
 To search for only the string without a regular expression accidentally
 interfering, enclose the search string between '\Q' and '\E'. E.g.:
 
-      #
-      # We don't know what's in $looking, so de-magic it.
-      #
-      matchcount($str, '\E' . $looking . '\Q]);
+    #
+    # We don't know what's in $looking, so de-magic it.
+    #
+    matchcount($str, '\E' . $looking . '\Q]);
 
 =cut
 
@@ -84,7 +84,7 @@ sub matchcount
 Returns the terms that match a mask made up of zeros, ones, and don't-care
 characters.
 
-      my @rterms = maskedmatch("010-0", @terms);
+    my @rterms = maskedmatch("010-0", @terms);
 
 =cut
 
@@ -117,7 +117,7 @@ sub maskedmatch
 Returns the indexes of the terms that match a mask made up of zeros,
 ones, and don't-care characters.
 
-      my @pos = maskedmatchindexes("010-0", @terms);
+    my @pos = maskedmatchindexes("010-0", @terms);
 
 =cut
 
@@ -149,7 +149,7 @@ sub maskedmatchindexes
 
 Find the essential prime implicants in a primes table.
 
-      my @essentials = find_essentials(\%primes);
+    my @essentials = find_essentials(\%primes);
 
 =cut
 
@@ -192,8 +192,9 @@ sub find_essentials
 
 Row dominance checking.
 
-@dominated_rows = row_dominance(\%primes, 0);
-@dominant_rows = row_dominance(\%primes, 1);
+    @dominated_rows = row_dominance(\%primes, 0);
+
+    @dominant_rows = row_dominance(\%primes, 1);
 
 A row I<i> of a PI chart dominates row I<j> if row I<i> contains an x in each
 column dominated by it.
@@ -241,7 +242,7 @@ sub row_dominance
 Find the term with the fewest implicant covers, along with a list of
 those covers.
 
-      my($term, @covers) = covered_least(\%primes);
+    my($term, @covers) = covered_least(\%primes);
 
 =cut
 
@@ -298,7 +299,7 @@ sub covered_least
 
 =head3 purge_elements()
 
-      purge_elements(\%prime_implicants, @essentials);
+    purge_elements(\%prime_implicants, @essentials);
 
 Given a table of prime implicants, delete the list of elements (usually
 the essential prime implicants) from the table, both row-wise and column-wise.
@@ -329,7 +330,7 @@ matches their masks.
 Deletes the entire arrayref from the hash if the last element of the
 array is removed.
 
-      remels(\%primes, @elements);
+    remels(\%primes, @elements);
 
 Returns the number of removals made.
 
@@ -372,7 +373,7 @@ sub remels
 Returns the unique arrays from an array of arrays (i.e., we're
 ensuring non-duplicate answers).
 
-      my @uels = uniqels(@els);
+    my @uels = uniqels(@els);
 
 =cut
 
@@ -386,7 +387,7 @@ sub uniqels
 
 Transposes a hash-of-arrays structure of the type used for %primes.
 
-      my %table90 = transpose(\%table)
+    my %table90 = transpose(\%table)
 
 =cut
 
@@ -420,7 +421,7 @@ Our calling code is only interested in Hamming distances of 1.
 In those cases return the string position where the two values differ.
 In all the other cases where the distance isn't one, return a -1.
 
-      $idx = hammingd1pos($val1, $val2);
+    $idx = hammingd1pos($val1, $val2);
 
 =cut
 
