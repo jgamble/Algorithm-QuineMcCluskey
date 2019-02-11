@@ -3,7 +3,7 @@ Changes
 MANIFEST
 META.yml # Will be created by "make dist"
 Makefile.PL
-README
+README.md
 lib/Algorithm/QuineMcCluskey.pm
 lib/Algorithm/QuineMcCluskey/Util.pm
 lib/Algorithm/QuineMcCluskey/Format.pm
