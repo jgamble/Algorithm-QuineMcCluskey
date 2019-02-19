@@ -784,7 +784,7 @@ prints
 
     -010, -10-, 0-00, 00-0, 001-, 1-10, 11--
 
-See the chart() function in Algorithm::QuineMcCluskey::Format
+See the function L<Algorithm::QuineMcCluskey::Format/"chart()">
 for an example of the prime implicant/term chart.
 
 =head3 get_essentials()
