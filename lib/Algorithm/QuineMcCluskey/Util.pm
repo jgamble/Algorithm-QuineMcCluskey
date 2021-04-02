@@ -258,9 +258,8 @@ sub covered_least
 	$bterms{$_} += 1 for (map {@$_} values %{$primes});
 
 	#
-	# Find out which keys in the primes hash
-	# cover each term (that is, have the term
-	# in each primes' arrays).
+	# Find out which keys in the primes hash cover each term
+	# (that is, have the term in each primes' arrays).
 	#
 	my @t = keys %bterms;
 	my @pkeys = keys %$primes;
@@ -313,8 +312,8 @@ sub purge_elements
 	return 0 if (scalar @ess == 0 or scalar keys %$primes == 0);
 
 	#
-	# Delete the rows of each element,
-	# then delete the columns associated with each element.
+	# Delete the rows of each element.
+	# Then delete the columns associated with each element.
 	#
 	delete ${$primes}{$_} for @ess;
 
